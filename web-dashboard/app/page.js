@@ -1,140 +1,79 @@
 'use client';
 import { useEffect, useState } from 'react';
 
-export default function Dashboard() {
+export default function Storefront() {
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchDeals = async () => {
-    try {
-      const res = await fetch('/api/deals');
-      const data = await res.json();
-      setDeals(data.deals || []);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchDeals = async () => {
+      try {
+        const res = await fetch('/api/deals?status=approved');
+        const data = await res.json();
+        setDeals(data.deals || []);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchDeals();
   }, []);
-
-  const handleAction = async (id, action, currentData) => {
-    setDeals(deals.filter(d => d.id !== id)); // Optimistic UI update
-    
-    try {
-      await fetch('/api/deals', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id,
-          action,
-          data: currentData
-        }),
-      });
-    } catch (e) {
-      console.error(e);
-      fetchDeals(); // Revert on failure
-    }
-  };
 
   if (loading) {
     return (
       <div className="loader-container">
         <div className="spinner"></div>
-        <p>Hunting for deals...</p>
+        <p>Finding the best discounts for you...</p>
       </div>
     );
   }
 
   return (
     <main className="dashboard">
-      <header className="header">
-        <h1>🎯 AI Deal Hunter</h1>
-        <p className="subtitle">Admin Review Dashboard</p>
+      <header className="header" style={{ marginBottom: '2rem' }}>
+        <h1 style={{ fontSize: '3.5rem', background: '-webkit-linear-gradient(45deg, #FF9A9E, #FECFEF)', WebkitBackgroundClip: 'text' }}>🎁 Inland Empire Smart Shopper</h1>
+        <p className="subtitle">Hand-picked best deals in Southern California and beyond, updated daily!</p>
       </header>
-
+      
       {deals.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-icon">🎉</div>
-          <h2>All Caught Up!</h2>
-          <p>No pending deals left to review. Great job.</p>
+          <div className="empty-icon">⏳</div>
+          <h2>Hunting for new deals...</h2>
+          <p>Check back soon for the latest massive discounts.</p>
         </div>
       ) : (
-        <div className="stats-bar">
-          <span className="badge">{deals.length} Pending Review</span>
+        <div className="deal-grid">
+          {deals.map(deal => (
+            <div key={deal.id} className="deal-card fade-in" style={{ cursor: 'pointer', background: 'rgba(255, 255, 255, 0.03)' }} onClick={() => window.open(deal.url, '_blank')}>
+              <div className="card-image-wrapper" style={{ background: '#fff', padding: '20px' }}>
+                 {deal.discount_price && deal.original_price && deal.original_price > deal.discount_price && (
+                    <div className="confidence-badge" style={{ background: '#e53935', fontSize: '1rem', padding: '6px 12px' }}>
+                      {Math.round((1 - deal.discount_price / deal.original_price) * 100)}% OFF
+                    </div>
+                 )}
+                 {deal.image_url ? (
+                  <img src={deal.image_url} alt="Deal" className="deal-image"/>
+                ) : (
+                  <div className="no-image">No Image</div>
+                )}
+              </div>
+              <div className="card-content">
+                <h3 style={{ fontSize: '1.2rem', marginBottom: '0.1rem', lineHeight: '1.4', fontWeight: 'bold' }}>{deal.title}</h3>
+                {deal.brand && <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem' }}>By {deal.brand}</p>}
+                
+                <div style={{ marginTop: 'auto', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                  <div>
+                    {deal.discount_price && <span style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--success)' }}>${parseFloat(deal.discount_price).toFixed(2)}</span>}
+                    {deal.original_price && <span style={{ fontSize: '1rem', textDecoration: 'line-through', color: 'var(--text-secondary)', marginLeft: '10px' }}>${parseFloat(deal.original_price).toFixed(2)}</span>}
+                  </div>
+                  <button className="btn btn-approve" style={{ padding: '0.6rem 1.2rem', flex: 'none', background: 'linear-gradient(90deg, #ff8a00, #e52e71)' }} onClick={(e) => { e.stopPropagation(); window.open(deal.url, '_blank'); }}>Buy Now 🛒</button>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
-
-      <div className="deal-grid">
-        {deals.map(deal => (
-          <DealCard key={deal.id} deal={deal} onAction={handleAction} />
-        ))}
-      </div>
     </main>
-  );
-}
-
-function DealCard({ deal, onAction }) {
-  const [title, setTitle] = useState(deal.title || '');
-  const [brand, setBrand] = useState(deal.brand || '');
-  const [origPrice, setOrigPrice] = useState(deal.original_price || '');
-  const [discPrice, setDiscPrice] = useState(deal.discount_price || '');
-
-  return (
-    <div className="deal-card fade-in">
-      <div className="card-image-wrapper">
-        <div className="confidence-badge">Score: {deal.confidence_score}</div>
-        {deal.image_url ? (
-          <img src={deal.image_url} alt="Deal" className="deal-image"/>
-        ) : (
-          <div className="no-image">No Image Found</div>
-        )}
-      </div>
-      
-      <div className="card-content">
-        <a href={deal.url} target="_blank" rel="noopener noreferrer" className="original-link">View Original Source ↗</a>
-        
-        <div className="form-group">
-          <label>Product Title</label>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} />
-        </div>
-        
-        <div className="form-group">
-          <label>Brand</label>
-          <input value={brand} onChange={(e) => setBrand(e.target.value)} />
-        </div>
-
-        <div className="price-row">
-          <div className="form-group">
-            <label>Original Price ($)</label>
-            <input type="number" step="0.01" value={origPrice} onChange={(e) => setOrigPrice(e.target.value)} />
-          </div>
-          <div className="form-group">
-            <label>Discount Price ($)</label>
-            <input type="number" step="0.01" value={discPrice} onChange={(e) => setDiscPrice(e.target.value)} />
-          </div>
-        </div>
-
-        <div className="action-buttons">
-          <button 
-            className="btn btn-reject" 
-            onClick={() => onAction(deal.id, 'reject')}
-          >
-            ❌ Reject
-          </button>
-          <button 
-            className="btn btn-approve"
-            onClick={() => onAction(deal.id, 'approve', { title, brand, original_price: origPrice, discount_price: discPrice })}
-          >
-            ✅ Approve
-          </button>
-        </div>
-      </div>
-    </div>
   );
 }

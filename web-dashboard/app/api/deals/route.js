@@ -3,12 +3,16 @@ import { getConnection } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request) {
   let connection;
   try {
+    const { searchParams } = new URL(request.url);
+    const status = searchParams.get('status') || 'pending';
+
     connection = await getConnection();
     const [rows] = await connection.execute(
-      "SELECT * FROM normalized_deals WHERE status = 'pending' ORDER BY created_at DESC"
+      "SELECT * FROM normalized_deals WHERE status = ? ORDER BY created_at DESC",
+      [status]
     );
     return NextResponse.json({ deals: rows });
   } catch (error) {
