@@ -35,7 +35,8 @@ export async function GET(request) {
     // 3. Fetch RSS Data (Strictly Top Retailers)
     const parser = new Parser();
     const encodedKeyword = encodeURIComponent(randomKeyword + ' ' + randomRetailer);
-    const rssUrl = `https://slickdeals.net/newsearch.php?mode=frontpage&searcharea=deals&searchin=first&rss=1&q=${encodedKeyword}`;
+    // Expand search scope from just 'frontpage' to 'popular' so we find more deals for specific retailers
+    const rssUrl = `https://slickdeals.net/newsearch.php?mode=popular&searcharea=deals&searchin=first&rss=1&q=${encodedKeyword}`;
     
     let feed;
     try {
