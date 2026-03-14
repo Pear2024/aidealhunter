@@ -1,0 +1,7 @@
+feedparser
+google-genai
+streamlit
+pandas
+python-dotenv
+
+pymysql
