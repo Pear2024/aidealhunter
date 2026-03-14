@@ -141,25 +141,49 @@ export async function GET(request) {
         console.error("Gemini Extraction Error:", e);
       }
 
-      // Insert into Normalized DB
+      // Gatekeeper AI Heuristics (Phase 8)
       if (extractedData) {
+        let finalStatus = 'pending';
+        let rejectReasons = [];
+        
+        // 1. Calculate discount if not provided
+        const computedDiscount = (extractedData.original_price && extractedData.discount_price) 
+          ? Math.round((1 - extractedData.discount_price / extractedData.original_price) * 100) 
+          : (extractedData.discount_percentage || 0);
+
+        // 2. Apply Rules
+        if (computedDiscount < 20) rejectReasons.push('Discount < 20%');
+        if ((extractedData.confidence_score || 0) < 0.80) rejectReasons.push('Low AI Confidence < 0.8');
+        if (!preExtractedImage && !extractedData.image_url) rejectReasons.push('No Product Image');
+        if (extractedData.brand === 'Unknown') rejectReasons.push('Unknown Brand');
+
+        // 3. Ruling
+        if (rejectReasons.length === 0) {
+          finalStatus = 'approved';
+          console.log(`🟢 Gatekeeper Approved: [${deal.title}]`);
+        } else {
+          finalStatus = 'rejected';
+          console.log(`🔴 Gatekeeper Rejected [${deal.title}] due to: ${rejectReasons.join(', ')}`);
+        }
+
         try {
-          // Note: submitter_id is 'system' and status is 'pending' so it requires your manual approval
+          // Note: submitter_id is 'system' and status is decided by the Gatekeeper AI
           await connection.execute(
             `INSERT INTO normalized_deals (
                 raw_deal_id, title, brand, original_price, discount_price, 
                 discount_percentage, url, image_url, confidence_score, status, submitter_id, vote_score
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 'system', 0)`,
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'system', 0)`,
             [
               rawId,
               deal.title,
               extractedData.brand || 'Unknown',
               extractedData.original_price || null,
               extractedData.discount_price || null,
-              extractedData.discount_percentage || null,
+              computedDiscount || extractedData.discount_percentage || null,
               deal.link,
               preExtractedImage || extractedData.image_url || null,
-              extractedData.confidence_score || 0.5
+              extractedData.confidence_score || 0.5,
+              finalStatus
             ]
           );
           
