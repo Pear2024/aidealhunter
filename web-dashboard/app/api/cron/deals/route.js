@@ -27,12 +27,14 @@ export async function GET(request) {
     }
 
     // 2. Randomize Keyword Selection
+    const RETAILERS = ['amazon', 'walmart', 'target', 'costco', 'best buy'];
+    const randomRetailer = RETAILERS[Math.floor(Math.random() * RETAILERS.length)];
     const randomKeyword = TRENDING_KEYWORDS[Math.floor(Math.random() * TRENDING_KEYWORDS.length)];
-    console.log(`🤖 Cron Job Triggered: Searching for [${randomKeyword}] deals...`);
+    console.log(`🤖 Cron Job Triggered: Searching for [${randomKeyword}] deals at [${randomRetailer}]...`);
 
-    // 3. Fetch RSS Data (Strictly Amazon)
+    // 3. Fetch RSS Data (Strictly Top Retailers)
     const parser = new Parser();
-    const encodedKeyword = encodeURIComponent(randomKeyword + ' amazon');
+    const encodedKeyword = encodeURIComponent(randomKeyword + ' ' + randomRetailer);
     const rssUrl = `https://slickdeals.net/newsearch.php?mode=frontpage&searcharea=deals&searchin=first&rss=1&q=${encodedKeyword}`;
     
     let feed;
@@ -151,12 +153,14 @@ export async function GET(request) {
           ? Math.round((1 - extractedData.discount_price / extractedData.original_price) * 100) 
           : (extractedData.discount_percentage || 0);
 
-        // 2. Apply Rules (Stricter Brand + Amazon URL enforcement)
+        // 2. Apply Rules (Stricter Brand + Retailer URL enforcement)
         if (computedDiscount < 20) rejectReasons.push('Discount < 20%');
         if ((extractedData.confidence_score || 0) < 0.80) rejectReasons.push('Low AI Confidence < 0.8');
         if (!preExtractedImage && !extractedData.image_url) rejectReasons.push('No Product Image');
         if (extractedData.brand === 'Unknown') rejectReasons.push('Unknown Brand');
-        if (!deal.link || !deal.link.toLowerCase().includes('amazon')) rejectReasons.push('Not an Amazon Deal');
+        
+        const isApprovedRetailer = RETAILERS.some(retailer => deal.link?.toLowerCase().includes(retailer.replace(' ', '')));
+        if (!isApprovedRetailer) rejectReasons.push('Not from an approved Major Retailer');
 
         // 3. Ruling
         if (rejectReasons.length === 0) {
@@ -196,7 +200,7 @@ export async function GET(request) {
               const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://hemet-deals.vercel.app';
               const trackURL = `${baseUrl}/r/${insertedDealId}`;
               
-              const caption = `💥 AI BOT DEAL ALERT! 💥\n\n${deal.title}\n\n💸 NOW ONLY: $${parseFloat(extractedData.discount_price).toFixed(2)} ${extractedData.original_price ? `(Was $${parseFloat(extractedData.original_price).toFixed(2)} - Save ${computedDiscount}%!)` : ''}\n🛒 Available on Amazon\n\n👇 GRAB IT FAST: 👇\n${trackURL}\n\n#InlandEmpire #SmartShopper #AmazonDeals`;
+              const caption = `💥 AI BOT DEAL ALERT! 💥\n\n${deal.title}\n\n💸 NOW ONLY: $${parseFloat(extractedData.discount_price).toFixed(2)} ${extractedData.original_price ? `(Was $${parseFloat(extractedData.original_price).toFixed(2)} - Save ${computedDiscount}%!)` : ''}\n🛒 Hurry to grab this deal!\n\n👇 GRAB IT FAST: 👇\n${trackURL}\n\n#InlandEmpire #SmartShopper #TrendingDeals`;
               
               const imageURL = preExtractedImage || extractedData.image_url;
               let fbEndpoint = `https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed`;
