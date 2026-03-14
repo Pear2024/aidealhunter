@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getConnection } from '@/lib/db';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 
 export async function POST(request) {
   let connection;
@@ -12,6 +12,10 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized. Please sign in to vote.' }, { status: 401 });
     }
 
+    const user = await currentUser();
+    const email = user?.emailAddresses?.[0]?.emailAddress || 'unknown@example.com';
+    const username = user?.username || user?.firstName || 'Anonymous';
+
     const { dealId, voteType } = await request.json(); // voteType should be 1 (upvote) or -1 (downvote)
 
     if (!dealId || ![1, -1].includes(voteType)) {
@@ -19,6 +23,16 @@ export async function POST(request) {
     }
 
     connection = await getConnection();
+
+    // 0. Ensure user exists in the local database to satisfy the Foreign Key constraint on votes table
+    try {
+      await connection.execute(
+        `INSERT IGNORE INTO users (id, email, username) VALUES (?, ?, ?)`,
+        [userId, email, username]
+      );
+    } catch (e) {
+      console.error("Local User Tracking Error on Vote:", e);
+    }
 
     // 1. Check if the user has already voted on this deal
     const [existingVotes] = await connection.execute(
