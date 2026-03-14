@@ -152,16 +152,13 @@ export async function GET(request) {
         // 1. Calculate discount if not provided
         const computedDiscount = (extractedData.original_price && extractedData.discount_price) 
           ? Math.round((1 - extractedData.discount_price / extractedData.original_price) * 100) 
-          : (extractedData.discount_percentage || 0);
+          : (extractedData.discount_percentage || null);
 
-        // 2. Apply Rules (Stricter Brand + Retailer URL enforcement)
-        if (computedDiscount < 20) rejectReasons.push('Discount < 20%');
-        if ((extractedData.confidence_score || 0) < 0.80) rejectReasons.push('Low AI Confidence < 0.8');
-        if (!preExtractedImage && !extractedData.image_url) rejectReasons.push('No Product Image');
+        // 2. Apply Rules (Tolerate missing MSRP from RSS chunks)
+        if (computedDiscount !== null && computedDiscount < 15) rejectReasons.push('Discount < 15%');
+        if ((extractedData.confidence_score || 0) < 0.60) rejectReasons.push('Low AI Confidence < 0.6');
         if (extractedData.brand === 'Unknown') rejectReasons.push('Unknown Brand');
-        
-        const isApprovedRetailer = RETAILERS.some(retailer => deal.link?.toLowerCase().includes(retailer.replace(' ', '')));
-        if (!isApprovedRetailer) rejectReasons.push('Not from an approved Major Retailer');
+
 
         // 3. Ruling
         if (rejectReasons.length === 0) {
