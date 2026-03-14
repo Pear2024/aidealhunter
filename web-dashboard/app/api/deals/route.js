@@ -44,20 +44,23 @@ export async function POST(request) {
       if (process.env.FB_PAGE_ID && process.env.FB_PAGE_ACCESS_TOKEN) {
         try {
           const [rows] = await connection.execute("SELECT url, image_url FROM normalized_deals WHERE id = ?", [id]);
-          const dealURL = rows[0]?.url || 'https://hemet-deals.vercel.app';
           const imageURL = rows[0]?.image_url;
+          
+          // Use our tracking redirect link instead of the original URL
+          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://hemet-deals.vercel.app';
+          const trackURL = `${baseUrl}/r/${id}`;
           
           let pct = '';
           if (data.original_price && data.discount_price && data.original_price > data.discount_price) {
             pct = Math.round((1 - data.discount_price / data.original_price) * 100);
           }
 
-          const caption = `🔥 MEGA DEAL! 🔥\n\n${data.title}\n\n💸 NOW ONLY: $${parseFloat(data.discount_price).toFixed(2)} ${data.original_price ? `(Was $${parseFloat(data.original_price).toFixed(2)} - Save ${pct}%!)` : ''}\n✨ Brand: ${data.brand || 'Premium'}\n\n👇 GRAB IT HERE: 👇\n${dealURL}\n\n#InlandEmpire #SmartShopper #HemetDeals`;
+          const caption = `🔥 MEGA DEAL! 🔥\n\n${data.title}\n\n💸 NOW ONLY: $${parseFloat(data.discount_price).toFixed(2)} ${data.original_price ? `(Was $${parseFloat(data.original_price).toFixed(2)} - Save ${pct}%!)` : ''}\n✨ Brand: ${data.brand || 'Premium'}\n\n👇 GRAB IT HERE: 👇\n${trackURL}\n\n#InlandEmpire #SmartShopper #HemetDeals`;
           
           let fbEndpoint = `https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed`;
           const fbPayload = {
             message: caption,
-            link: dealURL,
+            link: trackURL,
             access_token: process.env.FB_PAGE_ACCESS_TOKEN
           };
 
@@ -69,20 +72,46 @@ export async function POST(request) {
             delete fbPayload.link;
           }
 
-          const fbResponse = await fetch(fbEndpoint, {
+          let currentEndpoint = fbEndpoint;
+          let currentPayload = { ...fbPayload };
+
+          let fbResponse = await fetch(currentEndpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(fbPayload)
+            body: JSON.stringify(currentPayload)
           });
           
-          const fbResult = await fbResponse.json();
+          let fbResult = await fbResponse.json();
+          console.log('--- FB API RAW RESPONSE (Attempt 1) ---');
+          console.log(fbResult);
+          
+          // Fallback logic: If uploading a photo failed, try posting just the link
+          if (fbResult.error && imageURL) {
+            console.warn('FB Photo upload failed, falling back to standard link post:', fbResult.error);
+            currentEndpoint = `https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed`;
+            currentPayload = {
+              message: caption,
+              link: trackURL,
+              access_token: process.env.FB_PAGE_ACCESS_TOKEN
+            };
+            
+            fbResponse = await fetch(currentEndpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(currentPayload)
+            });
+            fbResult = await fbResponse.json();
+            console.log('--- FB API RAW RESPONSE (Fallback) ---');
+            console.log(fbResult);
+          }
+
           if (fbResult.error) {
-            console.error('FB Error:', fbResult.error);
+            console.error('FB Error Object:', fbResult.error);
           } else {
-            console.log('Posted to FB:', fbResult.id);
+            console.log('Successfully Posted to FB:', fbResult.id);
           }
         } catch (e) {
-          console.error('FB API call failed', e);
+          console.error('FB API catch block triggered', e);
         }
       }
 

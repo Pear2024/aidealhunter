@@ -56,8 +56,13 @@ export default function AdminDashboard() {
       <header className="header">
         <h1>🎯 AI Deal Hunter</h1>
         <p className="subtitle">Admin Review Dashboard (Secret URL)</p>
-        <a href="/" style={{ color: 'var(--accent)', textDecoration: 'none', marginTop: '10px', display: 'inline-block' }}>← Go back to Public Storefront</a>
+        <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginTop: '15px' }}>
+          <a href="/" style={{ color: 'var(--accent)', textDecoration: 'none' }}>← Go back to Public Storefront</a>
+          <a href="/admin/analytics" style={{ color: 'var(--success)', textDecoration: 'none' }}>View Analytics 📈 →</a>
+        </div>
       </header>
+
+      <SearchModule onSearchComplete={fetchDeals} />
 
       {deals.length === 0 ? (
         <div className="empty-state">
@@ -136,6 +141,57 @@ function DealCard({ deal, onAction }) {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function SearchModule({ onSearchComplete }) {
+  const [keyword, setKeyword] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+
+  const handleSearch = async () => {
+    if (!keyword.trim()) return;
+    setIsSearching(true);
+    try {
+      const res = await fetch('/api/deals/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keyword })
+      });
+      const data = await res.json();
+      if (data.added > 0) {
+        alert(`Success! Found and added ${data.added} new deals for "${keyword}".\\nThey are now available below for your review.`);
+        onSearchComplete(); 
+      } else {
+        alert(data.message || 'No new deals found or they might be duplicates/rate-limited.');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error searching for deals. Check console.');
+    } finally {
+      setIsSearching(false);
+      setKeyword('');
+    }
+  };
+
+  return (
+    <div className="search-module slide-down fade-in" style={{ background: 'var(--card-bg)', padding: '20px', borderRadius: '12px', maxWidth: '600px', margin: '0 auto 30px auto', display: 'flex', gap: '10px', boxShadow: '0 4px 6px rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.05)' }}>
+      <input 
+        type="text" 
+        placeholder="Enter product (e.g. iPad, Sony, Laptop)..." 
+        value={keyword}
+        onChange={(e) => setKeyword(e.target.value)}
+        disabled={isSearching}
+        style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #444', background: '#222', color: 'white', fontSize: '1rem' }}
+        onKeyDown={(e) => { if (e.key === 'Enter') handleSearch() }}
+      />
+      <button 
+        onClick={handleSearch} 
+        disabled={isSearching}
+        style={{ padding: '0 25px', background: isSearching ? '#555' : 'var(--accent)', color: 'white', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: isSearching ? 'not-allowed' : 'pointer', transition: 'background 0.2s', fontSize: '1rem' }}
+      >
+        {isSearching ? '🤖 Hunting...' : '🤖 Hunt Deals!'}
+      </button>
     </div>
   );
 }

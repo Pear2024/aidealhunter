@@ -111,6 +111,10 @@ def process_deals():
             new_deals_count += 1
             print(f"Processing New Deal: {deal['title'][:50]}...")
             
+            # Use regex to extract image before relying purely on LLM
+            image_match = re.search(r'<img[^>]+src="([^">]+)"', deal['description'])
+            pre_extracted_image = image_match.group(1) if image_match else None
+
             # Combine title and description for context
             text_to_analyze = f"Title: {deal['title']}\nDescription: {deal['description']}"
             
@@ -131,7 +135,7 @@ def process_deals():
                     extracted_json.get('discount_price'),
                     extracted_json.get('discount_percentage'),
                     deal['link'],
-                    extracted_json.get('image_url'),
+                    pre_extracted_image or extracted_json.get('image_url'),
                     extracted_json.get('confidence_score', 0.5)
                 ))
                 extracted_count += 1

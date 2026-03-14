@@ -1,7 +1,9 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { SignInButton, UserButton, useUser } from '@clerk/nextjs';
 
 export default function Storefront() {
+  const { isSignedIn } = useUser();
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -31,7 +33,19 @@ export default function Storefront() {
 
   return (
     <main className="dashboard">
-      <header className="header" style={{ marginBottom: '2rem' }}>
+      <header className="header" style={{ marginBottom: '2rem', position: 'relative' }}>
+        <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
+          {!isSignedIn ? (
+            <SignInButton mode="modal">
+              <button style={{ padding: '8px 16px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Sign In / Join</button>
+            </SignInButton>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+              <a href="/submit" style={{ background: 'rgba(255,255,255,0.1)', padding: '6px 12px', borderRadius: '6px', color: 'white', textDecoration: 'none', fontSize: '0.9rem' }}>+ Submit Deal</a>
+              <UserButton afterSignOutUrl="/" />
+            </div>
+          )}
+        </div>
         <h1 style={{ fontSize: '3.5rem', background: '-webkit-linear-gradient(45deg, #FF9A9E, #FECFEF)', WebkitBackgroundClip: 'text' }}>🎁 Inland Empire Smart Shopper</h1>
         <p className="subtitle">Hand-picked best deals in Southern California and beyond, updated daily!</p>
       </header>
