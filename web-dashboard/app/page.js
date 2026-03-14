@@ -59,6 +59,17 @@ export default function Storefront() {
     );
   }
 
+  const getRetailerInfo = (url) => {
+    if (!url) return { name: 'Unknown', color: '#666' };
+    const lowerUrl = url.toLowerCase();
+    if (lowerUrl.includes('amazon')) return { name: 'Amazon', color: '#FF9900' };
+    if (lowerUrl.includes('walmart')) return { name: 'Walmart', color: '#0071CE' };
+    if (lowerUrl.includes('target')) return { name: 'Target', color: '#CC0000' };
+    if (lowerUrl.includes('costco')) return { name: 'Costco', color: '#005DAA' };
+    if (lowerUrl.includes('bestbuy') || lowerUrl.includes('best buy')) return { name: 'Best Buy', color: '#0046BE' };
+    return { name: 'Retailer', color: '#666' };
+  };
+
   return (
     <main className="dashboard">
       <header className="header" style={{ marginBottom: '2rem', position: 'relative' }}>
@@ -101,8 +112,20 @@ export default function Storefront() {
                 )}
               </div>
               <div className="card-content">
-                <h3 style={{ fontSize: '1.2rem', marginBottom: '0.1rem', lineHeight: '1.4', fontWeight: 'bold' }}>{deal.title}</h3>
-                {deal.brand && <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem' }}>By {deal.brand}</p>}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                    <h3 style={{ fontSize: '1.2rem', margin: 0, lineHeight: '1.4', fontWeight: 'bold' }}>{deal.title}</h3>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                   {(() => {
+                     const { name, color } = getRetailerInfo(deal.url);
+                     return (
+                       <span style={{ background: color, color: 'white', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                         {name}
+                       </span>
+                     );
+                   })()}
+                   {deal.brand && <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>By {deal.brand}</span>}
+                </div>
                 
                 <div style={{ marginTop: 'auto', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
                   <div>
