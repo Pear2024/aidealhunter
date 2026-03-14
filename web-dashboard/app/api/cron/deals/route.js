@@ -30,9 +30,9 @@ export async function GET(request) {
     const randomKeyword = TRENDING_KEYWORDS[Math.floor(Math.random() * TRENDING_KEYWORDS.length)];
     console.log(`🤖 Cron Job Triggered: Searching for [${randomKeyword}] deals...`);
 
-    // 3. Fetch RSS Data
+    // 3. Fetch RSS Data (Strictly Amazon)
     const parser = new Parser();
-    const encodedKeyword = encodeURIComponent(randomKeyword);
+    const encodedKeyword = encodeURIComponent(randomKeyword + ' amazon');
     const rssUrl = `https://slickdeals.net/newsearch.php?mode=frontpage&searcharea=deals&searchin=first&rss=1&q=${encodedKeyword}`;
     
     let feed;
@@ -151,11 +151,12 @@ export async function GET(request) {
           ? Math.round((1 - extractedData.discount_price / extractedData.original_price) * 100) 
           : (extractedData.discount_percentage || 0);
 
-        // 2. Apply Rules
+        // 2. Apply Rules (Stricter Brand + Amazon URL enforcement)
         if (computedDiscount < 20) rejectReasons.push('Discount < 20%');
         if ((extractedData.confidence_score || 0) < 0.80) rejectReasons.push('Low AI Confidence < 0.8');
         if (!preExtractedImage && !extractedData.image_url) rejectReasons.push('No Product Image');
         if (extractedData.brand === 'Unknown') rejectReasons.push('Unknown Brand');
+        if (!deal.link || !deal.link.toLowerCase().includes('amazon')) rejectReasons.push('Not an Amazon Deal');
 
         // 3. Ruling
         if (rejectReasons.length === 0) {
@@ -187,6 +188,47 @@ export async function GET(request) {
             ]
           );
           
+          const insertedDealId = insertResult.insertId;
+
+          // --- FB AUTO-POSTING LOGIC (Phase 3 Integration) ---
+          if (finalStatus === 'approved' && process.env.FB_PAGE_ID && process.env.FB_PAGE_ACCESS_TOKEN) {
+            try {
+              const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://hemet-deals.vercel.app';
+              const trackURL = `${baseUrl}/r/${insertedDealId}`;
+              
+              const caption = `💥 AI BOT DEAL ALERT! 💥\n\n${deal.title}\n\n💸 NOW ONLY: $${parseFloat(extractedData.discount_price).toFixed(2)} ${extractedData.original_price ? `(Was $${parseFloat(extractedData.original_price).toFixed(2)} - Save ${computedDiscount}%!)` : ''}\n🛒 Available on Amazon\n\n👇 GRAB IT FAST: 👇\n${trackURL}\n\n#InlandEmpire #SmartShopper #AmazonDeals`;
+              
+              const imageURL = preExtractedImage || extractedData.image_url;
+              let fbEndpoint = `https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed`;
+              const fbPayload = {
+                message: caption,
+                link: trackURL,
+                access_token: process.env.FB_PAGE_ACCESS_TOKEN
+              };
+
+              if (imageURL) {
+                fbEndpoint = `https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/photos`;
+                fbPayload.url = imageURL;
+                fbPayload.caption = caption;
+                delete fbPayload.message;
+                delete fbPayload.link;
+              }
+
+              let fbResponse = await fetch(fbEndpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(fbPayload)
+              });
+              
+              let fbResult = await fbResponse.json();
+              if (fbResult.error) console.error('Bot FB Post Error:', fbResult.error);
+              else console.log('🤖 Bot Successfully Auto-Posted to FB:', fbResult.id);
+
+            } catch (fbErr) {
+              console.error('Bot FB Catch Block:', fbErr);
+            }
+          }
+
           await connection.execute('UPDATE raw_deals SET is_processed = TRUE WHERE id = ?', [rawId]);
           addedCount++;
         } catch (e) {
