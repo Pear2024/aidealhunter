@@ -12,7 +12,9 @@ export default function Storefront() {
       try {
         const res = await fetch('/api/deals?status=approved');
         const data = await res.json();
-        setDeals(data.deals || []);
+        // Decorate default user context into the deal cards if needed, or sort by votes
+        const sortedDeals = (data.deals || []).sort((a, b) => (b.vote_score || 0) - (a.vote_score || 0));
+        setDeals(sortedDeals);
       } catch (e) {
         console.error(e);
       } finally {
@@ -21,6 +23,32 @@ export default function Storefront() {
     };
     fetchDeals();
   }, []);
+
+  const handleVote = async (e, dealId) => {
+    e.stopPropagation();
+    if (!isSignedIn) {
+      alert("Please sign in to vote! 💖");
+      return;
+    }
+
+    // Optimistic UI updates could be added here, but doing straightforward refresh for simplicity.
+    try {
+      const res = await fetch('/api/deals/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dealId, voteType: 1 }) // 1 is Upvote
+      });
+      const data = await res.json();
+      
+      if (res.ok) {
+        setDeals(deals.map(d => d.id === dealId ? { ...d, vote_score: data.newScore } : d));
+      } else {
+        alert(data.error);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   if (loading) {
     return (
@@ -81,7 +109,16 @@ export default function Storefront() {
                     {deal.discount_price && <span style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--success)' }}>${parseFloat(deal.discount_price).toFixed(2)}</span>}
                     {deal.original_price && <span style={{ fontSize: '1rem', textDecoration: 'line-through', color: 'var(--text-secondary)', marginLeft: '10px' }}>${parseFloat(deal.original_price).toFixed(2)}</span>}
                   </div>
-                  <button className="btn btn-approve" style={{ padding: '0.6rem 1.2rem', flex: 'none', background: 'linear-gradient(90deg, #ff8a00, #e52e71)' }} onClick={(e) => { e.stopPropagation(); window.open(deal.url, '_blank'); }}>Buy Now 🛒</button>
+                  
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                    <button 
+                      onClick={(e) => handleVote(e, deal.id)}
+                      style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '8px', padding: '8px 12px', color: 'var(--success)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}
+                    >
+                      🔥 {deal.vote_score || 0}
+                    </button>
+                    <button className="btn btn-approve" style={{ padding: '0.6rem 1.2rem', flex: 'none', background: 'linear-gradient(90deg, #ff8a00, #e52e71)' }} onClick={(e) => { e.stopPropagation(); window.open(deal.url, '_blank'); }}>Buy Now 🛒</button>
+                  </div>
                 </div>
               </div>
             </div>

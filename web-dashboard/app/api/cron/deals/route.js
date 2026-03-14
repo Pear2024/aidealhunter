@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getConnection } from '@/lib/db';
 import Parser from 'rss-parser';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import * as cheerio from 'cheerio';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow Vercel Function to run for 60 seconds
@@ -77,6 +78,34 @@ export async function GET(request) {
       const imgMatch = rawContent.match(/<img[^>]+src="([^">]+)"/);
       if (imgMatch && imgMatch[1]) {
         preExtractedImage = imgMatch[1];
+      }
+
+      // If no image in RSS string, deep scrape the destination URL
+      if (!preExtractedImage && deal.link) {
+        try {
+          const pageRes = await fetch(deal.link, {
+             headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' }
+          });
+          if (pageRes.ok) {
+            const html = await pageRes.text();
+            const $ = cheerio.load(html);
+            // 1. Try Open Graph first (standard for link sharing)
+            preExtractedImage = $('meta[property="og:image"]').attr('content');
+            // 2. Fallback to Twitter card
+            if (!preExtractedImage) {
+               preExtractedImage = $('meta[name="twitter:image"]').attr('content');
+            }
+            // 3. Last resort: Find the biggest/first meaningful image on the page
+            if (!preExtractedImage) {
+               const firstImg = $('img').not('[src$=".gif"], [src$=".svg"], .icon').first().attr('src');
+               if (firstImg && firstImg.startsWith('http')) {
+                  preExtractedImage = firstImg;
+               }
+            }
+          }
+        } catch (e) {
+          console.error("Deep Image Scrape Error for link:", deal.link, e.message);
+        }
       }
 
       // Gemini Extraction
