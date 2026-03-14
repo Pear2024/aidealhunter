@@ -85,7 +85,7 @@ export default function Storefront() {
             </div>
           )}
         </div>
-        <h1 style={{ fontSize: '3.5rem', background: '-webkit-linear-gradient(45deg, #FF9A9E, #FECFEF)', WebkitBackgroundClip: 'text' }}>🎁 Inland Empire Smart Shopper</h1>
+        <h1 style={{ background: '-webkit-linear-gradient(45deg, #FF9A9E, #FECFEF)', WebkitBackgroundClip: 'text' }}>🎁 Inland Empire Smart Shopper</h1>
         <p className="subtitle">Hand-picked best deals in Southern California and beyond, updated daily!</p>
       </header>
       

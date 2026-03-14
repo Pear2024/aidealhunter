@@ -40,10 +40,11 @@ body {
 }
 
 .header h1 {
-  font-size: 3rem;
+  font-size: 3.5rem;
   font-weight: 700;
   background: -webkit-linear-gradient(45deg, #58a6ff, #a371f7);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 0.5rem;
 }
@@ -72,7 +73,7 @@ body {
 
 .deal-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
   gap: 2rem;
 }
 
@@ -288,4 +289,30 @@ input:focus {
 }
 .fade-in {
   animation: slideDown 0.4s ease-out forwards;
+}
+
+@media (max-width: 768px) {
+  .dashboard {
+    padding: 1rem;
+  }
+  .header h1 {
+    font-size: 2.2rem;
+  }
+  .subtitle {
+    font-size: 1rem;
+  }
+  .header {
+    margin-top: 2rem;
+  }
+  .deal-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  /* Remove absolute position for login buttons on mobile, to prevent overlap */
+  .header > div[style*="position: absolute"] {
+    position: static !important;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
 }
