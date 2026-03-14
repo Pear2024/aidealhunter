@@ -22,14 +22,14 @@ export async function POST(request) {
 
     // 1. Check if the user has already voted on this deal
     const [existingVotes] = await connection.execute(
-      `SELECT value FROM votes WHERE user_id = ? AND deal_id = ?`,
+      `SELECT vote_type FROM votes WHERE user_id = ? AND deal_id = ?`,
       [userId, dealId]
     );
 
     let scoreDelta = 0;
 
     if (existingVotes.length > 0) {
-      const pastVote = existingVotes[0].value;
+      const pastVote = existingVotes[0].vote_type;
       
       if (pastVote === voteType) {
         // User clicked the same vote button again -> Remove their vote
@@ -38,7 +38,7 @@ export async function POST(request) {
       } else {
         // User changed their vote direction
         await connection.execute(
-          `UPDATE votes SET value = ? WHERE user_id = ? AND deal_id = ?`,
+          `UPDATE votes SET vote_type = ? WHERE user_id = ? AND deal_id = ?`,
           [voteType, userId, dealId]
         );
         scoreDelta = voteType * 2; // if past was -1 and new is 1, change is +2. If past was 1 and new is -1, change is -2.
@@ -46,7 +46,7 @@ export async function POST(request) {
     } else {
       // User is voting for the first time
       await connection.execute(
-        `INSERT INTO votes (user_id, deal_id, value) VALUES (?, ?, ?)`,
+        `INSERT INTO votes (user_id, deal_id, vote_type) VALUES (?, ?, ?)`,
         [userId, dealId, voteType]
       );
       scoreDelta = voteType;
