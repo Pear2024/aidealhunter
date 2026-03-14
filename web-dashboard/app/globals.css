@@ -110,7 +110,7 @@ body {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  mix-blend-mode: screen; /* Helps with white backgrounds on items */
+  mix-blend-mode: multiply; /* Helps with white backgrounds on items without making them invisible */
 }
 
 .confidence-badge {
