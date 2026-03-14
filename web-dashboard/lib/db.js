@@ -8,7 +8,7 @@ export async function getConnection() {
     database: process.env.MYSQL_DATABASE,
     port: parseInt(process.env.MYSQL_PORT || '3306'),
     ssl: {
-      rejectUnauthorized: true,
+      rejectUnauthorized: false,
     },
   });
 }
