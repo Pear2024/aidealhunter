@@ -247,7 +247,7 @@ export async function GET(request) {
               const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://hemet-deals.vercel.app';
               const trackURL = `${baseUrl}/r/${insertedDealId}`;
               
-              // PHASE 12: Agent 3 (The Hypeman Copywriter)
+              // PHASE 12 & 16: Agent 3 (The Hypeman Copywriter) with Agent 7 (Compliance Officer) Rules
               const copywriterPrompt = `
               You are a world-class Social Media Marketer and Copywriter.
               Write a highly engaging, "thumb-stopping" Facebook post caption for a deal.
@@ -267,6 +267,10 @@ export async function GET(request) {
               5. Add 2-3 relevant hashtags at the end (e.g. #SmartShopper, #TrendingDeals).
               6. DO NOT use generic openings like "Hey everyone". Start with a bang!
               7. Output ONLY the raw caption text. Do not wrap in markdown or quotes.
+              
+              COMPLIANCE RULES (MANDATORY):
+              8. You MUST include one of these hashtags at the very end of the post to comply with FTC guidelines: #Ad, #CommissionsEarned, or "As an Amazon Associate I earn from qualifying purchases."
+              9. Do NOT make claims like "Lowest price ever!" or "Guaranteed cheapest!" as prices fluctuate. Use phrases like "Great price right now" or "Huge discount today".
               `;
               
               let caption = `💥 DEALS ALERT! 💥\n\n${deal.title}\n\n💸 NOW ONLY: $${parseFloat(extractedData.discount_price).toFixed(2)}\n🛒 Hurry and grab yours here: ${trackURL}`; // Fallback

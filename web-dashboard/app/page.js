@@ -168,6 +168,11 @@ export default function Storefront() {
         <h1 style={{ background: '-webkit-linear-gradient(45deg, #FF9A9E, #FECFEF)', WebkitBackgroundClip: 'text' }}>🎁 Inland Empire Smart Shopper</h1>
         <p className="subtitle">Hand-picked best deals in Southern California and beyond, updated daily!</p>
       </header>
+
+      {/* PHASE 16: FTC Affiliate Disclosure Banner */}
+      <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '12px 20px', textAlign: 'center', fontSize: '0.9rem', color: '#ccc', marginBottom: '2rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+        <strong>Affiliate Disclosure:</strong> As an Amazon Associate, I earn from qualifying purchases. We may earn a small commission if you buy through our links, at no extra cost to you.
+      </div>
       
       {(latestDeals.length === 0 && recommendedDeals.length === 0) ? (
         <div className="empty-state">
@@ -198,6 +203,12 @@ export default function Storefront() {
           </div>
         </>
       )}
+
+      {/* PHASE 16: Amazon Price Disclaimer Footer */}
+      <footer style={{ marginTop: '4rem', padding: '2rem 0', borderTop: '1px solid rgba(255, 255, 255, 0.1)', textAlign: 'center', color: '#888', fontSize: '0.85rem', lineHeight: '1.5' }}>
+        <p>Product prices and availability are accurate as of the date/time indicated and are subject to change. Any price and availability information displayed on the merchant's site (e.g., Amazon) at the time of purchase will apply to the purchase of this product.</p>
+        <p style={{ marginTop: '10px' }}>&copy; {new Date().getFullYear()} Inland Empire Smart Shopper. All rights reserved.</p>
+      </footer>
     </main>
   );
 }
