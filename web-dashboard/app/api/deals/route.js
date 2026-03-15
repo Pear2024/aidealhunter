@@ -40,7 +40,7 @@ export async function GET(request) {
     return NextResponse.json({ deals: rows, visitorSegment });
   } catch (error) {
     console.error('Database Error:', error);
-    return NextResponse.json({ error: 'Failed to fetch deals' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch deals: ' + error.message }, { status: 500 });
   } finally {
     if (connection) {
       await connection.end();
