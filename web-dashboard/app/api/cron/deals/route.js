@@ -392,6 +392,68 @@ export async function GET(request) {
         console.error("Agent 4 (Merchandiser) Error:", e.message);
     }
 
+    // --- PHASE 14: Agent 5 (The Rechecker) ---
+    try {
+        console.log("🤖 Agent 5 (Rechecker) is patrolling existing deals...");
+         const [dealsToCheck] = await connection.execute(
+            `SELECT id, title, discount_price, url 
+             FROM normalized_deals 
+             WHERE status = 'approved' 
+             ORDER BY RAND() LIMIT 5`
+        );
+        
+        let expiredCount = 0;
+        for (const oldDeal of dealsToCheck) {
+             try {
+                 const res = await fetch(oldDeal.url, {
+                    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+                    signal: AbortSignal.timeout(8000)
+                 });
+                 if (res.ok) {
+                     const html = await res.text();
+                     const $ = cheerio.load(html);
+                     const pageText = $('body').text().replace(/\s+/g, ' ').substring(0, 15000);
+                     
+                     const recheckPrompt = `
+                     You are an elite E-commerce Compliance Agent (The Rechecker).
+                     Review this raw webpage text for an existing deal we posted.
+                     Target Product: ${oldDeal.title}
+                     Target Discount Price: $${parseFloat(oldDeal.discount_price).toFixed(2)}
+                     
+                     Raw Text:
+                     ${pageText}
+                     
+                     Task:
+                     Verify if this deal is STILL active.
+                     1. Does the text still show the target discount price?
+                     2. Is the item in stock (e.g., no "Out of stock" or "Currently unavailable" warnings)?
+                     
+                     Respond ONLY with "ACTIVE" if the price matches and it seems in stock.
+                     Respond ONLY with "EXPIRED" if the price is higher, missing, or it says out of stock.
+                     `;
+                     
+                     const recheckResult = await model.generateContent(recheckPrompt);
+                     const statusDecision = recheckResult.response.text().trim().toUpperCase();
+                     
+                     if (statusDecision.includes('EXPIRED')) {
+                         await connection.execute("UPDATE normalized_deals SET status = 'expired' WHERE id = ?", [oldDeal.id]);
+                         console.log(`❌ Agent 5 Expired Deal [${oldDeal.id}]: Price changed or out of stock.`);
+                         expiredCount++;
+                     }
+                 }
+             } catch (e) {
+                 console.log(`Agent 5 could not scrape URL for deal ${oldDeal.id}, skipping...`);
+             }
+        }
+        if (expiredCount > 0) {
+            console.log(`✅ Agent 5 Patrol Complete: Removed ${expiredCount} expired deals from storefront.`);
+        } else if (dealsToCheck.length > 0) {
+            console.log(`✅ Agent 5 Patrol Complete: All checked deals are still active.`);
+        }
+    } catch (e) {
+        console.error("Agent 5 (Rechecker) Error:", e.message);
+    }
+
     console.log(`🤖 Cron Job Completed: Added ${addedCount} new [${trendingKeyword}] deals to the pending queue.`);
     return NextResponse.json({ success: true, keyword: trendingKeyword, dealsAdded: addedCount });
 

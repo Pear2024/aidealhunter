@@ -10,10 +10,17 @@ export async function GET(request) {
     const status = searchParams.get('status') || 'pending';
 
     connection = await getConnection();
-    const [rows] = await connection.execute(
-      "SELECT * FROM normalized_deals WHERE status = ? ORDER BY merchandiser_score DESC, created_at DESC",
-      [status]
-    );
+    let rows;
+    if (status === 'all') {
+      [rows] = await connection.execute(
+        "SELECT * FROM normalized_deals WHERE status IN ('approved', 'expired') ORDER BY merchandiser_score DESC, created_at DESC"
+      );
+    } else {
+      [rows] = await connection.execute(
+        "SELECT * FROM normalized_deals WHERE status = ? ORDER BY merchandiser_score DESC, created_at DESC",
+        [status]
+      );
+    }
     return NextResponse.json({ deals: rows });
   } catch (error) {
     console.error('Database Error:', error);

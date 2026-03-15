@@ -19,7 +19,7 @@ export default function Storefront() {
 
     const fetchDeals = async () => {
       try {
-        const res = await fetch('/api/deals?status=approved');
+        const res = await fetch('/api/deals?status=all');
         const data = await res.json();
         const sortedDeals = (data.deals || []).sort((a, b) => (b.merchandiser_score || 0) - (a.merchandiser_score || 0));
         
@@ -88,10 +88,17 @@ export default function Storefront() {
     return { name: 'Retailer', color: '#666' };
   };
 
-  const renderDeal = (deal) => (
-    <div key={deal.id} className="deal-card fade-in" style={{ cursor: 'pointer', background: 'rgba(255, 255, 255, 0.03)' }} onClick={() => window.open(deal.url, '_blank')}>
-      <div className="card-image-wrapper" style={{ background: '#fff', padding: '20px' }}>
-         {deal.discount_price && deal.original_price && deal.original_price > deal.discount_price && (
+  const renderDeal = (deal) => {
+    const isExpired = deal.status === 'expired';
+    return (
+    <div key={deal.id} className="deal-card fade-in" style={{ cursor: isExpired ? 'not-allowed' : 'pointer', background: 'rgba(255, 255, 255, 0.03)', opacity: isExpired ? 0.6 : 1, filter: isExpired ? 'grayscale(80%)' : 'none' }} onClick={() => !isExpired && window.open(deal.url, '_blank')}>
+      <div className="card-image-wrapper" style={{ background: '#fff', padding: '20px', position: 'relative' }}>
+         {isExpired && (
+             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
+                 <span style={{ color: 'white', fontWeight: 'bold', fontSize: '1.5rem', border: '3px solid white', padding: '10px 20px', transform: 'rotate(-15deg)' }}>EXPIRED</span>
+             </div>
+         )}
+         {deal.discount_price && deal.original_price && deal.original_price > deal.discount_price && !isExpired && (
             <div className="confidence-badge" style={{ background: '#e53935', fontSize: '1rem', padding: '6px 12px' }}>
               {Math.round((1 - deal.discount_price / deal.original_price) * 100)}% OFF
             </div>
@@ -120,23 +127,28 @@ export default function Storefront() {
         
         <div style={{ marginTop: 'auto', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
           <div>
-            {deal.discount_price && <span style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--success)' }}>${parseFloat(deal.discount_price).toFixed(2)}</span>}
+            {deal.discount_price && <span style={{ fontSize: '1.8rem', fontWeight: 'bold', color: isExpired ? '#888' : 'var(--success)' }}>${parseFloat(deal.discount_price).toFixed(2)}</span>}
             {deal.original_price && <span style={{ fontSize: '1rem', textDecoration: 'line-through', color: 'var(--text-secondary)', marginLeft: '10px' }}>${parseFloat(deal.original_price).toFixed(2)}</span>}
           </div>
           
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             <button 
-              onClick={(e) => handleVote(e, deal.id)}
-              style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '8px', padding: '8px 12px', color: 'var(--success)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}
+              onClick={(e) => { if(!isExpired) handleVote(e, deal.id); }}
+              disabled={isExpired}
+              style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '8px', padding: '8px 12px', color: isExpired ? '#888' : 'var(--success)', cursor: isExpired ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}
             >
               🔥 {deal.vote_score || 0}
             </button>
-            <button className="btn btn-approve" style={{ padding: '0.6rem 1.2rem', flex: 'none', background: 'linear-gradient(90deg, #ff8a00, #e52e71)' }} onClick={(e) => { e.stopPropagation(); window.open(deal.url, '_blank'); }}>Buy Now 🛒</button>
+            {isExpired ? (
+                <button className="btn btn-approve" disabled style={{ padding: '0.6rem 1.2rem', flex: 'none', background: '#555', cursor: 'not-allowed' }}>Ended ⏳</button>
+            ) : (
+                <button className="btn btn-approve" style={{ padding: '0.6rem 1.2rem', flex: 'none', background: 'linear-gradient(90deg, #ff8a00, #e52e71)' }} onClick={(e) => { e.stopPropagation(); window.open(deal.url, '_blank'); }}>Buy Now 🛒</button>
+            )}
           </div>
         </div>
       </div>
     </div>
-  );
+  )};
 
   return (
     <main className="dashboard">
