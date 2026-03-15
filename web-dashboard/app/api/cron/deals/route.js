@@ -325,8 +325,13 @@ export async function GET(request) {
               }
               
               let fbResult = await fbResponse.json();
-              if (fbResult.error) console.error('Bot FB Post Error:', fbResult.error);
-              else console.log('🤖 Bot Successfully Auto-Posted to FB:', fbResult.id);
+              if (fbResult.error) {
+                  console.error('Bot FB Post Error:', fbResult.error);
+              } else {
+                  console.log('🤖 Bot Successfully Auto-Posted to FB:', fbResult.id);
+                  // PHASE 17 (Agent 8): Store fb_post_id for Comment Closer tracking
+                  await connection.execute('UPDATE normalized_deals SET fb_post_id = ? WHERE id = ?', [fbResult.id, insertedDealId]);
+              }
 
             } catch (fbErr) {
               console.error('Bot FB Catch Block:', fbErr);
