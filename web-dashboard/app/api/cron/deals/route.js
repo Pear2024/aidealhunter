@@ -247,7 +247,19 @@ export async function GET(request) {
               const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://hemet-deals.vercel.app';
               const trackURL = `${baseUrl}/r/${insertedDealId}`;
               
-              // PHASE 12 & 16: Agent 3 (The Hypeman Copywriter) with Agent 7 (Compliance Officer) Rules
+              // PHASE 19: Agent 9 (The A/B Tester) dictates Agent 3 (The Hypeman Copywriter)
+              const abVariants = ['Percentage Hook', 'Cash Saver Hook', 'Urgency Hook'];
+              const chosenVariant = abVariants[Math.floor(Math.random() * abVariants.length)];
+              
+              let variantInstruction = "";
+              if (chosenVariant === 'Percentage Hook') {
+                  variantInstruction = "Focus heavily on the big discount percentage. Make them feel like this is a massive markdown.";
+              } else if (chosenVariant === 'Cash Saver Hook') {
+                  variantInstruction = "Focus directly on how much money ($) they are saving in their pocket. Relate it to what else they could buy with those savings.";
+              } else {
+                  variantInstruction = "Focus heavily on FOMO and urgency. Warn them that this deal is likely restocked for a limited time and will sell out today.";
+              }
+
               const copywriterPrompt = `
               You are a world-class Social Media Marketer and Copywriter.
               Write a highly engaging, "thumb-stopping" Facebook post caption for a deal.
@@ -260,7 +272,7 @@ export async function GET(request) {
               Affiliate Link: ${trackURL}
               
               Rules:
-              1. Use FOMO (Fear of Missing Out) and urgency.
+              1. A/B TEST VARIANT OBJECTIVE: ${variantInstruction}
               2. Keep it punchy, exciting, and easy to read.
               3. Use attractive emojis strategically (but don't overdo it).
               4. ALWAYS include the EXACT Affiliate Link provided above at the bottom with a clear Call to Action.
@@ -328,9 +340,9 @@ export async function GET(request) {
               if (fbResult.error) {
                   console.error('Bot FB Post Error:', fbResult.error);
               } else {
-                  console.log('🤖 Bot Successfully Auto-Posted to FB:', fbResult.id);
-                  // PHASE 17 (Agent 8): Store fb_post_id for Comment Closer tracking
-                  await connection.execute('UPDATE normalized_deals SET fb_post_id = ? WHERE id = ?', [fbResult.id, insertedDealId]);
+                  console.log(`🤖 Bot Successfully Auto-Posted to FB [Variant: ${chosenVariant}]:`, fbResult.id);
+                  // PHASE 17 & 19: Store fb_post_id and ab_variant for future analysis
+                  await connection.execute('UPDATE normalized_deals SET fb_post_id = ?, ab_variant = ? WHERE id = ?', [fbResult.id, chosenVariant, insertedDealId]);
               }
 
             } catch (fbErr) {
