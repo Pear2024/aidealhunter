@@ -247,7 +247,39 @@ export async function GET(request) {
               const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://hemet-deals.vercel.app';
               const trackURL = `${baseUrl}/r/${insertedDealId}`;
               
-              const caption = `💥 AI BOT DEAL ALERT! 💥\n\n${deal.title}\n\n💸 NOW ONLY: $${parseFloat(extractedData.discount_price).toFixed(2)} ${extractedData.original_price ? `(Was $${parseFloat(extractedData.original_price).toFixed(2)} - Save ${computedDiscount}%!)` : ''}\n🛒 Hurry to grab this deal!\n\n👇 GRAB IT FAST: 👇\n${trackURL}\n\n#InlandEmpire #SmartShopper #TrendingDeals`;
+              // PHASE 12: Agent 3 (The Hypeman Copywriter)
+              const copywriterPrompt = `
+              You are a world-class Social Media Marketer and Copywriter.
+              Write a highly engaging, "thumb-stopping" Facebook post caption for a deal.
+              
+              Product: ${deal.title}
+              Brand: ${extractedData.brand || 'Unknown'}
+              Discount Price: $${parseFloat(extractedData.discount_price).toFixed(2)}
+              Original Price: ${extractedData.original_price ? '$' + parseFloat(extractedData.original_price).toFixed(2) : 'Unknown'}
+              Discount Percentage: ${computedDiscount}% OFF
+              Affiliate Link: ${trackURL}
+              
+              Rules:
+              1. Use FOMO (Fear of Missing Out) and urgency.
+              2. Keep it punchy, exciting, and easy to read.
+              3. Use attractive emojis strategically (but don't overdo it).
+              4. ALWAYS include the EXACT Affiliate Link provided above at the bottom with a clear Call to Action.
+              5. Add 2-3 relevant hashtags at the end (e.g. #SmartShopper, #TrendingDeals).
+              6. DO NOT use generic openings like "Hey everyone". Start with a bang!
+              7. Output ONLY the raw caption text. Do not wrap in markdown or quotes.
+              `;
+              
+              let caption = `💥 DEALS ALERT! 💥\n\n${deal.title}\n\n💸 NOW ONLY: $${parseFloat(extractedData.discount_price).toFixed(2)}\n🛒 Hurry and grab yours here: ${trackURL}`; // Fallback
+              try {
+                  const copyResult = await model.generateContent(copywriterPrompt);
+                  const generatedCaption = copyResult.response.text().trim();
+                  if (generatedCaption) {
+                      caption = generatedCaption;
+                  }
+              } catch (e) {
+                  console.error("Agent 3 (Copywriter) Error:", e);
+              }
+
               
               const imageURL = preExtractedImage || extractedData.image_url;
               let useFormData = false;
