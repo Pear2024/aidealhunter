@@ -88,7 +88,7 @@ export async function POST(request) {
             try {
                await connection.execute(
                   `INSERT IGNORE INTO leads (lead_id, email, full_name, campaign_name) VALUES (?, ?, ?, ?)`,
-                  [leadId, email, fullName || 'Unknown', \`Form \${formId}\`]
+                  [leadId, email, fullName || 'Unknown', `Form ${formId}`]
                );
                console.log(`✅ Agent 9 Captured Lead: ${email}`);
                await sendTelegramAlert(`🧲 *New Lead Captured!* (Agent 9)\n\n👤 Name: ${fullName}\n📧 Email: \`${email}\``);
