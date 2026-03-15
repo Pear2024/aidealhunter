@@ -4,17 +4,34 @@ import { SignInButton, UserButton, useUser } from '@clerk/nextjs';
 
 export default function Storefront() {
   const { isSignedIn } = useUser();
-  const [deals, setDeals] = useState([]);
+  const [latestDeals, setLatestDeals] = useState([]);
+  const [recommendedDeals, setRecommendedDeals] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // 1. Read tracking cookie for Personalization
+    const getCookie = (name) => {
+      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+      if (match) return match[2];
+      return null;
+    };
+    const preferredBrand = getCookie('preferred_brand');
+
     const fetchDeals = async () => {
       try {
         const res = await fetch('/api/deals?status=approved');
         const data = await res.json();
-        // Decorate default user context into the deal cards if needed, or sort by votes
         const sortedDeals = (data.deals || []).sort((a, b) => (b.vote_score || 0) - (a.vote_score || 0));
-        setDeals(sortedDeals);
+        
+        // 2. Split into Recommended vs Latest based on user behavior
+        if (preferredBrand) {
+           const decodedBrand = decodeURIComponent(preferredBrand).toLowerCase();
+           setRecommendedDeals(sortedDeals.filter(d => d.brand?.toLowerCase() === decodedBrand));
+           setLatestDeals(sortedDeals.filter(d => d.brand?.toLowerCase() !== decodedBrand));
+        } else {
+           setLatestDeals(sortedDeals);
+        }
+
       } catch (e) {
         console.error(e);
       } finally {
@@ -41,7 +58,8 @@ export default function Storefront() {
       const data = await res.json();
       
       if (res.ok) {
-        setDeals(deals.map(d => d.id === dealId ? { ...d, vote_score: data.newScore } : d));
+        setRecommendedDeals(recommendedDeals.map(d => d.id === dealId ? { ...d, vote_score: data.newScore } : d));
+        setLatestDeals(latestDeals.map(d => d.id === dealId ? { ...d, vote_score: data.newScore } : d));
       } else {
         alert(data.error);
       }
@@ -70,6 +88,56 @@ export default function Storefront() {
     return { name: 'Retailer', color: '#666' };
   };
 
+  const renderDeal = (deal) => (
+    <div key={deal.id} className="deal-card fade-in" style={{ cursor: 'pointer', background: 'rgba(255, 255, 255, 0.03)' }} onClick={() => window.open(deal.url, '_blank')}>
+      <div className="card-image-wrapper" style={{ background: '#fff', padding: '20px' }}>
+         {deal.discount_price && deal.original_price && deal.original_price > deal.discount_price && (
+            <div className="confidence-badge" style={{ background: '#e53935', fontSize: '1rem', padding: '6px 12px' }}>
+              {Math.round((1 - deal.discount_price / deal.original_price) * 100)}% OFF
+            </div>
+         )}
+         {deal.image_url ? (
+          <img src={deal.image_url} alt="Deal" className="deal-image"/>
+        ) : (
+          <div className="no-image">No Image</div>
+        )}
+      </div>
+      <div className="card-content">
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+            <h3 style={{ fontSize: '1.2rem', margin: 0, lineHeight: '1.4', fontWeight: 'bold' }}>{deal.title}</h3>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap' }}>
+           {(() => {
+             const { name, color } = getRetailerInfo(deal.url);
+             return (
+               <span style={{ background: color, color: 'white', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
+                 {name}
+               </span>
+             );
+           })()}
+           {deal.brand && <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>By {deal.brand}</span>}
+        </div>
+        
+        <div style={{ marginTop: 'auto', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+          <div>
+            {deal.discount_price && <span style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--success)' }}>${parseFloat(deal.discount_price).toFixed(2)}</span>}
+            {deal.original_price && <span style={{ fontSize: '1rem', textDecoration: 'line-through', color: 'var(--text-secondary)', marginLeft: '10px' }}>${parseFloat(deal.original_price).toFixed(2)}</span>}
+          </div>
+          
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+            <button 
+              onClick={(e) => handleVote(e, deal.id)}
+              style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '8px', padding: '8px 12px', color: 'var(--success)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}
+            >
+              🔥 {deal.vote_score || 0}
+            </button>
+            <button className="btn btn-approve" style={{ padding: '0.6rem 1.2rem', flex: 'none', background: 'linear-gradient(90deg, #ff8a00, #e52e71)' }} onClick={(e) => { e.stopPropagation(); window.open(deal.url, '_blank'); }}>Buy Now 🛒</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <main className="dashboard">
       <header className="header" style={{ marginBottom: '2rem', position: 'relative' }}>
@@ -89,64 +157,34 @@ export default function Storefront() {
         <p className="subtitle">Hand-picked best deals in Southern California and beyond, updated daily!</p>
       </header>
       
-      {deals.length === 0 ? (
+      {(latestDeals.length === 0 && recommendedDeals.length === 0) ? (
         <div className="empty-state">
           <div className="empty-icon">⏳</div>
           <h2>Hunting for new deals...</h2>
           <p>Check back soon for the latest massive discounts.</p>
         </div>
       ) : (
-        <div className="deal-grid">
-          {deals.map(deal => (
-            <div key={deal.id} className="deal-card fade-in" style={{ cursor: 'pointer', background: 'rgba(255, 255, 255, 0.03)' }} onClick={() => window.open(deal.url, '_blank')}>
-              <div className="card-image-wrapper" style={{ background: '#fff', padding: '20px' }}>
-                 {deal.discount_price && deal.original_price && deal.original_price > deal.discount_price && (
-                    <div className="confidence-badge" style={{ background: '#e53935', fontSize: '1rem', padding: '6px 12px' }}>
-                      {Math.round((1 - deal.discount_price / deal.original_price) * 100)}% OFF
-                    </div>
-                 )}
-                 {deal.image_url ? (
-                  <img src={deal.image_url} alt="Deal" className="deal-image"/>
-                ) : (
-                  <div className="no-image">No Image</div>
-                )}
-              </div>
-              <div className="card-content">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                    <h3 style={{ fontSize: '1.2rem', margin: 0, lineHeight: '1.4', fontWeight: 'bold' }}>{deal.title}</h3>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap' }}>
-                   {(() => {
-                     const { name, color } = getRetailerInfo(deal.url);
-                     return (
-                       <span style={{ background: color, color: 'white', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}>
-                         {name}
-                       </span>
-                     );
-                   })()}
-                   {deal.brand && <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>By {deal.brand}</span>}
-                </div>
-                
-                <div style={{ marginTop: 'auto', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                  <div>
-                    {deal.discount_price && <span style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--success)' }}>${parseFloat(deal.discount_price).toFixed(2)}</span>}
-                    {deal.original_price && <span style={{ fontSize: '1rem', textDecoration: 'line-through', color: 'var(--text-secondary)', marginLeft: '10px' }}>${parseFloat(deal.original_price).toFixed(2)}</span>}
-                  </div>
-                  
-                  <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                    <button 
-                      onClick={(e) => handleVote(e, deal.id)}
-                      style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '8px', padding: '8px 12px', color: 'var(--success)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}
-                    >
-                      🔥 {deal.vote_score || 0}
-                    </button>
-                    <button className="btn btn-approve" style={{ padding: '0.6rem 1.2rem', flex: 'none', background: 'linear-gradient(90deg, #ff8a00, #e52e71)' }} onClick={(e) => { e.stopPropagation(); window.open(deal.url, '_blank'); }}>Buy Now 🛒</button>
-                  </div>
-                </div>
+        <>
+          {recommendedDeals.length > 0 && (
+            <div style={{ marginBottom: '3rem' }}>
+              <h2 style={{ color: '#ff8a00', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '1.8rem' }}>🎯</span> Recommended For You
+              </h2>
+              <div className="deal-grid">
+                {recommendedDeals.map(deal => renderDeal(deal))}
               </div>
             </div>
-          ))}
-        </div>
+          )}
+          
+          <div>
+              <h2 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px', color: '#fff' }}>
+                <span style={{ fontSize: '1.8rem' }}>⚡</span> Latest Deals
+              </h2>
+              <div className="deal-grid">
+                {latestDeals.map(deal => renderDeal(deal))}
+              </div>
+          </div>
+        </>
       )}
     </main>
   );

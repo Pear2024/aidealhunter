@@ -10,9 +10,9 @@ export async function GET(request, { params }) {
 
     connection = await getConnection();
     
-    // First, lookup the URL for the given deal ID
+    // First, lookup the URL and Brand for the given deal ID
     const [rows] = await connection.execute(
-      "SELECT url FROM normalized_deals WHERE id = ?",
+      "SELECT url, brand FROM normalized_deals WHERE id = ?",
       [id]
     );
 
@@ -41,8 +41,15 @@ export async function GET(request, { params }) {
       [id]
     );
 
-    // Redirect the user to the actual product page
-    return NextResponse.redirect(targetUrl);
+    // Redirect the user to the actual product page and plant the tracking cookie
+    const response = NextResponse.redirect(targetUrl);
+    
+    // Plant the brand in the cookie (Expires in 30 days)
+    if (rows[0].brand && rows[0].brand !== 'Unknown') {
+        response.cookies.set('preferred_brand', rows[0].brand, { path: '/', maxAge: 60 * 60 * 24 * 30 });
+    }
+
+    return response;
 
   } catch (error) {
     console.error('Redirect Error:', error);
