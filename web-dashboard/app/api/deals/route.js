@@ -22,9 +22,8 @@ export async function GET(request) {
         [status]
       );
     }
-    // --- PHASE 20: Fetch Taste Profiler Segment ---
     let visitorSegment = null;
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const dhVisitorId = cookieStore.get('dh_visitor_id')?.value;
     
     if (dhVisitorId) {

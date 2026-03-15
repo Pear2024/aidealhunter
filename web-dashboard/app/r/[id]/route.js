@@ -43,7 +43,7 @@ export async function GET(request, { params }) {
     );
 
     // --- PHASE 20: Agent 10 (Taste Profiler) ---
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     let dhVisitorId = cookieStore.get('dh_visitor_id')?.value;
     let isNewVisitor = false;
 
