@@ -3,6 +3,7 @@ import { getConnection } from '@/lib/db';
 import Parser from 'rss-parser';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as cheerio from 'cheerio';
+import { sendTelegramAlert, withRetry } from '@/lib/failsafe';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow Vercel Function to run for 60 seconds
@@ -54,11 +55,12 @@ export async function GET(request) {
     
     let trendingKeyword = 'headphones'; // Fallback
     try {
-        const trendResult = await jsonModel.generateContent(trendPrompt);
+        const trendResult = await withRetry(() => jsonModel.generateContent(trendPrompt), 2, 2000);
         const parsed = JSON.parse(trendResult.response.text().trim());
         if (parsed.keyword) trendingKeyword = parsed.keyword;
     } catch (e) {
-        console.error("Agent 0 (Trendsetter) Error:", e);
+        console.error("Agent 0 (Trendsetter) Error:", e.message);
+        await sendTelegramAlert(`❌ *Agent 0 (Trendsetter) Failed*\nFailed to find trends after retries.\nError: ${e.message}\nFallback: ${trendingKeyword}`);
     }
     console.log(`🤖 Cron Job Triggered: Agent 0 Selected [${trendingKeyword}] deals at [${randomRetailer}]...`);
 
@@ -164,7 +166,7 @@ export async function GET(request) {
 
       let extractedData = null;
       try {
-        const result = await model.generateContent(prompt);
+        const result = await withRetry(() => model.generateContent(prompt), 2, 2000);
         let textResult = result.response.text().trim();
         
         if (textResult.startsWith('```json')) textResult = textResult.substring(7, textResult.length - 3);
@@ -172,7 +174,8 @@ export async function GET(request) {
         
         extractedData = JSON.parse(textResult);
       } catch (e) {
-        console.error("Gemini Extraction Error:", e);
+        console.error("Agent 1 (Data Extraction) Error:", e.message);
+        // Do not alert on single deal extraction failures to avoid spam, just proceed to next deal
       }
 
       // Gatekeeper AI Heuristics (Phase 8)
@@ -207,13 +210,14 @@ export async function GET(request) {
           Respond ONLY with "FAIL" if the price is wrong, missing, or the context does not match.
           `;
           try {
-             const qaResult = await model.generateContent(qaPrompt);
+             const qaResult = await withRetry(() => model.generateContent(qaPrompt), 2, 2000);
              const qaDecision = qaResult.response.text().trim().toUpperCase();
              if (qaDecision.includes('FAIL')) {
                 rejectReasons.push('Failed AI QA Validator (Price/Title Mismatch or Hallucination)');
              }
           } catch (e) {
-             console.error("QA Agent Error:", e);
+             console.error("Agent 2 (QA) Error:", e.message);
+             rejectReasons.push('Failed AI QA Validator (Network/Timeout Error)');
           }
         }
 
@@ -303,13 +307,13 @@ export async function GET(request) {
               
               let caption = `💥 DEALS ALERT! 💥\n\n${deal.title}\n\n💸 NOW ONLY: $${parseFloat(extractedData.discount_price).toFixed(2)}\n🛒 Hurry and grab yours here: ${trackURL}`; // Fallback
               try {
-                  const copyResult = await model.generateContent(copywriterPrompt);
+                  const copyResult = await withRetry(() => model.generateContent(copywriterPrompt), 2, 2000);
                   const generatedCaption = copyResult.response.text().trim();
                   if (generatedCaption) {
                       caption = generatedCaption;
                   }
               } catch (e) {
-                  console.error("Agent 3 (Copywriter) Error:", e);
+                  console.error("Agent 3 (Copywriter) Error:", e.message);
               }
 
               
@@ -336,12 +340,12 @@ export async function GET(request) {
 
               let fbResponse;
               if (useFormData) {
-                fbResponse = await fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/photos`, {
+                fbResponse = await withRetry(() => fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/photos`, {
                   method: 'POST',
                   body: formData
-                });
+                }), 2, 3000);
               } else {
-                fbResponse = await fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed`, {
+                fbResponse = await withRetry(() => fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed`, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
@@ -349,12 +353,13 @@ export async function GET(request) {
                     link: trackURL,
                     access_token: process.env.FB_PAGE_ACCESS_TOKEN
                   })
-                });
+                }), 2, 3000);
               }
               
               let fbResult = await fbResponse.json();
               if (fbResult.error) {
                   console.error('Bot FB Post Error:', fbResult.error);
+                  await sendTelegramAlert(`❌ *Facebook Auto-Post Failed!*\nAPI Error: ${fbResult.error.message}\nDeal: ${deal.title}`);
               } else {
                   console.log(`🤖 Bot Successfully Auto-Posted to FB [Variant: ${chosenVariant}]:`, fbResult.id);
                   // PHASE 17 & 19: Store fb_post_id and ab_variant for future analysis
@@ -362,7 +367,8 @@ export async function GET(request) {
               }
 
             } catch (fbErr) {
-              console.error('Bot FB Catch Block:', fbErr);
+              console.error('Bot FB Catch Block:', fbErr.message);
+              await sendTelegramAlert(`❌ *Facebook Network Error*\nFailed to connect to Graph API.\nDeal: ${deal.title}`);
             }
           }
 
@@ -410,7 +416,7 @@ export async function GET(request) {
             [ { "id": deal_id, "score": 85 }, ... ]
             `;
 
-            const merchResult = await jsonModel.generateContent(merchandiserPrompt);
+            const merchResult = await withRetry(() => jsonModel.generateContent(merchandiserPrompt), 2, 2000);
             const generatedText = merchResult.response.text().trim();
             const parsedScores = JSON.parse(generatedText.replace(/^```json|```$/g, ''));
             
@@ -427,6 +433,7 @@ export async function GET(request) {
         }
     } catch (e) {
         console.error("Agent 4 (Merchandiser) Error:", e.message);
+        await sendTelegramAlert(`❌ *Agent 4 (Merchandiser) Failed*\nError: ${e.message}`);
     }
 
     // --- PHASE 14 & 15: Agent 5 & 6 (The Rechecker & OOS Killer) ---
@@ -443,11 +450,11 @@ export async function GET(request) {
         let hiddenCount = 0;
         for (const oldDeal of dealsToCheck) {
              try {
-                 const res = await fetch(oldDeal.url, {
+                 const res = await withRetry(() => fetch(oldDeal.url, {
                     headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
                     signal: AbortSignal.timeout(8000),
                     redirect: 'follow'
-                 });
+                 }), 2, 2000);
                  if (!res.ok) {
                      await connection.execute("UPDATE normalized_deals SET status = 'hidden' WHERE id = ?", [oldDeal.id]);
                      console.log(`🥷 Agent 6 Assassinated Deal [${oldDeal.id}]: HTTP Error ${res.status}`);
@@ -479,7 +486,7 @@ export async function GET(request) {
                  Respond ONLY with "HIDDEN" if it exhibits bad UX (Third-party sellers took over, requires selecting sizes that are out of stock, misleading price loops).
                  `;
                  
-                 const recheckResult = await model.generateContent(recheckPrompt);
+                 const recheckResult = await withRetry(() => model.generateContent(recheckPrompt), 2, 2000);
                  const statusDecision = recheckResult.response.text().trim().toUpperCase();
                  
                  if (statusDecision.includes('HIDDEN')) {
@@ -567,6 +574,7 @@ export async function GET(request) {
 
   } catch (error) {
     console.error('Cron Execution Error:', error);
+    await sendTelegramAlert(`❌ *CRITICAL SYSTEM CRASH*\nThe background deal worker crashed completely.\nError: ${error.message}`);
     return NextResponse.json({ error: 'Internal server error during automated processing' }, { status: 500 });
   } finally {
     if (connection) {
