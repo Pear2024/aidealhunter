@@ -13,12 +13,20 @@ async function runAgent() {
         port: process.env.MYSQL_PORT || 25060,
     });
     
+    const withRetry = async (fn, maxRetries = 2, delayMs = 1000) => {
+        for (let i = 0; i <= maxRetries; i++) {
+            try { return await fn(); }
+            catch (err) {
+                if (i === maxRetries) throw err;
+                await new Promise(res => setTimeout(res, delayMs * (i + 1)));
+            }
+        }
+    };
+
     try {
-        console.log("Starting Local Autonomous Agent...");
+        console.log("Starting Local Autonomous Agent (with Facebook Auto-Post)...");
         const parser = new Parser({
-          customFields: {
-            item: ['media:content', 'image']
-          }
+          customFields: { item: ['media:content', 'image'] }
         });
         const urls = [
             'https://slickdeals.net/newsearch.php?mode=popular&searcharea=deals&searchin=first&rss=1&q=gaming',
@@ -27,21 +35,18 @@ async function runAgent() {
         ];
         
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash", generationConfig: { responseMimeType: "application/json" } });
+        // Copywriter instance
+        const textModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         let dealsAdded = 0;
         
         for (const url of urls) {
             console.log("\\n📡 Fetching RSS:", url);
             let feed;
-            try { 
-              feed = await parser.parseURL(url); 
-            } catch(e) { 
-              console.error("RSS Error:", e.message); 
-              continue; 
-            }
+            try { feed = await parser.parseURL(url); } 
+            catch(e) { console.error("RSS Error:", e.message); continue; }
             
-            const items = feed.items.slice(0, 15); // Take top 15 from each (Total 45)
+            const items = feed.items.slice(0, 15);
             
             for (const deal of items) {
                 console.log("⚙️  Processing:", deal.title);
@@ -58,35 +63,22 @@ async function runAgent() {
                    continue;
                 }
                 
-                let extracted = { 
-                  should_approve: false,
-                  confidence_score: 0.95
-                };
+                let extracted = { should_approve: false, confidence_score: 0.95 };
                 
-                // Fallback to strict Regex to bypass Gemini API quotas
                 try {
-                    const priceMatch = deal.title.match(/\$([0-9,.]+)/);
+                    const priceMatch = deal.title.match(/\\$([0-9,.]+)/);
                     if (priceMatch) {
                         extracted.discount_price = parseFloat(priceMatch[1].replace(/,/g, ''));
-                        
-                        // Look for installment plans like "$68.62/mo (36 mo)" or "$50/mo"
                         const installmentMatch = deal.title.match(/(?:Or\\s)?(\$[0-9.,]+\/mo(?:\\s\\([0-9]+\\s*mo\\))?)/i);
-                        if (installmentMatch) {
-                            extracted.installment_plan = installmentMatch[1];
-                        }
-                        
-                        extracted.title = deal.title.replace(/\\$([0-9,.]+)/, '').replace(/(?:Or\\s)?(\$[0-9.,]+\/mo(?:\\s\\([0-9]+\\s*mo\\))?)/i, '').replace(/ at Amazon| at Best Buy| at Walmart| at Target/i, '').trim();
+                        if (installmentMatch) extracted.installment_plan = installmentMatch[1];
+                        extracted.title = deal.title.replace(/\$([0-9,.]+)/, '').replace(/(?:Or\s)?(\$[0-9.,]+\/mo(?:\s\([0-9]+\s*mo\))?)/i, '').replace(/ at Amazon| at Best Buy| at Walmart| at Target/i, '').trim();
                         extracted.should_approve = true;
                     }
-                } catch(e) {
-                    console.error("Regex Parsing Error:", e.message);
-                    continue;
-                }
+                } catch(e) { continue; }
                 
-                let fallbackImg = 'https://images.unsplash.com/photo-1550009158-9ebf6d1735da?auto=format&fit=crop&q=80&w=800';
-                if(url.includes('apple')) fallbackImg = 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&q=80&w=800';
-                if(url.includes('tv')) fallbackImg = 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&q=80&w=800';
-                if(url.includes('gaming')) fallbackImg = 'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&q=80&w=800';
+                let fallbackImg = url.includes('apple') ? 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&q=80&w=800' :
+                                  url.includes('tv') ? 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&q=80&w=800' :
+                                  'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&q=80&w=800';
                 
                 let extractedImage = null;
                 const htmlContent = deal['content:encoded'] || deal.content || '';
@@ -94,34 +86,93 @@ async function runAgent() {
                     try {
                         const $ = cheerio.load(htmlContent);
                         const imgSrc = $('img').first().attr('src');
-                        if (imgSrc) {
-                            extractedImage = imgSrc;
-                        }
+                        if (imgSrc) extractedImage = imgSrc;
                     } catch(e) {}
                 }
 
                 const finalImg = extractedImage || fallbackImg;
 
                 if (extracted.should_approve && extracted.discount_price) {
-                     await connection.execute(`
+                     const [insertResult] = await connection.execute(`
                         INSERT INTO normalized_deals 
                         (raw_deal_id, title, brand, original_price, discount_price, url, image_url, status, confidence_score, merchandiser_score, vote_score, installment_plan)
                         VALUES (?, ?, ?, ?, ?, ?, ?, 'approved', ?, ?, ?, ?)
                      `, [
-                         rawId,
-                         extracted.title.substring(0, 100), // safe limit
-                         extracted.brand ? extracted.brand.substring(0, 50) : null,
-                         extracted.original_price || null,
-                         extracted.discount_price,
-                         deal.link,
-                         finalImg,
-                         extracted.confidence_score || 0.90,
-                         Math.floor(Math.random() * 80) + 10,
-                         Math.floor(Math.random() * 50) + 5,
-                         extracted.installment_plan || null
+                         rawId, extracted.title.substring(0, 100), null, null, extracted.discount_price, deal.link, finalImg,
+                         0.95, Math.floor(Math.random() * 80) + 10, Math.floor(Math.random() * 50) + 5, extracted.installment_plan || null
                      ]);
+                     
+                     const insertedDealId = insertResult.insertId;
                      dealsAdded++;
                      console.log("✅ APPROVED:", extracted.title, `($${extracted.discount_price})`);
+
+                     // ──────────── AUTOMATIC FACEBOOK POSTING ────────────
+                     try {
+                        console.log("✍️  Agent 3 (Copywriter): Generating Facebook Post...");
+                        const copywriterPrompt = `
+                          Act as an expert social media copywriter. Write a highly engaging, "thumb-stopping" Facebook post caption for a deal.
+                          Deal Title: ${extracted.title}
+                          Price: $${extracted.discount_price}
+                          
+                          Rules:
+                          1. Keep it concise (3-4 short sentences max).
+                          2. Use 2-3 relevant emojis.
+                          3. Create a sense of urgency.
+                          4. Do NOT include any links, just the text.
+                          5. Include #Ad or #CommissionsEarned at the end.
+                        `;
+                        
+                        let caption = `💥 DEALS ALERT! 💥\\n\\n${extracted.title}\\n\\n💸 NOW ONLY: $${extracted.discount_price}\\n🛒 Hurry and grab yours here: ${deal.link}\\n\\n#Ad`;
+                        try {
+                            const copyResult = await withRetry(() => textModel.generateContent(copywriterPrompt), 2, 2000);
+                            const generatedText = copyResult.response.text().trim();
+                            if (generatedText) caption = `${generatedText}\\n\\n🛒 Grab Deal Here: ${deal.link}`;
+                        } catch(e) {
+                             console.log("Gemini API Error, using fallback caption.", e.message);
+                        }
+                        
+                        let useFormData = false;
+                        let formData = new FormData();
+          
+                        if (finalImg) {
+                          try {
+                            const imgRes = await fetch(finalImg, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+                            if (imgRes.ok) {
+                              const blob = await imgRes.blob();
+                              formData.append('source', blob, 'image.jpg');
+                              formData.append('message', caption);
+                              formData.append('access_token', process.env.FB_PAGE_ACCESS_TOKEN);
+                              useFormData = true;
+                            }
+                          } catch (e) {
+                            console.error('Failed to download image for FB:', e.message);
+                          }
+                        }
+                        
+                        let fbResponse;
+                        if (useFormData) {
+                          fbResponse = await withRetry(() => fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/photos`, { method: 'POST', body: formData }), 2, 3000);
+                        } else {
+                          fbResponse = await withRetry(() => fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ message: caption, link: deal.link, access_token: process.env.FB_PAGE_ACCESS_TOKEN })
+                          }), 2, 3000);
+                        }
+                        
+                        let fbResult = await fbResponse.json();
+                        if (fbResult.error) {
+                             console.error('Bot FB Post Error:', fbResult.error.message);
+                        } else {
+                             console.log(`🚀 Published to Facebook page (ID: ${fbResult.id})`);
+                             await connection.execute('UPDATE normalized_deals SET fb_post_id = ? WHERE id = ?', [fbResult.id, insertedDealId]);
+                             
+                             console.log("⏳ Facebook API: Sleeping for 10 minutes before next post to prevent spam...");
+                             await new Promise(resolve => setTimeout(resolve, 600000));
+                        }
+                     } catch(err) {
+                          console.log("Facebook Publishing failed:", err.message);
+                     }
                 } else {
                     console.log("⚠️  BLOCKED BY GATEKEEPER:", deal.title);
                 }
@@ -129,7 +180,7 @@ async function runAgent() {
         }
         
         console.log("\\n====== Agent Completed ======");
-        console.log("Total Authentic Deals Ingested:", dealsAdded);
+        console.log("Total Authentic Deals Ingested & Posted:", dealsAdded);
         
     } catch(err) {
         console.error("Fatal Error:", err);
