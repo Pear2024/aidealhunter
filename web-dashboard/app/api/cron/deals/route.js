@@ -82,6 +82,7 @@ export async function GET(request) {
       // Extract image URL early
       const rawContent = deal.content || deal.contentSnippet || '';
       let preExtractedImage = null;
+      let deepPageText = ''; // Track full page text for QA Agent
       const imgMatch = rawContent.match(/<img[^>]+src="([^">]+)"/);
       if (imgMatch && imgMatch[1]) {
         preExtractedImage = imgMatch[1];
@@ -96,6 +97,7 @@ export async function GET(request) {
           if (pageRes.ok) {
             const html = await pageRes.text();
             const $ = cheerio.load(html);
+            deepPageText = $('body').text().replace(/\s+/g, ' ').substring(0, 15000); // 15k chars to limit token usage
             // 1. Try Open Graph first (standard for link sharing)
             preExtractedImage = $('meta[property="og:image"]').attr('content');
             // 2. Fallback to Twitter card
@@ -162,6 +164,33 @@ export async function GET(request) {
         if (computedDiscount !== null && computedDiscount < 15) rejectReasons.push('Discount < 15%');
         if ((extractedData.confidence_score || 0) < 0.60) rejectReasons.push('Low AI Confidence < 0.6');
         if (extractedData.brand === 'Unknown') rejectReasons.push('Unknown Brand');
+
+        // 3. PHASE 9: AI Validator Check (QA Agent)
+        if (rejectReasons.length === 0 && deepPageText) {
+          const qaPrompt = `
+          You are a strict QA Deal Validator. Your job is to verify NO hallucinations occurred.
+          Check if the following extracted deal precisely matches the provided context from the deep scraped webpage.
+          
+          Deep Scraped Webpage Text:
+          ${deepPageText}
+
+          Extracted Deal to Verify:
+          Title: ${deal.title}
+          Discount Price: $${extractedData.discount_price}
+
+          Respond ONLY with "PASS" if the price and deal context definitively exists in the text.
+          Respond ONLY with "FAIL" if the price is wrong, missing, or the context does not match.
+          `;
+          try {
+             const qaResult = await model.generateContent(qaPrompt);
+             const qaDecision = qaResult.response.text().trim().toUpperCase();
+             if (qaDecision.includes('FAIL')) {
+                rejectReasons.push('Failed AI QA Validator (Price/Title Mismatch or Hallucination)');
+             }
+          } catch (e) {
+             console.error("QA Agent Error:", e);
+          }
+        }
 
 
         // 3. Ruling
