@@ -337,8 +337,63 @@ export async function GET(request) {
       }
     } // end loop
 
-    console.log(`🤖 Cron Job Completed: Added ${addedCount} new [${randomKeyword}] deals to the pending queue.`);
-    return NextResponse.json({ success: true, keyword: randomKeyword, dealsAdded: addedCount });
+    // --- PHASE 13: Agent 4 (The Merchandiser) ---
+    try {
+        console.log("🤖 Agent 4 (Merchandiser) is evaluating the storefront...");
+        const [activeDeals] = await connection.execute(
+            `SELECT id, title, brand, vote_score, clicks, discount_percentage 
+             FROM normalized_deals 
+             WHERE status = 'approved' 
+             ORDER BY id DESC LIMIT 50`
+        );
+        
+        if (activeDeals.length > 0) {
+            const currentHour = new Date().getHours();
+            let timeOfDay = 'Morning';
+            if (currentHour >= 12 && currentHour < 17) timeOfDay = 'Afternoon';
+            if (currentHour >= 17 && currentHour < 21) timeOfDay = 'Evening';
+            if (currentHour >= 21 || currentHour < 5) timeOfDay = 'Night';
+
+            const merchandiserPrompt = `
+            You are an elite E-commerce Merchandiser and Storefront Manager.
+            Review the following list of active deals on our storefront.
+            Current Time of Day: ${timeOfDay}
+            
+            Evaluate each deal's potential to convert right now based on:
+            1. Relevance to the time of day (e.g. TVs/Games score higher in evening, Coffee/Work gear in morning).
+            2. Performance metrics: High votes or clicks should strongly boost the score.
+            3. Discount depth.
+            
+            Assign a 'merchandiser_score' integer from 0 to 100 for each deal.
+            
+            Deals Data:
+            ${JSON.stringify(activeDeals, null, 2)}
+            
+            Respond ONLY with a valid JSON array matching this schema:
+            [ { "id": deal_id, "score": 85 }, ... ]
+            `;
+
+            const merchResult = await jsonModel.generateContent(merchandiserPrompt);
+            const generatedText = merchResult.response.text().trim();
+            const parsedScores = JSON.parse(generatedText.replace(/^```json|```$/g, ''));
+            
+            // Bulk update scores
+            for (const item of parsedScores) {
+               if (item.id && item.score !== undefined) {
+                  await connection.execute(
+                     'UPDATE normalized_deals SET merchandiser_score = ? WHERE id = ?',
+                     [item.score, item.id]
+                  );
+               }
+            }
+            console.log(`✅ Agent 4 Restocked the Storefront: Updated ${parsedScores.length} items' merchandising scores.`);
+        }
+    } catch (e) {
+        console.error("Agent 4 (Merchandiser) Error:", e.message);
+    }
+
+    console.log(`🤖 Cron Job Completed: Added ${addedCount} new [${trendingKeyword}] deals to the pending queue.`);
+    return NextResponse.json({ success: true, keyword: trendingKeyword, dealsAdded: addedCount });
 
   } catch (error) {
     console.error('Cron Execution Error:', error);

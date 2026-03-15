@@ -11,7 +11,7 @@ export async function GET(request) {
 
     connection = await getConnection();
     const [rows] = await connection.execute(
-      "SELECT * FROM normalized_deals WHERE status = ? ORDER BY created_at DESC",
+      "SELECT * FROM normalized_deals WHERE status = ? ORDER BY merchandiser_score DESC, created_at DESC",
       [status]
     );
     return NextResponse.json({ deals: rows });

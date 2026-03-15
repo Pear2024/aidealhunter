@@ -21,7 +21,7 @@ export default function Storefront() {
       try {
         const res = await fetch('/api/deals?status=approved');
         const data = await res.json();
-        const sortedDeals = (data.deals || []).sort((a, b) => (b.vote_score || 0) - (a.vote_score || 0));
+        const sortedDeals = (data.deals || []).sort((a, b) => (b.merchandiser_score || 0) - (a.merchandiser_score || 0));
         
         // 2. Split into Recommended vs Latest based on user behavior
         if (preferredBrand) {
