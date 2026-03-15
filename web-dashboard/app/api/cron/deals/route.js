@@ -20,9 +20,13 @@ export async function GET(request) {
     // 1. Secret Key Authentication
     const { searchParams } = new URL(request.url);
     const providedKey = searchParams.get('key');
+    const authHeader = request.headers.get('authorization');
     const secretKey = process.env.CRON_SECRET_KEY;
 
-    if (!secretKey || providedKey !== secretKey) {
+    const isAuthorized = (secretKey && providedKey === secretKey) || 
+                         (secretKey && authHeader === `Bearer ${secretKey}`);
+
+    if (!isAuthorized) {
       return NextResponse.json({ error: 'Unauthorized. Invalid or missing Secret Key.' }, { status: 401 });
     }
 
@@ -201,26 +205,43 @@ export async function GET(request) {
               const caption = `💥 AI BOT DEAL ALERT! 💥\n\n${deal.title}\n\n💸 NOW ONLY: $${parseFloat(extractedData.discount_price).toFixed(2)} ${extractedData.original_price ? `(Was $${parseFloat(extractedData.original_price).toFixed(2)} - Save ${computedDiscount}%!)` : ''}\n🛒 Hurry to grab this deal!\n\n👇 GRAB IT FAST: 👇\n${trackURL}\n\n#InlandEmpire #SmartShopper #TrendingDeals`;
               
               const imageURL = preExtractedImage || extractedData.image_url;
-              let fbEndpoint = `https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed`;
-              const fbPayload = {
-                message: caption,
-                link: trackURL,
-                access_token: process.env.FB_PAGE_ACCESS_TOKEN
-              };
+              let useFormData = false;
+              let formData = new FormData();
 
               if (imageURL) {
-                fbEndpoint = `https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/photos`;
-                fbPayload.url = imageURL;
-                fbPayload.caption = caption;
-                delete fbPayload.message;
-                delete fbPayload.link;
+                try {
+                  const imgRes = await fetch(imageURL, {
+                    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36' }
+                  });
+                  if (imgRes.ok) {
+                    const blob = await imgRes.blob();
+                    formData.append('source', blob, 'image.jpg');
+                    formData.append('message', caption);
+                    formData.append('access_token', process.env.FB_PAGE_ACCESS_TOKEN);
+                    useFormData = true;
+                  }
+                } catch (e) {
+                  console.error('Failed to download image for FB:', e);
+                }
               }
 
-              let fbResponse = await fetch(fbEndpoint, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(fbPayload)
-              });
+              let fbResponse;
+              if (useFormData) {
+                fbResponse = await fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/photos`, {
+                  method: 'POST',
+                  body: formData
+                });
+              } else {
+                fbResponse = await fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    message: caption,
+                    link: trackURL,
+                    access_token: process.env.FB_PAGE_ACCESS_TOKEN
+                  })
+                });
+              }
               
               let fbResult = await fbResponse.json();
               if (fbResult.error) console.error('Bot FB Post Error:', fbResult.error);
