@@ -35,10 +35,18 @@ export async function GET(request) {
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const trendPrompt = `
-    You are an elite E-commerce Trend Analyst.
+    You are an elite E-commerce Trend Analyst and Profit Strategist (Agent 11).
     Analyze current market trends, seasonality, and consumer impulse buying behavior.
-    Select ONE single, highly specific search keyword (e.g., 'macbook pro', 'airpods', 'lego star wars') 
-    that consumers are currently highly motivated to purchase.
+    
+    CRITICAL PROFIT OBJECTIVE:
+    Prioritize product categories with HIGH Amazon Affiliate commission rates:
+    - Luxury Beauty / Coins (10%)
+    - Home / Furniture / Pet (8%)
+    - Kitchen & Dining / Beauty / Apparel (5-6%)
+    Limit keywords for low-margin categories like Video Games (1%) or Electronics/Computers (2-2.5%) unless there is a massive viral trend.
+    
+    Select ONE single, highly specific search keyword (e.g., 'espresso machine', 'korean skincare makeup', 'dyson vacuum') 
+    that consumers are currently highly motivated to purchase and yields high commission.
     
     Respond ONLY with a valid JSON object matching this schema:
     { "keyword": "the chosen keyword" }
@@ -149,7 +157,8 @@ export async function GET(request) {
           "discount_price": "The current deal price (number without $, e.g. 50.00). Run regex/extract numbers.",
           "discount_percentage": "The percentage off (number, e.g. 50.00). Calculate if possible, or null.",
           "image_url": "Extract the primary image URL from the HTML description if it exists, otherwise null.",
-          "confidence_score": "Your confidence in the extracted data from 0.0 to 1.0 (number)"
+          "confidence_score": "Your confidence in the extracted data from 0.0 to 1.0 (number)",
+          "estimated_commission_rate": "Estimate Amazon commission rate based on category: 10 for Beauty, 8 for Home/Furniture, 5 for Kitchen/Apparel, 2.5 for Electronics/PC, 1 for Video Games. Defaults to 4. (number)"
       }
       `;
 
@@ -219,12 +228,18 @@ export async function GET(request) {
         }
 
         try {
+          // --- PHASE 21: Agent 11 (Profit Brain) EPC Calculation ---
+          let profitScore = 0;
+          if (extractedData.discount_price && extractedData.estimated_commission_rate) {
+              profitScore = parseFloat((extractedData.discount_price * (extractedData.estimated_commission_rate / 100)).toFixed(2));
+          }
+
           // Note: submitter_id is 'system' and status is decided by the Gatekeeper AI
-          await connection.execute(
+          const [insertResult] = await connection.execute(
             `INSERT INTO normalized_deals (
                 raw_deal_id, title, brand, original_price, discount_price, 
-                discount_percentage, url, image_url, confidence_score, status, submitter_id, vote_score
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'system', 0)`,
+                discount_percentage, url, image_url, confidence_score, status, submitter_id, vote_score, profit_score
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'system', 0, ?)`,
             [
               rawId,
               deal.title,
@@ -235,7 +250,8 @@ export async function GET(request) {
               deal.link,
               preExtractedImage || extractedData.image_url || null,
               extractedData.confidence_score || 0.5,
-              finalStatus
+              finalStatus,
+              profitScore
             ]
           );
           
@@ -362,7 +378,7 @@ export async function GET(request) {
     try {
         console.log("🤖 Agent 4 (Merchandiser) is evaluating the storefront...");
         const [activeDeals] = await connection.execute(
-            `SELECT id, title, brand, vote_score, clicks, discount_percentage 
+            `SELECT id, title, brand, vote_score, clicks, discount_percentage, profit_score 
              FROM normalized_deals 
              WHERE status = 'approved' 
              ORDER BY id DESC LIMIT 50`
@@ -383,7 +399,7 @@ export async function GET(request) {
             Evaluate each deal's potential to convert right now based on:
             1. Relevance to the time of day (e.g. TVs/Games score higher in evening, Coffee/Work gear in morning).
             2. Performance metrics: High votes or clicks should strongly boost the score.
-            3. Discount depth.
+            3. CRITICAL AI PROFIT BRAIN (Agent 11) RULE: Factor in the 'profit_score' (Estimated Net Commission). Deals that generate higher real profit dollars MUST score significantly higher than simple deep-discount deals.
             
             Assign a 'merchandiser_score' integer from 0 to 100 for each deal.
             
