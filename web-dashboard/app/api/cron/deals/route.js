@@ -35,7 +35,13 @@ export async function GET(request) {
     
     console.log("🚀 Starting Serverless Scraper (Fast Regex Mode)...");
 
-    const parser = new Parser({ customFields: { item: ['media:content', 'image'] } });
+    const parser = new Parser({ 
+        customFields: { item: ['media:content', 'image'] },
+        headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+        }
+    });
     
     // Choose one category at random to limit execution time
     const CATEGORIES = ['gaming', 'apple', 'tv', 'headphones', 'monitor'];
