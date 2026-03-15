@@ -392,9 +392,9 @@ export async function GET(request) {
         console.error("Agent 4 (Merchandiser) Error:", e.message);
     }
 
-    // --- PHASE 14: Agent 5 (The Rechecker) ---
+    // --- PHASE 14 & 15: Agent 5 & 6 (The Rechecker & OOS Killer) ---
     try {
-        console.log("🤖 Agent 5 (Rechecker) is patrolling existing deals...");
+        console.log("🤖 Agent 6 (OOS Killer) is patrolling existing deals...");
          const [dealsToCheck] = await connection.execute(
             `SELECT id, title, discount_price, url 
              FROM normalized_deals 
@@ -403,55 +403,70 @@ export async function GET(request) {
         );
         
         let expiredCount = 0;
+        let hiddenCount = 0;
         for (const oldDeal of dealsToCheck) {
              try {
                  const res = await fetch(oldDeal.url, {
                     headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
-                    signal: AbortSignal.timeout(8000)
+                    signal: AbortSignal.timeout(8000),
+                    redirect: 'follow'
                  });
-                 if (res.ok) {
-                     const html = await res.text();
-                     const $ = cheerio.load(html);
-                     const pageText = $('body').text().replace(/\s+/g, ' ').substring(0, 15000);
-                     
-                     const recheckPrompt = `
-                     You are an elite E-commerce Compliance Agent (The Rechecker).
-                     Review this raw webpage text for an existing deal we posted.
-                     Target Product: ${oldDeal.title}
-                     Target Discount Price: $${parseFloat(oldDeal.discount_price).toFixed(2)}
-                     
-                     Raw Text:
-                     ${pageText}
-                     
-                     Task:
-                     Verify if this deal is STILL active.
-                     1. Does the text still show the target discount price?
-                     2. Is the item in stock (e.g., no "Out of stock" or "Currently unavailable" warnings)?
-                     
-                     Respond ONLY with "ACTIVE" if the price matches and it seems in stock.
-                     Respond ONLY with "EXPIRED" if the price is higher, missing, or it says out of stock.
-                     `;
-                     
-                     const recheckResult = await model.generateContent(recheckPrompt);
-                     const statusDecision = recheckResult.response.text().trim().toUpperCase();
-                     
-                     if (statusDecision.includes('EXPIRED')) {
-                         await connection.execute("UPDATE normalized_deals SET status = 'expired' WHERE id = ?", [oldDeal.id]);
-                         console.log(`❌ Agent 5 Expired Deal [${oldDeal.id}]: Price changed or out of stock.`);
-                         expiredCount++;
-                     }
+                 if (!res.ok) {
+                     await connection.execute("UPDATE normalized_deals SET status = 'hidden' WHERE id = ?", [oldDeal.id]);
+                     console.log(`🥷 Agent 6 Assassinated Deal [${oldDeal.id}]: HTTP Error ${res.status}`);
+                     hiddenCount++;
+                     continue;
+                 }
+                 
+                 const html = await res.text();
+                 const $ = cheerio.load(html);
+                 const pageText = $('body').text().replace(/\s+/g, ' ').substring(0, 15000);
+                 
+                 const recheckPrompt = `
+                 You are an elite E-commerce Compliance Agent (The OOS Killer).
+                 Review this raw webpage text for an existing deal we posted.
+                 Target Product: ${oldDeal.title}
+                 Target Discount Price: $${parseFloat(oldDeal.discount_price).toFixed(2)}
+                 
+                 Raw Text:
+                 ${pageText}
+                 
+                 Task:
+                 Verify if this deal is STILL active and provides a good user experience.
+                 1. Does the text still show the target discount price?
+                 2. Is the item in stock (e.g., no "Out of stock" or "Currently unavailable")?
+                 3. Are there bad UX warnings like "Available from these sellers", "Select size to see price" where the target price is not immediately available to buy?
+                 
+                 Respond ONLY with "ACTIVE" if the exact price matches, it is in stock, and the buy box is immediately available.
+                 Respond ONLY with "EXPIRED" if the price has simply changed or it's out of stock normally.
+                 Respond ONLY with "HIDDEN" if it exhibits bad UX (Third-party sellers took over, requires selecting sizes that are out of stock, misleading price loops).
+                 `;
+                 
+                 const recheckResult = await model.generateContent(recheckPrompt);
+                 const statusDecision = recheckResult.response.text().trim().toUpperCase();
+                 
+                 if (statusDecision.includes('HIDDEN')) {
+                     await connection.execute("UPDATE normalized_deals SET status = 'hidden' WHERE id = ?", [oldDeal.id]);
+                     console.log(`🥷 Agent 6 Assassinated Deal [${oldDeal.id}]: Bad UX / Bait & Switch.`);
+                     hiddenCount++;
+                 } else if (statusDecision.includes('EXPIRED')) {
+                     await connection.execute("UPDATE normalized_deals SET status = 'expired' WHERE id = ?", [oldDeal.id]);
+                     console.log(`❌ Agent 5 Expired Deal [${oldDeal.id}]: Price changed or out of stock.`);
+                     expiredCount++;
                  }
              } catch (e) {
-                 console.log(`Agent 5 could not scrape URL for deal ${oldDeal.id}, skipping...`);
+                 console.log(`Agent 6 could not scrape URL for deal ${oldDeal.id}: ${e.message}. Marking as hidden.`);
+                 await connection.execute("UPDATE normalized_deals SET status = 'hidden' WHERE id = ?", [oldDeal.id]);
+                 hiddenCount++;
              }
         }
-        if (expiredCount > 0) {
-            console.log(`✅ Agent 5 Patrol Complete: Removed ${expiredCount} expired deals from storefront.`);
+        if (expiredCount > 0 || hiddenCount > 0) {
+            console.log(`✅ Patrol Complete: Removed ${expiredCount} expired and assassinated ${hiddenCount} hidden deals.`);
         } else if (dealsToCheck.length > 0) {
-            console.log(`✅ Agent 5 Patrol Complete: All checked deals are still active.`);
+            console.log(`✅ Patrol Complete: All checked deals are still active and safe.`);
         }
     } catch (e) {
-        console.error("Agent 5 (Rechecker) Error:", e.message);
+        console.error("Agent 6 (OOS Killer) Error:", e.message);
     }
 
     console.log(`🤖 Cron Job Completed: Added ${addedCount} new [${trendingKeyword}] deals to the pending queue.`);
