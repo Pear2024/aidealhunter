@@ -144,7 +144,7 @@ export default function Storefront() {
             </div>
          )}
          {deal.image_url ? (
-          <img src={deal.image_url} alt="Deal" className="deal-image"/>
+          <img src={deal.image_url} alt="Deal" className="deal-image" referrerPolicy="no-referrer" />
         ) : (
           <div className="no-image">No Image</div>
         )}
