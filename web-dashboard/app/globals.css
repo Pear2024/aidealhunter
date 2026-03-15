@@ -1,16 +1,19 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
 
 :root {
-  --bg-color: #0d1117;
-  --bg-gradient: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
-  --card-bg: rgba(33, 38, 45, 0.6);
-  --card-border: rgba(255, 255, 255, 0.1);
-  --text-primary: #e6edf3;
-  --text-secondary: #8b949e;
-  --accent: #58a6ff;
-  --success: #2ea043;
-  --danger: #f85149;
-  --input-bg: rgba(13, 17, 23, 0.8);
+  --bg-color: #050505;
+  --bg-gradient: radial-gradient(circle at top, #1a1a24 0%, #050505 100%);
+  --card-bg: rgba(20, 20, 25, 0.45);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --card-glow: rgba(255, 255, 255, 0.03);
+  --text-primary: #f5f5f7;
+  --text-secondary: #a1a1aa;
+  --accent: #FF3366;
+  --accent-gradient: linear-gradient(135deg, #FF3366 0%, #FF9933 100%);
+  --success: #00D084;
+  --danger: #FF3B30;
+  --input-bg: rgba(255, 255, 255, 0.03);
+  --glass-blur: blur(16px);
 }
 
 * {
@@ -40,13 +43,14 @@ body {
 }
 
 .header h1 {
-  font-size: 3.5rem;
-  font-weight: 700;
-  background: -webkit-linear-gradient(45deg, #58a6ff, #a371f7);
+  font-size: 4rem;
+  font-weight: 800;
+  background: var(--accent-gradient);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
   margin-bottom: 0.5rem;
+  letter-spacing: -1px;
 }
 
 .subtitle {
@@ -80,20 +84,21 @@ body {
 /* Glassmorphism Card */
 .deal-card {
   background: var(--card-bg);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--card-border);
-  border-radius: 16px;
+  border-radius: 20px;
   overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   display: flex;
   flex-direction: column;
+  box-shadow: 0 4px 24px -6px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
 .deal-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.8), 0 0 20px var(--card-glow);
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 .card-image-wrapper {
@@ -138,6 +143,8 @@ body {
   flex-direction: column;
   gap: 1rem;
   flex-grow: 1;
+  position: relative;
+  z-index: 2;
 }
 
 .original-link {
@@ -201,20 +208,23 @@ input:focus {
   flex: 1;
   padding: 0.8rem;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   font-family: inherit;
-  font-weight: 600;
+  font-weight: 700;
   font-size: 1rem;
   cursor: pointer;
-  transition: transform 0.1s, opacity 0.2s;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
 .btn:active {
-  transform: scale(0.97);
+  transform: scale(0.95);
 }
 
 .btn:hover {
-  opacity: 0.9;
+  filter: brightness(1.2);
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
 }
 
 .btn-approve {
@@ -268,12 +278,12 @@ input:focus {
 }
 
 .spinner {
-  width: 50px;
-  height: 50px;
-  border: 4px solid rgba(255, 255, 255, 0.1);
+  width: 60px;
+  height: 60px;
+  border: 4px solid rgba(255, 255, 255, 0.05);
   border-left-color: var(--accent);
   border-radius: 50%;
-  animation: spin 1s linear infinite;
+  animation: spin 1s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
 }
 
 /* Animations */
@@ -308,6 +318,42 @@ input:focus {
     grid-template-columns: 1fr;
     gap: 1.5rem;
   }
+
+.btn-outline {
+  padding: 8px 20px;
+  background: rgba(255,255,255,0.05);
+  color: white;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: all 0.3s ease;
+}
+.btn-outline:hover {
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.4);
+  transform: translateY(-2px);
+}
+
+.premium-badge {
+  background: linear-gradient(90deg, #FF3366, #FF9933);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 15px rgba(255, 51, 102, 0.4);
+  text-transform: uppercase;
+}
+
+.discount-text {
+  background: -webkit-linear-gradient(45deg, #00D084, #00A669);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 900;
+}
   /* Remove absolute position for login buttons on mobile, to prevent overlap */
   .header > div[style*="position: absolute"] {
     position: static !important;

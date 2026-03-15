@@ -139,8 +139,8 @@ export default function Storefront() {
              </div>
          )}
          {deal.discount_price && deal.original_price && deal.original_price > deal.discount_price && !isExpired && (
-            <div className="confidence-badge" style={{ background: '#e53935', fontSize: '1rem', padding: '6px 12px' }}>
-              {Math.round((1 - deal.discount_price / deal.original_price) * 100)}% OFF
+            <div style={{ position: 'absolute', top: '15px', right: '15px', zIndex: 10 }}>
+              <span className="premium-badge">{Math.round((1 - deal.discount_price / deal.original_price) * 100)}% OFF</span>
             </div>
          )}
          {deal.image_url ? (
@@ -165,9 +165,9 @@ export default function Storefront() {
            {deal.brand && <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>By {deal.brand}</span>}
         </div>
         
-        <div style={{ marginTop: 'auto', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+        <div style={{ marginTop: 'auto', paddingTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
           <div>
-            {deal.discount_price && <span style={{ fontSize: '1.8rem', fontWeight: 'bold', color: isExpired ? '#888' : 'var(--success)' }}>${parseFloat(deal.discount_price).toFixed(2)}</span>}
+            {deal.discount_price && <span className="discount-text" style={{ fontSize: '1.8rem', color: isExpired ? '#888' : 'inherit' }}>${parseFloat(deal.discount_price).toFixed(2)}</span>}
             {deal.original_price && <span style={{ fontSize: '1rem', textDecoration: 'line-through', color: 'var(--text-secondary)', marginLeft: '10px' }}>${parseFloat(deal.original_price).toFixed(2)}</span>}
           </div>
           
@@ -175,14 +175,14 @@ export default function Storefront() {
             <button 
               onClick={(e) => { if(!isExpired) handleVote(e, deal.id); }}
               disabled={isExpired}
-              style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '8px', padding: '8px 12px', color: isExpired ? '#888' : 'var(--success)', cursor: isExpired ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '8px 12px', color: isExpired ? '#888' : 'white', cursor: isExpired ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}
             >
               🔥 {deal.vote_score || 0}
             </button>
             {isExpired ? (
-                <button className="btn btn-approve" disabled style={{ padding: '0.6rem 1.2rem', flex: 'none', background: '#555', cursor: 'not-allowed' }}>Ended ⏳</button>
+                <button className="btn btn-approve" disabled style={{ padding: '0.6rem 1.2rem', flex: 'none', background: '#333', cursor: 'not-allowed' }}>Ended ⏳</button>
             ) : (
-                <button className="btn btn-approve" style={{ padding: '0.6rem 1.2rem', flex: 'none', background: 'linear-gradient(90deg, #ff8a00, #e52e71)' }} onClick={(e) => { e.stopPropagation(); window.open(deal.url, '_blank'); }}>Buy Now 🛒</button>
+                <button className="btn btn-approve" style={{ padding: '0.6rem 1.2rem', flex: 'none', background: 'var(--accent-gradient)' }} onClick={(e) => { e.stopPropagation(); window.open(deal.url, '_blank'); }}>Buy Now 🛒</button>
             )}
           </div>
         </div>
@@ -191,23 +191,52 @@ export default function Storefront() {
   )};
 
   return (
-    <main className="dashboard">
-      <header className="header" style={{ marginBottom: '2rem', position: 'relative' }}>
-        <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
-          {!isSignedIn ? (
-            <SignInButton mode="modal">
-              <button style={{ padding: '8px 16px', background: 'var(--accent)', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>Sign In / Join</button>
-            </SignInButton>
-          ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-              <a href="/submit" style={{ background: 'rgba(255,255,255,0.1)', padding: '6px 12px', borderRadius: '6px', color: 'white', textDecoration: 'none', fontSize: '0.9rem' }}>+ Submit Deal</a>
-              <UserButton afterSignOutUrl="/" />
-            </div>
-          )}
+    <>
+      <nav style={{ 
+        position: 'sticky', top: 0, zIndex: 100, 
+        background: 'rgba(5, 5, 5, 0.7)', backdropFilter: 'var(--glass-blur)', WebkitBackdropFilter: 'var(--glass-blur)',
+        borderBottom: '1px solid var(--card-border)', padding: '15px 0'
+      }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ fontWeight: '800', fontSize: '1.4rem', letterSpacing: '-0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '1.8rem' }}>💎</span> 
+            <span style={{ background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>DealHunter Pro</span>
+          </div>
+          <div>
+            {!isSignedIn ? (
+              <SignInButton mode="modal">
+                <button className="btn-outline">Sign In</button>
+              </SignInButton>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                <a href="/submit" className="btn-outline" style={{ textDecoration: 'none', fontSize: '0.9rem' }}>+ Submit Deal</a>
+                <UserButton afterSignOutUrl="/" />
+              </div>
+            )}
+          </div>
         </div>
-        <h1 style={{ background: '-webkit-linear-gradient(45deg, #FF9A9E, #FECFEF)', WebkitBackgroundClip: 'text' }}>🎁 Inland Empire Smart Shopper</h1>
-        <p className="subtitle">Hand-picked best deals in Southern California and beyond, updated daily!</p>
-      </header>
+      </nav>
+
+      <main className="dashboard" style={{ paddingTop: '2rem' }}>
+        <section style={{ 
+          textAlign: 'center', marginBottom: '4rem', padding: '4rem 2rem', 
+          background: 'radial-gradient(circle at 50% 0%, rgba(255, 51, 102, 0.15) 0%, transparent 70%)',
+          borderRadius: '30px', position: 'relative', overflow: 'hidden'
+        }} className="fade-in">
+          <div style={{ position: 'absolute', top: '-50%', left: '-10%', width: '400px', height: '400px', background: 'var(--accent)', filter: 'blur(120px)', opacity: 0.15, borderRadius: '50%' }}></div>
+          <div style={{ position: 'absolute', bottom: '-50%', right: '-10%', width: '300px', height: '300px', background: '#FF9933', filter: 'blur(100px)', opacity: 0.15, borderRadius: '50%' }}></div>
+          
+          <div style={{ display: 'inline-block', marginBottom: '1.5rem', border: '1px solid rgba(255,51,102,0.3)', padding: '6px 16px', borderRadius: '20px', background: 'rgba(255,51,102,0.1)', color: '#ff99a8', fontSize: '0.9rem', fontWeight: 'bold', letterSpacing: '1px' }}>
+             🚀 UP TO 90% OFF PREMIUM BRANDS 
+          </div>
+          <h1 style={{ fontSize: '3.5rem', fontWeight: '800', marginBottom: '1rem', letterSpacing: '-1px', lineHeight: '1.2' }}>
+            Discover Unbeatable <br/>
+            <span style={{ background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Exclusive Deals</span>
+          </h1>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto', lineHeight: '1.6' }}>
+            Premium, hand-picked discounts powered by AI. Save big on top brands with our real-time deal engine.
+          </p>
+        </section>
 
       {/* PHASE 16: FTC Affiliate Disclosure Banner */}
       <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '12px 20px', textAlign: 'center', fontSize: '0.9rem', color: '#ccc', marginBottom: '2rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
@@ -248,8 +277,9 @@ export default function Storefront() {
       {/* PHASE 16: Amazon Price Disclaimer Footer */}
       <footer style={{ marginTop: '4rem', padding: '2rem 0', borderTop: '1px solid rgba(255, 255, 255, 0.1)', textAlign: 'center', color: '#888', fontSize: '0.85rem', lineHeight: '1.5' }}>
         <p>Product prices and availability are accurate as of the date/time indicated and are subject to change. Any price and availability information displayed on the merchant's site (e.g., Amazon) at the time of purchase will apply to the purchase of this product.</p>
-        <p style={{ marginTop: '10px' }}>&copy; {new Date().getFullYear()} Inland Empire Smart Shopper. All rights reserved.</p>
+        <p style={{ marginTop: '10px' }}>&copy; {new Date().getFullYear()} DealHunter Pro. All rights reserved.</p>
       </footer>
     </main>
+    </>
   );
 }
