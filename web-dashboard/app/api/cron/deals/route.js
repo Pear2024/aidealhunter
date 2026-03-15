@@ -7,12 +7,7 @@ import * as cheerio from 'cheerio';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow Vercel Function to run for 60 seconds
 
-// List of high-value trending keywords to randomize deal diversity
-const TRENDING_KEYWORDS = [
-  'apple', 'laptop', 'monitor', 'tv', 'sneakers', 'gaming',
-  'headphones', 'ssd', 'smart home', 'coffee', 'lego',
-  'nintendo', 'playstation', 'tools', 'kitchen'
-];
+
 
 export async function GET(request) {
   let connection;
@@ -30,15 +25,38 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Unauthorized. Invalid or missing Secret Key.' }, { status: 401 });
     }
 
-    // 2. Randomize Keyword Selection
+    // 2. PHASE 10: AI Trend Analyst (Agent 0)
     const RETAILERS = ['amazon', 'walmart', 'target', 'costco', 'best buy'];
     const randomRetailer = RETAILERS[Math.floor(Math.random() * RETAILERS.length)];
-    const randomKeyword = TRENDING_KEYWORDS[Math.floor(Math.random() * TRENDING_KEYWORDS.length)];
-    console.log(`🤖 Cron Job Triggered: Searching for [${randomKeyword}] deals at [${randomRetailer}]...`);
+
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    // Use json generative model for Agent 0 & 1
+    const jsonModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash", generationConfig: { responseMimeType: "application/json" } });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    const trendPrompt = `
+    You are an elite E-commerce Trend Analyst.
+    Analyze current market trends, seasonality, and consumer impulse buying behavior.
+    Select ONE single, highly specific search keyword (e.g., 'macbook pro', 'airpods', 'lego star wars') 
+    that consumers are currently highly motivated to purchase.
+    
+    Respond ONLY with a valid JSON object matching this schema:
+    { "keyword": "the chosen keyword" }
+    `;
+    
+    let trendingKeyword = 'headphones'; // Fallback
+    try {
+        const trendResult = await jsonModel.generateContent(trendPrompt);
+        const parsed = JSON.parse(trendResult.response.text().trim());
+        if (parsed.keyword) trendingKeyword = parsed.keyword;
+    } catch (e) {
+        console.error("Agent 0 (Trendsetter) Error:", e);
+    }
+    console.log(`🤖 Cron Job Triggered: Agent 0 Selected [${trendingKeyword}] deals at [${randomRetailer}]...`);
 
     // 3. Fetch RSS Data (Strictly Top Retailers)
     const parser = new Parser();
-    const encodedKeyword = encodeURIComponent(randomKeyword + ' ' + randomRetailer);
+    const encodedKeyword = encodeURIComponent(trendingKeyword + ' ' + randomRetailer);
     // Expand search scope from just 'frontpage' to 'popular' so we find more deals for specific retailers
     const rssUrl = `https://slickdeals.net/newsearch.php?mode=popular&searcharea=deals&searchin=first&rss=1&q=${encodedKeyword}`;
     
@@ -53,12 +71,10 @@ export async function GET(request) {
     // Protect Gemini Limits: Only process the top 3 newest deals per execution
     const deals = feed.items.slice(0, 3);
     if (deals.length === 0) {
-      return NextResponse.json({ message: `No recent deals found for [${randomKeyword}].`, added: 0 });
+      return NextResponse.json({ message: `No recent deals found for [${trendingKeyword}].`, added: 0 });
     }
 
     connection = await getConnection();
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     let addedCount = 0;
 
