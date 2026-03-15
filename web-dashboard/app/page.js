@@ -132,15 +132,15 @@ export default function Storefront() {
     const isExpired = deal.status === 'expired';
     return (
     <div key={deal.id} className="deal-card fade-in" style={{ cursor: isExpired ? 'not-allowed' : 'pointer', background: 'rgba(255, 255, 255, 0.03)', opacity: isExpired ? 0.6 : 1, filter: isExpired ? 'grayscale(80%)' : 'none' }} onClick={() => !isExpired && window.open(deal.url, '_blank')}>
-      <div className="card-image-wrapper" style={{ background: '#fff', padding: '20px', position: 'relative' }}>
+      <div className="card-image-wrapper">
          {isExpired && (
              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
                  <span style={{ color: 'white', fontWeight: 'bold', fontSize: '1.5rem', border: '3px solid white', padding: '10px 20px', transform: 'rotate(-15deg)' }}>EXPIRED</span>
              </div>
          )}
          {deal.discount_price && deal.original_price && deal.original_price > deal.discount_price && !isExpired && (
-            <div style={{ position: 'absolute', top: '15px', right: '15px', zIndex: 10 }}>
-              <span className="premium-badge">{Math.round((1 - deal.discount_price / deal.original_price) * 100)}% OFF</span>
+            <div style={{ position: 'absolute', top: '12px', right: '12px', zIndex: 10 }}>
+              <span className="premium-badge" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.4)', border: '1px solid rgba(255,255,255,0.2)' }}>{Math.round((1 - deal.discount_price / deal.original_price) * 100)}% OFF</span>
             </div>
          )}
          {deal.image_url ? (
@@ -151,7 +151,9 @@ export default function Storefront() {
       </div>
       <div className="card-content">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-            <h3 style={{ fontSize: '1.2rem', margin: 0, lineHeight: '1.4', fontWeight: 'bold' }}>{deal.title}</h3>
+            <h3 style={{ fontSize: '1.15rem', margin: '0 0 10px 0', lineHeight: '1.5', fontWeight: '700', overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+              {deal.title.replace(/\[DEMO\]\s*/g, '')}
+            </h3>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '1rem', flexWrap: 'wrap' }}>
            {(() => {
@@ -173,16 +175,17 @@ export default function Storefront() {
           
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
             <button 
+              className="vote-btn"
               onClick={(e) => { if(!isExpired) handleVote(e, deal.id); }}
               disabled={isExpired}
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '8px 12px', color: isExpired ? '#888' : 'white', cursor: isExpired ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '5px', fontWeight: 'bold' }}
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '10px 14px', color: isExpired ? '#888' : 'white', cursor: isExpired ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '5px', fontWeight: 'bold', minWidth: '60px' }}
             >
-              🔥 {deal.vote_score || 0}
+              🔥 <span style={{fontSize:'0.95rem'}}>{deal.vote_score || 0}</span>
             </button>
             {isExpired ? (
-                <button className="btn btn-approve" disabled style={{ padding: '0.6rem 1.2rem', flex: 'none', background: '#333', cursor: 'not-allowed' }}>Ended ⏳</button>
+                <button className="premium-buy-btn" disabled>Ended ⏳</button>
             ) : (
-                <button className="btn btn-approve" style={{ padding: '0.6rem 1.2rem', flex: 'none', background: 'var(--accent-gradient)' }} onClick={(e) => { e.stopPropagation(); window.open(deal.url, '_blank'); }}>Buy Now 🛒</button>
+                <button className="premium-buy-btn" onClick={(e) => { e.stopPropagation(); window.open(deal.url, '_blank'); }}>Get Deal 🛒</button>
             )}
           </div>
         </div>

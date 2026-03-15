@@ -102,20 +102,23 @@ body {
 }
 
 .card-image-wrapper {
-  height: 200px;
-  background: var(--input-bg);
+  height: 220px;
+  background: #ffffff;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  border-radius: 16px 16px 0 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
 .deal-image {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  mix-blend-mode: multiply; /* Helps with white backgrounds on items without making them invisible */
+  padding: 15px;
+  box-sizing: border-box;
 }
 
 .confidence-badge {
@@ -333,6 +336,32 @@ input:focus {
   background: rgba(255,255,255,0.15);
   border-color: rgba(255,255,255,0.4);
   transform: translateY(-2px);
+}
+
+.premium-buy-btn {
+  background: linear-gradient(135deg, #FF9900, #FF5500);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 15px rgba(255, 153, 0, 0.3);
+}
+
+.premium-buy-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 153, 0, 0.5);
+}
+
+.premium-buy-btn:disabled {
+  background: #444;
+  cursor: not-allowed;
+  color: #888;
+  box-shadow: none;
 }
 
 .premium-badge {
