@@ -71,12 +71,12 @@ export async function GET(request) {
         let extracted = { should_approve: false, confidence_score: 0.95 };
         
         try {
-            const priceMatch = deal.title.match(/\\$([0-9,.]+)/);
+            const priceMatch = deal.title.match(/\$([0-9,.]+)/);
             if (priceMatch) {
                 extracted.discount_price = parseFloat(priceMatch[1].replace(/,/g, ''));
-                const installmentMatch = deal.title.match(/(?:Or\\s)?(\\$[0-9.,]+\\/mo(?:\\s\\([0-9]+\\s*mo\\))?)/i);
+                const installmentMatch = deal.title.match(/(?:Or\s)?(\$[0-9.,]+\/mo(?:\s\([0-9]+\s*mo\))?)/i);
                 if (installmentMatch) extracted.installment_plan = installmentMatch[1];
-                extracted.title = deal.title.replace(/\\$([0-9,.]+)/, '').replace(/(?:Or\\s)?(\\$[0-9.,]+\\/mo(?:\\s\\([0-9]+\\s*mo\\))?)/i, '').replace(/ at Amazon| at Best Buy| at Walmart| at Target/i, '').trim();
+                extracted.title = deal.title.replace(/\$([0-9,.]+)/, '').replace(/(?:Or\s)?(\$[0-9.,]+\/mo(?:\s\([0-9]+\s*mo\))?)/i, '').replace(/ at Amazon| at Best Buy| at Walmart| at Target/i, '').trim();
                 extracted.should_approve = true;
             }
         } catch(e) { continue; }
@@ -113,18 +113,18 @@ export async function GET(request) {
             // ----- Agent 3: Copywriter & FB API -----
             try {
                 console.log("✍️ Generating FB copy...");
-                const copywriterPrompt = \`
+                const copywriterPrompt = `
                   Act as an expert social media copywriter. Write a highly engaging, "thumb-stopping" Facebook post caption for a deal.
-                  Deal Title: \${extracted.title}
-                  Price: $\${extracted.discount_price}
+                  Deal Title: ${extracted.title}
+                  Price: $${extracted.discount_price}
                   Rules: Keep it concise (3-4 sentences max), use 2-3 emojis, NO links in body, Include #Ad or #CommissionsEarned at the end.
-                \`;
-                let caption = \`💥 DEALS ALERT! 💥\\n\\n\${extracted.title}\\n\\n💸 NOW ONLY: $\${extracted.discount_price}\\n🛒 Hurry and grab yours here: \${deal.link}\\n\\n#Ad\`;
+                `;
+                let caption = `💥 DEALS ALERT! 💥\\n\\n${extracted.title}\\n\\n💸 NOW ONLY: $${extracted.discount_price}\\n🛒 Hurry and grab yours here: ${deal.link}\\n\\n#Ad`;
                 
                 try {
                     const copyResult = await withRetry(() => textModel.generateContent(copywriterPrompt), 1, 1000); // Only 1 retry, fast timeout
                     const generatedText = copyResult.response.text().trim();
-                    if (generatedText) caption = \`\${generatedText}\\n\\n🛒 Grab Deal Here: \${deal.link}\`;
+                    if (generatedText) caption = `${generatedText}\\n\\n🛒 Grab Deal Here: ${deal.link}`;
                 } catch(e) { console.error("Gemini FB copy failed, using fallback."); }
                 
                 let useFormData = false;
@@ -146,9 +146,9 @@ export async function GET(request) {
                 
                 let fbResponse;
                 if (useFormData) {
-                  fbResponse = await fetch(\`https://graph.facebook.com/v19.0/\${process.env.FB_PAGE_ID}/photos\`, { method: 'POST', body: formData });
+                  fbResponse = await fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/photos`, { method: 'POST', body: formData });
                 } else {
-                  fbResponse = await fetch(\`https://graph.facebook.com/v19.0/\${process.env.FB_PAGE_ID}/feed\`, {
+                  fbResponse = await fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed`, {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: caption, link: deal.link, access_token: process.env.FB_PAGE_ACCESS_TOKEN })
                   });
@@ -156,7 +156,7 @@ export async function GET(request) {
                 const fbResult = await fbResponse.json();
                 if (!fbResult.error && fbResult.id) {
                      await connection.execute('UPDATE normalized_deals SET fb_post_id = ? WHERE id = ?', [fbResult.id, insertedDealId]);
-                     console.log(\`🚀 Published to FB (ID: \${fbResult.id})\`);
+                     console.log(`🚀 Published to FB (ID: ${fbResult.id})`);
                 } else {
                      console.error("Facebook API Error:", fbResult.error?.message);
                 }
@@ -169,7 +169,7 @@ export async function GET(request) {
         }
     }
     
-    console.log(\`✅ Serverless Scraper Finished. Added \${dealsAdded} deals.\`);
+    console.log(`✅ Serverless Scraper Finished. Added ${dealsAdded} deals.`);
     return NextResponse.json({ success: true, added: dealsAdded });
     
   } catch (error) {
