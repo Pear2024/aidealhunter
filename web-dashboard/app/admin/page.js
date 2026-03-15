@@ -58,7 +58,8 @@ export default function AdminDashboard() {
         <p className="subtitle">Admin Review Dashboard (Secret URL)</p>
         <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginTop: '15px' }}>
           <a href="/" style={{ color: 'var(--accent)', textDecoration: 'none' }}>← Go back to Public Storefront</a>
-          <a href="/admin/analytics" style={{ color: 'var(--success)', textDecoration: 'none' }}>View Analytics 📈 →</a>
+          <a href="/admin/analytics" style={{ color: 'var(--success)', textDecoration: 'none' }}>View Analytics 📈</a>
+          <a href="/admin/agents" style={{ color: '#ff9a9e', textDecoration: 'none', fontWeight: 'bold' }}>AI Overlord 🌌 →</a>
         </div>
       </header>
 
