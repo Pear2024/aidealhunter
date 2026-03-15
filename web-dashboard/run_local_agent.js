@@ -68,7 +68,14 @@ async function runAgent() {
                     const priceMatch = deal.title.match(/\$([0-9,.]+)/);
                     if (priceMatch) {
                         extracted.discount_price = parseFloat(priceMatch[1].replace(/,/g, ''));
-                        extracted.title = deal.title.replace(/\$([0-9,.]+)/, '').replace(/ at Amazon| at Best Buy| at Walmart| at Target/i, '').trim();
+                        
+                        // Look for installment plans like "$68.62/mo (36 mo)" or "$50/mo"
+                        const installmentMatch = deal.title.match(/(?:Or\\s)?(\$[0-9.,]+\/mo(?:\\s\\([0-9]+\\s*mo\\))?)/i);
+                        if (installmentMatch) {
+                            extracted.installment_plan = installmentMatch[1];
+                        }
+                        
+                        extracted.title = deal.title.replace(/\\$([0-9,.]+)/, '').replace(/(?:Or\\s)?(\$[0-9.,]+\/mo(?:\\s\\([0-9]+\\s*mo\\))?)/i, '').replace(/ at Amazon| at Best Buy| at Walmart| at Target/i, '').trim();
                         extracted.should_approve = true;
                     }
                 } catch(e) {
@@ -98,8 +105,8 @@ async function runAgent() {
                 if (extracted.should_approve && extracted.discount_price) {
                      await connection.execute(`
                         INSERT INTO normalized_deals 
-                        (raw_deal_id, title, brand, original_price, discount_price, url, image_url, status, confidence_score, merchandiser_score, vote_score)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, 'approved', ?, ?, ?)
+                        (raw_deal_id, title, brand, original_price, discount_price, url, image_url, status, confidence_score, merchandiser_score, vote_score, installment_plan)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, 'approved', ?, ?, ?, ?)
                      `, [
                          rawId,
                          extracted.title.substring(0, 100), // safe limit
@@ -110,7 +117,8 @@ async function runAgent() {
                          finalImg,
                          extracted.confidence_score || 0.90,
                          Math.floor(Math.random() * 80) + 10,
-                         Math.floor(Math.random() * 50) + 5
+                         Math.floor(Math.random() * 50) + 5,
+                         extracted.installment_plan || null
                      ]);
                      dealsAdded++;
                      console.log("✅ APPROVED:", extracted.title, `($${extracted.discount_price})`);

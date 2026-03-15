@@ -173,10 +173,10 @@ export default function Storefront() {
                 {deal.discount_price && <span className="discount-text" style={{ fontSize: '1.8rem', color: isExpired ? '#888' : 'inherit' }}>${parseFloat(deal.discount_price).toFixed(2)}</span>}
                 {deal.original_price && <span style={{ fontSize: '1rem', textDecoration: 'line-through', color: 'var(--text-secondary)', marginLeft: '10px' }}>${parseFloat(deal.original_price).toFixed(2)}</span>}
             </div>
-            {deal.discount_price && parseFloat(deal.discount_price) >= 100 && !isExpired && (
+            {deal.installment_plan && !isExpired && (
                 <div style={{ fontSize: '0.8rem', color: '#00D084', marginTop: '2px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    0% Installment: ${(parseFloat(deal.discount_price) / 10).toFixed(2)}/mo x 10
+                    💳 {deal.installment_plan}
                 </div>
             )}
           </div>
