@@ -151,12 +151,12 @@ async function runAgent() {
                         
                         let fbResponse;
                         if (useFormData) {
-                          fbResponse = await withRetry(() => fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/photos`, { method: 'POST', body: formData }), 2, 3000);
+                          fbResponse = await withRetry(() => fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/photos?access_token=${process.env.FB_PAGE_ACCESS_TOKEN}`, { method: 'POST', body: formData }), 2, 3000);
                         } else {
-                          fbResponse = await withRetry(() => fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed`, {
+                          fbResponse = await withRetry(() => fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed?access_token=${process.env.FB_PAGE_ACCESS_TOKEN}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ message: caption, link: deal.link, access_token: process.env.FB_PAGE_ACCESS_TOKEN })
+                            body: JSON.stringify({ message: caption, link: deal.link })
                           }), 2, 3000);
                         }
                         

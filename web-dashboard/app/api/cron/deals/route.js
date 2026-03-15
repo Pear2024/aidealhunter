@@ -134,10 +134,10 @@ export async function GET(request) {
                 } catch(e) { console.error("Gemini FB copy failed, using fallback."); }
                 
                 let useFormData = false;
-                let fbResponse = await fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed`, {
+                let fbResponse = await fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed?access_token=${process.env.FB_PAGE_ACCESS_TOKEN}`, {
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: caption, link: deal.link, access_token: process.env.FB_PAGE_ACCESS_TOKEN })
+                    body: JSON.stringify({ message: caption, link: deal.link })
                 });
                 const fbResult = await fbResponse.json();
                 if (!fbResult.error && fbResult.id) {
