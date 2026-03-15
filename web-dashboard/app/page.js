@@ -7,6 +7,7 @@ export default function Storefront() {
   const [latestDeals, setLatestDeals] = useState([]);
   const [recommendedDeals, setRecommendedDeals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [userSegment, setUserSegment] = useState(null);
 
   useEffect(() => {
     // 1. Read tracking cookie for Personalization
@@ -23,8 +24,47 @@ export default function Storefront() {
         const data = await res.json();
         const sortedDeals = (data.deals || []).sort((a, b) => (b.merchandiser_score || 0) - (a.merchandiser_score || 0));
         
-        // 2. Split into Recommended vs Latest based on user behavior
-        if (preferredBrand) {
+        // --- PHASE 20: Taste Profiler Driven Sorting ---
+        const seg = data.visitorSegment;
+        
+        if (seg) {
+            setUserSegment(seg);
+            const lowSeg = seg.toLowerCase();
+            const recommendList = [];
+            const otherList = [];
+            
+            for (const d of sortedDeals) {
+               const textToMatch = `${d.title} ${d.brand} ${d.url}`.toLowerCase();
+               const segWords = lowSeg.split(' ').filter(w => w.length > 3 && !['under', 'lovers', 'moms', 'hunters', 'fans'].includes(w));
+               
+               let isMatch = false;
+               for (const word of segWords) {
+                  if (textToMatch.includes(word)) {
+                     isMatch = true; break;
+                  }
+               }
+               
+               // Quick heuristic for bargain hunters
+               if (lowSeg.includes('clearance') || lowSeg.includes('budget') || lowSeg.includes('cheap')) {
+                   const original = parseFloat(d.original_price);
+                   const discounted = parseFloat(d.discount_price);
+                   if (original && discounted && (1 - discounted / original) > 0.4) {
+                       isMatch = true;
+                   }
+               }
+               
+               if (isMatch) recommendList.push(d);
+               else otherList.push(d);
+            }
+            
+            if (recommendList.length > 0) {
+                setRecommendedDeals(recommendList);
+                setLatestDeals(otherList);
+            } else {
+                setLatestDeals(sortedDeals);
+            }
+        } else if (preferredBrand) {
+           // Fallback to old phase personalization
            const decodedBrand = decodeURIComponent(preferredBrand).toLowerCase();
            setRecommendedDeals(sortedDeals.filter(d => d.brand?.toLowerCase() === decodedBrand));
            setLatestDeals(sortedDeals.filter(d => d.brand?.toLowerCase() !== decodedBrand));
@@ -186,6 +226,7 @@ export default function Storefront() {
             <div style={{ marginBottom: '3rem' }}>
               <h2 style={{ color: '#ff8a00', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span style={{ fontSize: '1.8rem' }}>🎯</span> Recommended For You
+                {userSegment && <span style={{ fontSize: '0.9rem', color: '#ffcc80', border: '1px solid #ffcc80', padding: '2px 8px', borderRadius: '12px', marginLeft: 'auto' }}>{userSegment}</span>}
               </h2>
               <div className="deal-grid">
                 {recommendedDeals.map(deal => renderDeal(deal))}

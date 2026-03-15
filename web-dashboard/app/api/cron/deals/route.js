@@ -490,6 +490,62 @@ export async function GET(request) {
         console.error("Agent 6 (OOS Killer) Error:", e.message);
     }
 
+    // --- PHASE 20: Agent 10 (The Taste Profiler) ---
+    try {
+        console.log("🧠 Agent 10 (Taste Profiler) is analyzing visitor clicks...");
+        
+        // Find up to 10 visitors who have clicks
+        const [visitors] = await connection.execute(`
+            SELECT v.visitor_id, v.segment 
+            FROM visitor_profiles v
+            JOIN visitor_clicks c ON v.visitor_id = c.visitor_id
+            GROUP BY v.visitor_id
+            ORDER BY RAND() LIMIT 10
+        `);
+
+        let profiledCount = 0;
+        for (const visitor of visitors) {
+            // Fetch last 10 clicks for this visitor
+            const [clicks] = await connection.execute(`
+                SELECT d.title, d.brand, d.discount_price, d.url
+                FROM visitor_clicks c
+                JOIN normalized_deals d ON c.deal_id = d.id
+                WHERE c.visitor_id = ?
+                ORDER BY c.clicked_at DESC LIMIT 10
+            `, [visitor.visitor_id]);
+
+            if (clicks.length > 0) {
+                const profilerPrompt = `
+                You are a Consumer Psychology Expert.
+                Analyze the last 10 products that this visitor clicked on to build a buyer persona.
+                
+                Click History:
+                ${JSON.stringify(clicks, null, 2)}
+                
+                Based on the brand, category, price range, and retailer, assign exactly ONE dominant behavioral segment from this list:
+                "Apple under $100", "Kitchen moms", "Clearance hunters", "Best Buy electronics lovers", "High-End Tech", "Budget Audio", "Fashion & Apparel", "General Bargain Hunter".
+                If none fit perfectly, invent ONE short segment label (max 4 words) that perfectly describes their taste.
+                
+                Respond ONLY with the name of the segment. Do not use quotes or markdown.
+                `;
+                
+                const profilerResult = await model.generateContent(profilerPrompt);
+                const newSegment = profilerResult.response.text().trim();
+                
+                if (newSegment && newSegment !== visitor.segment) {
+                    await connection.execute("UPDATE visitor_profiles SET segment = ? WHERE visitor_id = ?", [newSegment, visitor.visitor_id]);
+                    console.log(`🧠 Agent 10 Re-profiled Visitor [...${visitor.visitor_id.slice(-6)}] as: "${newSegment}"`);
+                    profiledCount++;
+                }
+            }
+        }
+        if (profiledCount > 0) {
+            console.log(`✅ Profiling Complete: Updated segments for ${profiledCount} visitors.`);
+        }
+    } catch (e) {
+        console.error("Agent 10 (Taste Profiler) Error:", e.message);
+    }
+
     console.log(`🤖 Cron Job Completed: Added ${addedCount} new [${trendingKeyword}] deals to the pending queue.`);
     return NextResponse.json({ success: true, keyword: trendingKeyword, dealsAdded: addedCount });
 

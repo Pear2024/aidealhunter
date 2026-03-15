@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getConnection } from '@/lib/db';
+import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,8 +42,34 @@ export async function GET(request, { params }) {
       [id]
     );
 
+    // --- PHASE 20: Agent 10 (Taste Profiler) ---
+    const cookieStore = cookies();
+    let dhVisitorId = cookieStore.get('dh_visitor_id')?.value;
+    let isNewVisitor = false;
+
+    if (!dhVisitorId) {
+        dhVisitorId = crypto.randomUUID();
+        isNewVisitor = true;
+        // Register new profile
+        await connection.execute(
+            "INSERT IGNORE INTO visitor_profiles (visitor_id, segment) VALUES (?, 'New Visitor')",
+            [dhVisitorId]
+        );
+    }
+
+    // Record the specific click
+    await connection.execute(
+        "INSERT INTO visitor_clicks (visitor_id, deal_id) VALUES (?, ?)",
+        [dhVisitorId, id]
+    );
+
     // Redirect the user to the actual product page and plant the tracking cookie
     const response = NextResponse.redirect(targetUrl);
+    
+    // Plant the Taste Profiler cookie (Expires in 1 year)
+    if (isNewVisitor) {
+        response.cookies.set('dh_visitor_id', dhVisitorId, { path: '/', maxAge: 60 * 60 * 24 * 365 });
+    }
     
     // Plant the brand in the cookie (Expires in 30 days)
     if (rows[0].brand && rows[0].brand !== 'Unknown') {

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getConnection } from '@/lib/db';
+import { cookies } from 'next/headers';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,7 +22,22 @@ export async function GET(request) {
         [status]
       );
     }
-    return NextResponse.json({ deals: rows });
+    // --- PHASE 20: Fetch Taste Profiler Segment ---
+    let visitorSegment = null;
+    const cookieStore = cookies();
+    const dhVisitorId = cookieStore.get('dh_visitor_id')?.value;
+    
+    if (dhVisitorId) {
+        const [profiles] = await connection.execute(
+            "SELECT segment FROM visitor_profiles WHERE visitor_id = ?",
+            [dhVisitorId]
+        );
+        if (profiles.length > 0 && profiles[0].segment !== 'New Visitor') {
+            visitorSegment = profiles[0].segment;
+        }
+    }
+
+    return NextResponse.json({ deals: rows, visitorSegment });
   } catch (error) {
     console.error('Database Error:', error);
     return NextResponse.json({ error: 'Failed to fetch deals' }, { status: 500 });
