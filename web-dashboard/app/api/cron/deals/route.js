@@ -134,31 +134,11 @@ export async function GET(request) {
                 } catch(e) { console.error("Gemini FB copy failed, using fallback."); }
                 
                 let useFormData = false;
-                let formData = new FormData();
-                if (finalImg && finalImg.startsWith('http')) {
-                    try {
-                        const imgRes = await fetch(finalImg, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-                        if (imgRes.ok) {
-                          const blob = await imgRes.blob();
-                          formData.append('source', blob, 'image.jpg');
-                          formData.append('message', caption);
-                          formData.append('access_token', process.env.FB_PAGE_ACCESS_TOKEN);
-                          useFormData = true;
-                        }
-                    } catch (e) {
-                         console.error("Image blob fetch failed for FB.");
-                    }
-                }
-                
-                let fbResponse;
-                if (useFormData) {
-                  fbResponse = await fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/photos`, { method: 'POST', body: formData });
-                } else {
-                  fbResponse = await fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                let fbResponse = await fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed`, {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: caption, link: deal.link, access_token: process.env.FB_PAGE_ACCESS_TOKEN })
-                  });
-                }
+                });
                 const fbResult = await fbResponse.json();
                 if (!fbResult.error && fbResult.id) {
                      await connection.execute('UPDATE normalized_deals SET fb_post_id = ? WHERE id = ?', [fbResult.id, insertedDealId]);
