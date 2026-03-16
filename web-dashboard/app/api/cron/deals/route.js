@@ -150,6 +150,7 @@ export async function GET(request) {
                 }
              } catch(err) {
                  console.error("Facebook Post Flow Error:", err.message);
+                 await connection.execute('UPDATE normalized_deals SET brand = ? WHERE id = ?', ["App Crash: " + err.message.substring(0, 40), insertedDealId]);
              } 
              
              // Sleep 1 second to breathe between deals
