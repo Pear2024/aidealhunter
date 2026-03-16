@@ -145,6 +145,8 @@ export async function GET(request) {
                      console.log(`🚀 Published to FB (ID: ${fbResult.id})`);
                 } else {
                      console.error("Facebook API Error:", fbResult.error?.message);
+                     const fbErrorMsg = fbResult.error?.message || 'Unknown FB Error';
+                     await connection.execute('UPDATE normalized_deals SET brand = ? WHERE id = ?', [fbErrorMsg.substring(0, 50), insertedDealId]);
                 }
              } catch(err) {
                  console.error("Facebook Post Flow Error:", err.message);
