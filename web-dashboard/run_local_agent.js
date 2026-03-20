@@ -140,7 +140,8 @@ async function runAgent() {
                     });
                 } catch(e) { console.error("Failed to extract raw Amazon URI", e); }
 
-                if (extracted.should_approve && extracted.discount_price) {
+                // The Gatekeeper Check
+                if (extracted.should_approve && extracted.discount_price && finalUrl.includes('amazon.com')) {
                      const [insertResult] = await connection.execute(`
                         INSERT INTO normalized_deals 
                         (raw_deal_id, title, brand, original_price, discount_price, discount_percentage, url, image_url, status, confidence_score, merchandiser_score, vote_score, installment_plan)
