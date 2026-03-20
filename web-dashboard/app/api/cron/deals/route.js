@@ -73,6 +73,11 @@ export async function GET(request) {
             console.log("➡️ Skipped (Already in DB)");
             continue; 
         } // Skip duplicates
+
+        if (!deal.title.toLowerCase().includes('amazon')) {
+            console.log("➡️ Skipped (Not Amazon)");
+            continue;
+        }
         
         let extracted = { should_approve: false, confidence_score: 0.95 };
         
@@ -125,19 +130,20 @@ export async function GET(request) {
                   Price: $${extracted.discount_price}
                   Rules: Keep it concise (3-4 sentences max), use 2-3 emojis, NO links in body, Include #Ad or #CommissionsEarned at the end.
                 `;
-                let caption = `💥 DEALS ALERT! 💥\\n\\n${extracted.title}\\n\\n💸 NOW ONLY: $${extracted.discount_price}\\n🛒 Hurry and grab yours here: ${deal.link}\\n\\n#Ad`;
+                const trackingLink = `https://aidealhunter.vercel.app/r/${insertedDealId}`;
+                let caption = `💥 DEALS ALERT! 💥\\n\\n${extracted.title}\\n\\n💸 NOW ONLY: $${extracted.discount_price}\\n🛒 Hurry and grab yours here: ${trackingLink}\\n\\n#Ad`;
                 
                 try {
                     const copyResult = await withRetry(() => textModel.generateContent(copywriterPrompt), 1, 1000); // Only 1 retry, fast timeout
                     const generatedText = copyResult.response.text().trim();
-                    if (generatedText) caption = `${generatedText}\\n\\n🛒 Grab Deal Here: ${deal.link}`;
+                    if (generatedText) caption = `${generatedText}\\n\\n🛒 Grab Deal Here: ${trackingLink}`;
                 } catch(e) { console.error("Gemini FB copy failed, using fallback."); }
                 
                 let useFormData = false;
                 let fbResponse = await fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed?access_token=${process.env.FB_PAGE_ACCESS_TOKEN}`, {
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: caption, link: deal.link })
+                    body: JSON.stringify({ message: caption, link: trackingLink })
                 });
                 const fbResult = await fbResponse.json();
                 if (!fbResult.error && fbResult.id) {

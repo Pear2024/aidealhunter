@@ -63,6 +63,11 @@ async function runAgent() {
                    continue;
                 }
                 
+                if (!deal.title.toLowerCase().includes('amazon')) {
+                   console.log("Skipping (Not an Amazon deal)");
+                   continue;
+                }
+                
                 let extracted = { should_approve: false, confidence_score: 0.95 };
                 
                 try {
@@ -122,11 +127,12 @@ async function runAgent() {
                           5. Include #Ad or #CommissionsEarned at the end.
                         `;
                         
-                        let caption = `💥 DEALS ALERT! 💥\\n\\n${extracted.title}\\n\\n💸 NOW ONLY: $${extracted.discount_price}\\n🛒 Hurry and grab yours here: ${deal.link}\\n\\n#Ad`;
+                        const trackingLink = `https://aidealhunter.vercel.app/r/${insertedDealId}`;
+                        let caption = `💥 DEALS ALERT! 💥\\n\\n${extracted.title}\\n\\n💸 NOW ONLY: $${extracted.discount_price}\\n🛒 Hurry and grab yours here: ${trackingLink}\\n\\n#Ad`;
                         try {
                             const copyResult = await withRetry(() => textModel.generateContent(copywriterPrompt), 2, 2000);
                             const generatedText = copyResult.response.text().trim();
-                            if (generatedText) caption = `${generatedText}\\n\\n🛒 Grab Deal Here: ${deal.link}`;
+                            if (generatedText) caption = `${generatedText}\\n\\n🛒 Grab Deal Here: ${trackingLink}`;
                         } catch(e) {
                              console.log("Gemini API Error, using fallback caption.", e.message);
                         }
@@ -156,7 +162,7 @@ async function runAgent() {
                           fbResponse = await withRetry(() => fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed?access_token=${process.env.FB_PAGE_ACCESS_TOKEN}`, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ message: caption, link: deal.link })
+                            body: JSON.stringify({ message: caption, link: trackingLink })
                           }), 2, 3000);
                         }
                         
