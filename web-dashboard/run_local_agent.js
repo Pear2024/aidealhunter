@@ -179,7 +179,7 @@ async function runAgent() {
                            } catch(e) {}
                         }
                         const trackingLink = facebookDirectLink;
-                        let caption = `💥 DEALS ALERT! 💥\\n\\n${extracted.title}\\n\\n💸 NOW ONLY: $${extracted.discount_price}\\n🛒 Hurry and grab yours here: ${trackingLink}\\n\\n#Ad`;
+                        let caption = `💥 DEALS ALERT! 💥\n\n${extracted.title}\n\n💸 NOW ONLY: $${extracted.discount_price}\n🛒 Hurry and grab yours here: ${trackingLink}\n\n#Ad`;
                         try {
                             const copyResult = await withRetry(() => textModel.generateContent(copywriterPrompt), 2, 2000);
                             const generatedText = copyResult.response.text().trim();

@@ -183,7 +183,7 @@ export async function GET(request) {
                    } catch(e) {}
                 }
                 const trackingLink = facebookDirectLink;
-                let caption = `💥 DEALS ALERT! 💥\\n\\n${extracted.title}\\n\\n💸 NOW ONLY: $${extracted.discount_price}\\n🛒 Hurry and grab yours here: ${trackingLink}\\n\\n#Ad`;
+                let caption = `💥 DEALS ALERT! 💥\n\n${extracted.title}\n\n💸 NOW ONLY: $${extracted.discount_price}\n🛒 Hurry and grab yours here: ${trackingLink}\n\n#Ad`;
                 
                 try {
                     const copyResult = await withRetry(() => textModel.generateContent(copywriterPrompt), 1, 1000); // Only 1 retry, fast timeout
