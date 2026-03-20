@@ -170,7 +170,15 @@ async function runAgent() {
                           5. Include #Ad or #CommissionsEarned at the end.
                         `;
                         
-                        const trackingLink = `https://aidealhunter.vercel.app/r/${insertedDealId}`;
+                        let facebookDirectLink = finalUrl;
+                        if (facebookDirectLink.includes('amazon.com')) {
+                           try {
+                               const urlObj = new URL(facebookDirectLink);
+                               urlObj.searchParams.set('tag', process.env.AMAZON_AFFILIATE_TAG || 'smartshop0c33-20');
+                               facebookDirectLink = urlObj.toString();
+                           } catch(e) {}
+                        }
+                        const trackingLink = facebookDirectLink;
                         let caption = `💥 DEALS ALERT! 💥\\n\\n${extracted.title}\\n\\n💸 NOW ONLY: $${extracted.discount_price}\\n🛒 Hurry and grab yours here: ${trackingLink}\\n\\n#Ad`;
                         try {
                             const copyResult = await withRetry(() => textModel.generateContent(copywriterPrompt), 2, 2000);
