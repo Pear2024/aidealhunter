@@ -53,11 +53,24 @@ export async function GET(request) {
 
         console.log(`🗨️ Generated Post: \n${generatedText}`);
 
-        // 4. Publish to Facebook
-        const fbResponse = await fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed?access_token=${process.env.FB_PAGE_ACCESS_TOKEN}`, {
+        // 4. Attach Random Image & Publish to Facebook
+        const aestheticImages = [
+            "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=1200&auto=format&fit=crop", 
+            "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1200&auto=format&fit=crop", 
+            "https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?q=80&w=1200&auto=format&fit=crop", 
+            "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?q=80&w=1200&auto=format&fit=crop", 
+            "https://images.unsplash.com/photo-1472851294608-062f824d29cc?q=80&w=1200&auto=format&fit=crop"  
+        ];
+        const randomImage = aestheticImages[Math.floor(Math.random() * aestheticImages.length)];
+
+        // We use /photos endpoint instead of /feed to make it a Native Photo Post
+        const fbResponse = await fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/photos?access_token=${process.env.FB_PAGE_ACCESS_TOKEN}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: generatedText })
+            body: JSON.stringify({ 
+                message: generatedText,
+                url: randomImage
+            })
         });
         const fbResult = await fbResponse.json();
 
