@@ -33,14 +33,70 @@ export async function GET(request) {
             }
         ];
 
-        // Pick a random category
-        const randomCategory = categories[Math.floor(Math.random() * categories.length)];
-        console.log(`🎲 Selected Category: ${randomCategory.type}`);
+        // Temporal Holiday System
+        const today = new Date();
+        const month = today.getMonth() + 1; // 1-12
+        const date = today.getDate();
+        let holidayOverride = null;
+
+        if (month === 2 && date <= 14) {
+            holidayOverride = {
+                type: 'Valentine Specials',
+                prompt: `Act as a savvy shopping expert. Write a fun, engaging 2-3 sentence Facebook post asking followers what they are buying their partner for Valentine's Day, or suggesting they treat themselves. Keep it conversational. Use emojis like ❤️🍫.`,
+                images: [
+                    "https://aidealhunter.vercel.app/holidays/valentine.jpg"
+                ]
+            };
+        } else if (month === 7 && date <= 16) {
+            holidayOverride = {
+                type: 'Prime Day Hype',
+                prompt: `Act as an excited Amazon Deal Hunter. Write a 2-sentence Facebook post hyping up Amazon Prime Day. Ask the audience what item they are hoping goes on sale. Use emojis like 🔥🛒.`,
+                images: ["https://aidealhunter.vercel.app/holidays/prime.jpg"]
+            };
+        } else if (month === 10 && date >= 15) {
+             holidayOverride = {
+                type: 'Halloween Deals',
+                prompt: `Act as a festive community manager. Write a spooky and fun 2-sentence Facebook post asking followers if they are buying their Halloween costumes or candy on Amazon this year. Use emojis like 🎃👻.`,
+                images: ["https://aidealhunter.vercel.app/holidays/halloween.jpg"]
+             };
+        } else if (month === 11 && date >= 15) {
+             holidayOverride = {
+                type: 'Black Friday Madness',
+                prompt: `Act as a hardcore shopping deal hunter. Write an intense 2-sentence Facebook post asking followers if they are ready for the Black Friday / Cyber Monday madness on Amazon, and what their budget is. Use emojis like 💸🏃‍♂️.`,
+                images: ["https://aidealhunter.vercel.app/holidays/blackfriday.jpg"]
+             };
+        } else if (month === 12 && date <= 25) {
+             holidayOverride = {
+                type: 'Christmas Gift Hunting',
+                prompt: `Act as a helpful holiday shopping assistant. Write a warm 2-sentence Facebook post asking the audience if they have finished their Christmas gift shopping yet, or if they wait until the last minute. Use emojis like 🎄🎁.`,
+                images: ["https://aidealhunter.vercel.app/holidays/christmas.jpg"]
+             };
+        }
+
+        let activeCategory;
+        let finalImage;
+
+        if (holidayOverride) {
+             activeCategory = holidayOverride;
+             finalImage = holidayOverride.images[Math.floor(Math.random() * holidayOverride.images.length)];
+             console.log(`🎄 Temporal Holiday Triggered: ${activeCategory.type}`);
+        } else {
+             const aestheticImages = [
+                 "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=1200&auto=format&fit=crop", 
+                 "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1200&auto=format&fit=crop", 
+                 "https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?q=80&w=1200&auto=format&fit=crop", 
+                 "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?q=80&w=1200&auto=format&fit=crop", 
+                 "https://images.unsplash.com/photo-1472851294608-062f824d29cc?q=80&w=1200&auto=format&fit=crop"  
+             ];
+             activeCategory = categories[Math.floor(Math.random() * categories.length)];
+             finalImage = aestheticImages[Math.floor(Math.random() * aestheticImages.length)];
+             console.log(`🎲 Selected Routine Category: ${activeCategory.type}`);
+        }
 
         // 3. Generate Content using Gemini
         let generatedText = '';
         try {
-             const result = await textModel.generateContent(randomCategory.prompt);
+             const result = await textModel.generateContent(activeCategory.prompt);
              generatedText = result.response.text().trim();
              // Remove wrapping quotes if Gemini adds them
              if (generatedText.startsWith('"') && generatedText.endsWith('"')) {
@@ -53,30 +109,20 @@ export async function GET(request) {
 
         console.log(`🗨️ Generated Post: \n${generatedText}`);
 
-        // 4. Attach Random Image & Publish to Facebook
-        const aestheticImages = [
-            "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?q=80&w=1200&auto=format&fit=crop", 
-            "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1200&auto=format&fit=crop", 
-            "https://images.unsplash.com/photo-1534452203293-494d7ddbf7e0?q=80&w=1200&auto=format&fit=crop", 
-            "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?q=80&w=1200&auto=format&fit=crop", 
-            "https://images.unsplash.com/photo-1472851294608-062f824d29cc?q=80&w=1200&auto=format&fit=crop"  
-        ];
-        const randomImage = aestheticImages[Math.floor(Math.random() * aestheticImages.length)];
-
-        // We use /photos endpoint instead of /feed to make it a Native Photo Post
+        // 4. Publish to Facebook using the contextual finalImage
         const fbResponse = await fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/photos?access_token=${process.env.FB_PAGE_ACCESS_TOKEN}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 message: generatedText,
-                url: randomImage
+                url: finalImage
             })
         });
         const fbResult = await fbResponse.json();
 
         if (fbResult.id) {
             console.log(`🚀 Published Organic Post to Facebook (ID: ${fbResult.id})`);
-            return new Response(JSON.stringify({ success: true, category: randomCategory.type, post_id: fbResult.id, text: generatedText }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+            return new Response(JSON.stringify({ success: true, category: activeCategory.type, post_id: fbResult.id, text: generatedText }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         } else {
             console.error("❌ Facebook Post Failed:", fbResult);
             return new Response(JSON.stringify({ error: "FB Post Failed", details: fbResult }), { status: 500 });
