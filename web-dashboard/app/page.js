@@ -131,7 +131,7 @@ export default function Storefront() {
   const renderDeal = (deal) => {
     const isExpired = deal.status === 'expired';
     return (
-    <div key={deal.id} className="deal-card fade-in" style={{ cursor: isExpired ? 'not-allowed' : 'pointer', background: 'rgba(255, 255, 255, 0.03)', opacity: isExpired ? 0.6 : 1, filter: isExpired ? 'grayscale(80%)' : 'none' }} onClick={() => !isExpired && window.open(deal.url, '_blank')}>
+    <div key={deal.id} className="deal-card fade-in" style={{ cursor: isExpired ? 'not-allowed' : 'pointer', background: 'rgba(255, 255, 255, 0.03)', opacity: isExpired ? 0.6 : 1, filter: isExpired ? 'grayscale(80%)' : 'none' }} onClick={() => !isExpired && window.open('/r/' + deal.id, '_blank')}>
       <div className="card-image-wrapper">
          {isExpired && (
              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
@@ -193,7 +193,7 @@ export default function Storefront() {
             {isExpired ? (
                 <button className="premium-buy-btn" disabled>Ended ⏳</button>
             ) : (
-                <button className="premium-buy-btn" onClick={(e) => { e.stopPropagation(); window.open(deal.url, '_blank'); }}>Get Deal 🛒</button>
+                <button className="premium-buy-btn" onClick={(e) => { e.stopPropagation(); window.open('/r/' + deal.id, '_blank'); }}>Get Deal 🛒</button>
             )}
           </div>
         </div>

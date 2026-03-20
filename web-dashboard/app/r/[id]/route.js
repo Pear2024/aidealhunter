@@ -25,7 +25,7 @@ export async function GET(request, { params }) {
     let targetUrl = rows[0].url;
 
     // --- AFFILIATE LINK INJECTION ---
-    const amazonTag = process.env.AMAZON_AFFILIATE_TAG;
+    const amazonTag = process.env.AMAZON_AFFILIATE_TAG || 'smartshop0c33-20';
     if (amazonTag && targetUrl.includes('amazon.com')) {
       try {
         const urlObj = new URL(targetUrl);

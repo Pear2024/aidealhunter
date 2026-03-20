@@ -81,6 +81,9 @@ export async function GET(request) {
         
         let extracted = { should_approve: false, confidence_score: 0.95 };
         
+        let original_price = null;
+        let discount_percentage = null;
+
         try {
             const priceMatch = deal.title.match(/\$([0-9,.]+)/);
             if (priceMatch) {
@@ -90,14 +93,37 @@ export async function GET(request) {
                 extracted.title = deal.title.replace(/\$([0-9,.]+)/, '').replace(/(?:Or\s)?(\$[0-9.,]+\/mo(?:\s\([0-9]+\s*mo\))?)/i, '').replace(/ at Amazon| at Best Buy| at Walmart| at Target/i, '').trim();
                 extracted.should_approve = true;
             }
-        } catch(e) { continue; }
-        
+        } catch(e) { console.error("Regex price extraction failed:", e.message); }
+
+        // Agent: Deep Price Extractor
+        const htmlContent = deal['content:encoded'] || deal.content || '';
+        try {
+            const extractorPrompt = `
+              Analyze the following deal text and extract the numeric values for discount_price, original_price, and discount_percentage.
+              If the text says "$100 lower (20%)", compute the original price.
+              If original price is missing, use null.
+              Return ONLY raw JSON in this exact format: {"discount_price": 99.99, "original_price": 120.00, "discount_percentage": 20.5} (no markdown blocks or backticks).
+              Title: ${deal.title}
+              Content: ${htmlContent}
+            `;
+            const extractResult = await withRetry(() => textModel.generateContent(extractorPrompt), 1, 2000);
+            const jsonStr = extractResult.response.text().trim().replace(/```json/g, '').replace(/```/g, '').trim();
+            const jsonData = JSON.parse(jsonStr);
+            if (jsonData.discount_price && !extracted.discount_price) {
+                extracted.discount_price = jsonData.discount_price;
+                extracted.should_approve = true;
+            }
+            if (jsonData.original_price) original_price = parseFloat(jsonData.original_price);
+            if (jsonData.discount_percentage) discount_percentage = parseFloat(jsonData.discount_percentage);
+        } catch (e) {
+            console.log("Deep Extraction API fallback...");
+        }
+
         let fallbackImg = url.includes('apple') ? 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&q=80&w=800' :
                           url.includes('tv') ? 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&q=80&w=800' :
                           'https://images.unsplash.com/photo-1606813907291-d86efa9b94db?auto=format&fit=crop&q=80&w=800';
                           
         let extractedImage = null;
-        const htmlContent = deal['content:encoded'] || deal.content || '';
         if (htmlContent) {
             try {
                 const $ = cheerio.load(htmlContent);
@@ -107,13 +133,31 @@ export async function GET(request) {
         }
         const finalImg = extractedImage || fallbackImg;
 
+        let finalUrl = deal.link;
+        try {
+            const sdRes = await fetch(deal.link, { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' } });
+            const sdHtml = await sdRes.text();
+            const $sd = cheerio.load(sdHtml);
+            $sd('a').each((i, el) => {
+                const href = $sd(el).attr('href');
+                if (href && href.includes('u2=')) {
+                    const decoded = decodeURIComponent(href.split('u2=')[1]);
+                    if (decoded.includes('amazon.com')) {
+                        const asinMatch = decoded.match(/(?:dp|product-reviews|gp\/product)\/([A-Z0-9]{10})/i);
+                        if (asinMatch) finalUrl = 'https://www.amazon.com/dp/' + asinMatch[1];
+                        else finalUrl = decoded;
+                    }
+                }
+            });
+        } catch(e) { console.error("Failed to extract raw Amazon URI", e); }
+
         if (extracted.should_approve && extracted.discount_price) {
             const [insertResult] = await connection.execute(`
                 INSERT INTO normalized_deals 
-                (raw_deal_id, title, brand, original_price, discount_price, url, image_url, status, confidence_score, merchandiser_score, vote_score, installment_plan, submitter_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 'approved', ?, ?, ?, ?, 'system')
+                (raw_deal_id, title, brand, original_price, discount_price, discount_percentage, url, image_url, status, confidence_score, merchandiser_score, vote_score, installment_plan, submitter_id)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'approved', ?, ?, ?, ?, 'system')
             `, [
-                rawId, extracted.title.substring(0, 100), 'Unknown', null, extracted.discount_price, deal.link, finalImg,
+                rawId, extracted.title.substring(0, 100), 'Unknown', original_price, extracted.discount_price, discount_percentage, finalUrl, finalImg,
                 0.95, Math.floor(Math.random() * 80) + 10, Math.floor(Math.random() * 50) + 5, extracted.installment_plan || null
             ]);
             
