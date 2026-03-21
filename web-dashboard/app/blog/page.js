@@ -40,7 +40,6 @@ export default async function BlogArchive() {
                                 <img 
                                     src={post.image_url} 
                                     alt={post.title} 
-                                    onError={(e) => { e.target.onerror = null; e.target.src = `https://picsum.photos/seed/${post.id * 88}/1200/630`; }}
                                     style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
                                 />
                             </div>
