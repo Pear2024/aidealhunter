@@ -50,6 +50,7 @@ async function main() {
         const [rows] = await conn.execute(`
             SELECT * FROM normalized_deals 
             WHERE image_url IS NOT NULL 
+              AND status != 'published'
               AND (
                   discount_percentage > 0 
                   OR original_price > discount_price
@@ -86,7 +87,10 @@ async function main() {
         generationConfig: { responseMimeType: "application/json", responseSchema: schema }
     });
 
-    const prompt = `Write a viral 15-second TikTok/Reels voiceover script based on this product deal:\nTitle: ${deal.title}\nOriginal Price: ${deal.price_min}\nIt must sound like an enthusiastic frugal influencer trying to get the viewer to steal this deal immediately. Hook them instantly. STRICT RULE: Cannot exceed 180 characters total.`;
+    const actualPrice = deal.discount_price || deal.original_price || "an amazing value";
+    const oldPriceStr = deal.original_price ? `(Was $${deal.original_price})` : "";
+    
+    const prompt = `Write a viral 15-second TikTok/Reels voiceover script based on this product deal:\nTitle: ${deal.title}\nDiscount Price: $${actualPrice} ${oldPriceStr}\nIt must sound like an enthusiastic frugal influencer trying to get the viewer to steal this deal immediately. Hook them instantly. YOU MUST MENTION THE EXACT DISCOUNT PRICE IN THE AUDIO. STRICT RULE: Cannot exceed 180 characters total.`;
     const result = await textModel.generateContent(prompt);
     const aiResponse = JSON.parse(result.response.text());
     
@@ -165,7 +169,7 @@ async function main() {
                     }
                 }
                 const affiliateLink = finalUrl || "https://aidealhunter.vercel.app";
-                const caption = `🚨 🔥 ${deal.title}\n\n👉 Steal this deal right here: ${affiliateLink}\n\n#Hemet #InlandEmpire #DealHunter #Promos`;
+                const caption = `🚨 🔥 DEAL DROP: ${deal.title}\n💰 Just $${actualPrice} ${oldPriceStr}!\n\n👉 Steal this deal right here: ${affiliateLink}\n\n#Hemet #InlandEmpire #DealHunter #Promos`;
 
                 const form = new FormData();
                 form.append('access_token', token);
@@ -179,6 +183,20 @@ async function main() {
                 });
 
                 console.log(`🎉 MEGA SUCCESS! Reel LIVE on Facebook! Status:`, response.data);
+                
+                // Finalize duplicate-prevention state
+                console.log("🔒 Marking deal as published to block duplicates...");
+                const updateConn = await mysql.createConnection({
+                    host: (process.env.MYSQL_HOST || '').trim(),
+                    user: (process.env.MYSQL_USER || '').trim(),
+                    password: (process.env.MYSQL_PASSWORD || '').trim(),
+                    database: (process.env.MYSQL_DATABASE || '').trim(),
+                    port: parseInt((process.env.MYSQL_PORT || '3306').trim()),
+                    ssl: { rejectUnauthorized: false }
+                });
+                await updateConn.execute("UPDATE normalized_deals SET status = 'published' WHERE id = ?", [deal.id]);
+                await updateConn.end();
+
             } catch (err) {
                  console.error("❌ Facebook API Error:", err.response ? JSON.stringify(err.response.data) : err.stack);
             }
