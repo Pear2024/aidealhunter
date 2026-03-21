@@ -7,7 +7,7 @@ import AdBanner from '@/app/components/AdBanner';
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }) {
-    const { slug } = await params;
+    const slug = params.slug;
     let connection;
     try {
         connection = await getConnection();
@@ -18,7 +18,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function BlogPostPage({ params }) {
-    const { slug } = await params;
+    const slug = params.slug;
     let post = null;
     let connection;
     
@@ -48,7 +48,9 @@ export default async function BlogPostPage({ params }) {
             <Link href="/blog" style={{ color: '#ff3366', textDecoration: 'none', fontWeight: 'bold', marginBottom: '20px', display: 'inline-block' }}>&larr; Back to Blog</Link>
             
             <article style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '20px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '3rem' }}>
-                <div style={{ width: '100%', height: '400px', backgroundImage: `url(${post.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }}></div>
+                <div style={{ width: '100%', height: '400px', overflow: 'hidden' }}>
+                    <img src={post.image_url} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
                 <div style={{ padding: '3rem', maxWidth: '800px', margin: '0 auto' }}>
                     <p style={{ color: '#ff3366', fontWeight: 'bold', marginBottom: '1rem', textTransform: 'uppercase' }}>
                         {new Date(post.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}

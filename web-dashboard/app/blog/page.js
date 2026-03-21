@@ -36,7 +36,9 @@ export default async function BlogArchive() {
                 ) : posts.map(post => (
                     <Link href={`/blog/${post.slug}`} key={post.id} style={{ textDecoration: 'none', color: 'inherit' }}>
                         <div className="blog-card" style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '15px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
-                            <div style={{ width: '100%', height: '220px', backgroundImage: `url(${post.image_url})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+                            <div style={{ width: '100%', height: '220px', overflow: 'hidden' }}>
+                                <img src={post.image_url} alt={post.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            </div>
                             <div style={{ padding: '25px' }}>
                                 <p style={{ fontSize: '0.8rem', color: '#ff3366', textTransform: 'uppercase', fontWeight: 'bold', marginBottom: '10px' }}>
                                     {new Date(post.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
