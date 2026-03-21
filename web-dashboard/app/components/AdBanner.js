@@ -10,7 +10,7 @@ export default function AdBanner({ dataAdSlot = 'auto', dataAdFormat = 'auto', d
         }
     }, []);
 
-    const clientId = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID;
+    const clientId = "ca-pub-9052384752598699";
 
     if (!clientId) {
         return (

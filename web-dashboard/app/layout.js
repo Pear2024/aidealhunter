@@ -23,14 +23,12 @@ export default function RootLayout({ children }) {
     <ClerkProvider>
       <html lang="en">
         <head>
-          {process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID && (
-            <Script 
-                async 
-                src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID}`}
-                crossOrigin="anonymous"
-                strategy="afterInteractive"
-            />
-          )}
+          <Script 
+              async 
+              src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9052384752598699"
+              crossOrigin="anonymous"
+              strategy="afterInteractive"
+          />
         </head>
         <body className={`${geistSans.variable} ${geistMono.variable}`}>
           {children}
