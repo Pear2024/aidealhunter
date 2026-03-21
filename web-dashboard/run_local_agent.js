@@ -168,7 +168,7 @@ async function runAgent() {
                           2. Use 2-3 relevant emojis.
                           3. Create a sense of urgency.
                           4. Do NOT include any links, just the text.
-                          5. Include #Ad or #CommissionsEarned at the end.
+                          5. NO links in body. Do NOT include any #Ad or commission hashtags.
                         `;
                         
                         let facebookDirectLink = finalUrl;
@@ -201,11 +201,12 @@ async function runAgent() {
                             } catch(e) { console.error("❌ Bitly pipeline failure:", e); }
                         }
 
-                        let caption = `💥 DEALS ALERT! 💥\n\n${extracted.title}\n\n💸 NOW ONLY: $${extracted.discount_price}\n🛒 Hurry and grab yours here: ${trackingLink}\n\n#Ad`;
+                        let caption = `💥 DEALS ALERT! 💥\n\n${extracted.title}\n\n💸 NOW ONLY: $${extracted.discount_price}\n🛒 Hurry and grab yours here: ${trackingLink}`;
+                        
                         try {
-                            const copyResult = await withRetry(() => textModel.generateContent(copywriterPrompt), 2, 2000);
+                            const copyResult = await textModel.generateContent(copywriterPrompt);
                             const generatedText = copyResult.response.text().trim();
-                            if (generatedText) caption = `${generatedText}\\n\\n🛒 Grab Deal Here: ${trackingLink}`;
+                            if (generatedText) caption = `${generatedText}\n\n🛒 Grab Deal Here: ${trackingLink}`;
                         } catch(e) {
                              console.log("Gemini API Error, using fallback caption.", e.message);
                         }

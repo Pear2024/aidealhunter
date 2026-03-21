@@ -176,7 +176,7 @@ export async function GET(request) {
                   Act as an expert social media copywriter. Write a highly engaging, "thumb-stopping" Facebook post caption for a deal.
                   Deal Title: ${extracted.title}
                   Price: $${extracted.discount_price}
-                  Rules: Keep it concise (3-4 sentences max), use 2-3 emojis, NO links in body, Include #Ad or #CommissionsEarned at the end.
+                  Rules: Keep it concise (3-4 sentences max), use 2-3 emojis, NO links in body. Do NOT include any #Ad or commission hashtags.
                 `;
                 let facebookDirectLink = finalUrl;
                 if (facebookDirectLink.includes('amazon.com')) {
@@ -209,12 +209,12 @@ export async function GET(request) {
                     } catch(e) { console.error("❌ Bitly pipeline failure:", e); }
                 }
 
-                let caption = `💥 DEALS ALERT! 💥\n\n${extracted.title}\n\n💸 NOW ONLY: $${extracted.discount_price}\n🛒 Hurry and grab yours here: ${trackingLink}\n\n#Ad`;
+                let caption = `💥 DEALS ALERT! 💥\n\n${extracted.title}\n\n💸 NOW ONLY: $${extracted.discount_price}\n🛒 Hurry and grab yours here: ${trackingLink}`;
                 
                 try {
                     const copyResult = await withRetry(() => textModel.generateContent(copywriterPrompt), 1, 1000); // Only 1 retry, fast timeout
                     const generatedText = copyResult.response.text().trim();
-                    if (generatedText) caption = `${generatedText}\\n\\n🛒 Grab Deal Here: ${trackingLink}`;
+                    if (generatedText) caption = `${generatedText}\n\n🛒 Grab Deal Here: ${trackingLink}`;
                 } catch(e) { console.error("Gemini FB copy failed, using fallback."); }
                 
                 let useFormData = false;
