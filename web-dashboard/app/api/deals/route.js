@@ -9,6 +9,10 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const categoryQuery = searchParams.get('category') || 'all';
+    const status = searchParams.get('status') || 'all';
+    const page = parseInt(searchParams.get('page')) || 1;
+    const limit = 50;
+    const offset = (page - 1) * limit;
 
     connection = await getConnection();
     
@@ -27,7 +31,7 @@ export async function GET(request) {
         queryArgs.push(categoryQuery);
     }
     
-    queryStr += " ORDER BY merchandiser_score DESC, created_at DESC LIMIT 50";
+    queryStr += ` ORDER BY merchandiser_score DESC, created_at DESC LIMIT ${limit} OFFSET ${offset}`;
 
     const [rows] = await connection.execute(queryStr, queryArgs);
     let visitorSegment = null;

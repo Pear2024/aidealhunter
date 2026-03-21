@@ -9,26 +9,40 @@ export default function Storefront() {
   const [loading, setLoading] = useState(true);
   const [userSegment, setUserSegment] = useState(null);
   const [activeTab, setActiveTab] = useState('all');
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  useEffect(() => {
-    // 1. Read tracking cookie for Personalization
-    const getCookie = (name) => {
-      const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
-      if (match) return match[2];
-      return null;
-    };
-    const preferredBrand = getCookie('preferred_brand');
+  const loadDeals = async (pageNum, reset = false) => {
+      if (reset) setLoading(true);
+      else setLoadingMore(true);
 
-    const fetchDeals = async () => {
-      setLoading(true);
+      const getCookie = (name) => {
+        const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+        if (match) return match[2];
+        return null;
+      };
+      const preferredBrand = getCookie('preferred_brand');
+
       try {
-        const res = await fetch(`/api/deals?status=all&category=${activeTab}`);
+        const res = await fetch(`/api/deals?status=all&category=${activeTab}&page=${pageNum}`);
         const data = await res.json();
         const sortedDeals = (data.deals || []).sort((a, b) => (b.merchandiser_score || 0) - (a.merchandiser_score || 0));
         
-        // --- PHASE 20: Taste Profiler Driven Sorting ---
+        if (sortedDeals.length < 50) setHasMore(false);
+        else setHasMore(true);
+
+        if (!reset) {
+            setLatestDeals(prev => {
+                const existingIds = new Set(prev.map(d => d.id));
+                const uniqueNew = sortedDeals.filter(d => !existingIds.has(d.id));
+                return [...prev, ...uniqueNew];
+            });
+            return;
+        }
+
+        // --- PHASE 20: Taste Profiler Driven Sorting (Page 1 Only) ---
         const seg = data.visitorSegment;
-        
         if (seg) {
             setUserSegment(seg);
             const lowSeg = seg.toLowerCase();
@@ -41,18 +55,13 @@ export default function Storefront() {
                
                let isMatch = false;
                for (const word of segWords) {
-                  if (textToMatch.includes(word)) {
-                     isMatch = true; break;
-                  }
+                  if (textToMatch.includes(word)) { isMatch = true; break; }
                }
                
-               // Quick heuristic for bargain hunters
                if (lowSeg.includes('clearance') || lowSeg.includes('budget') || lowSeg.includes('cheap')) {
                    const original = parseFloat(d.original_price);
                    const discounted = parseFloat(d.discount_price);
-                   if (original && discounted && (1 - discounted / original) > 0.4) {
-                       isMatch = true;
-                   }
+                   if (original && discounted && (1 - discounted / original) > 0.4) isMatch = true;
                }
                
                if (isMatch) recommendList.push(d);
@@ -62,26 +71,33 @@ export default function Storefront() {
             if (recommendList.length > 0) {
                 setRecommendedDeals(recommendList);
                 setLatestDeals(otherList);
-            } else {
-                setLatestDeals(sortedDeals);
-            }
+            } else setLatestDeals(sortedDeals);
         } else if (preferredBrand) {
-           // Fallback to old phase personalization
            const decodedBrand = decodeURIComponent(preferredBrand).toLowerCase();
            setRecommendedDeals(sortedDeals.filter(d => d.brand?.toLowerCase() === decodedBrand));
            setLatestDeals(sortedDeals.filter(d => d.brand?.toLowerCase() !== decodedBrand));
         } else {
            setLatestDeals(sortedDeals);
         }
-
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
+      } catch (e) { console.error(e); } 
+      finally {
+        if (reset) setLoading(false);
+        else setLoadingMore(false);
       }
     };
-    fetchDeals();
+
+  useEffect(() => {
+    setPage(1);
+    setHasMore(true);
+    loadDeals(1, true);
   }, [activeTab]);
+
+  const handleLoadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    loadDeals(nextPage, false);
+  };
+
 
   const handleVote = async (e, dealId) => {
     e.stopPropagation();
@@ -308,6 +324,19 @@ export default function Storefront() {
                 {latestDeals.map(deal => renderDeal(deal))}
               </div>
           </div>
+          
+          {hasMore && (
+              <div style={{ textAlign: 'center', marginTop: '3rem', marginBottom: '2rem' }}>
+                  <button 
+                      onClick={handleLoadMore} 
+                      disabled={loadingMore}
+                      className="btn-outline" 
+                      style={{ padding: '12px 30px', fontSize: '1.1rem', background: loadingMore ? 'rgba(255,255,255,0.05)' : 'transparent', cursor: loadingMore ? 'wait' : 'pointer' }}
+                  >
+                      {loadingMore ? 'Loading hidden gems... 💎' : 'Load More Deals 👇'}
+                  </button>
+              </div>
+          )}
         </>
       )}
 
