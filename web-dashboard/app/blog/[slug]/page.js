@@ -13,7 +13,7 @@ export async function generateMetadata({ params }) {
         connection = await getConnection();
         const [rows] = await connection.execute('SELECT title FROM ai_blog_posts WHERE slug = ?', [slug]);
         if (rows.length > 0) return { title: rows[0].title + " | IE Deal Hunter Blog" };
-    } catch(e) {} finally { if (connection) try{ connection.end() }catch(e){} }
+    } catch(e) { console.error(e); } finally { if (connection) await connection.end(); }
     return { title: "Blog Article" };
 }
 
@@ -22,12 +22,12 @@ export default async function BlogPostPage({ params }) {
     let post = null;
     let connection;
     
-    try {
-        connection = await getConnection();
-        const [rows] = await connection.execute('SELECT * FROM ai_blog_posts WHERE slug = ?', [slug]);
-        if (rows.length === 0) return notFound();
-        post = rows[0];
-    } catch(e) { console.error(e); } finally { if(connection) try{ await connection.end() }catch(e){} }
+    connection = await getConnection();
+    const [rows] = await connection.execute('SELECT * FROM ai_blog_posts WHERE slug = ?', [slug]);
+    await connection.end();
+
+    if (rows.length === 0) return notFound();
+    post = rows[0];
 
     if (!post) return notFound();
 
