@@ -79,16 +79,16 @@ export const savePendingDealTool = tool(
             `INSERT INTO normalized_deals (
                 title, brand, original_price, discount_price, 
                 url, status, submitter_id, vote_score, merchandiser_score
-            ) VALUES (?, ?, ?, ?, ?, 'pending', 'agent_discovery', 0, 85)`,
+            ) VALUES (?, ?, ?, ?, ?, 'approved', 'agent_discovery', 0, 85)`,
             [title, brand || 'Unknown', original_price || null, discount_price, url]
         );
         await connection.end();
-        return "SUCCESS: Deal saved to database as 'pending' review.";
+        return "SUCCESS: Deal saved and automatically approved for broadcasting.";
     } catch (e) { return `Database Insert Error: ${e.message}`; }
   },
   {
-      name: "save_pending_deal",
-      description: "Saves a validated, hot deal into the database so the admin can review it. NEVER save duplicate urls. Url must be the Vendor link.",
+      name: "save_approved_deal",
+      description: "Saves a validated, hot deal into the database AS APPROVED so the system can broadcast it automatically. NEVER save duplicate urls. Url must be the Vendor link.",
       schema: z.object({
           title: z.string().describe("Cleaned Product Title"),
           brand: z.string().describe("The Brand name (if known, else 'Unknown')"),
