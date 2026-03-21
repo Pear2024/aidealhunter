@@ -112,7 +112,7 @@ export const publishSeoBlogTool = tool(
             [slug, title, content_html, imageUrl, source_deal_id]
         );
         
-        return `SUCCESS: Blog post published with ID ${insertResult.insertId}. Slug: /blog/${slug}`;
+        return `SUCCESS: Blog post published with ID ${insertResult.insertId}. Slug: /blog/${slug}. **CRITICAL FOR NEXT STEP**: The permanently hosted DALL-E Image URL you must use for the Facebook post is: ${imageUrl}`;
     } catch (e) { 
         return `Error publishing blog: ${e.message}`; 
     } finally {
@@ -133,24 +133,42 @@ export const publishSeoBlogTool = tool(
 );
 
 export const publishFacebookPostTool = tool(
-  async ({ caption_text, link_url }) => {
+  async ({ caption_text, link_url, image_url }) => {
     try {
         if (!process.env.FB_PAGE_ID || !process.env.FB_PAGE_ACCESS_TOKEN) {
              return "SKIPPED: Facebook credentials not configured in environment. But I assume it was successful for simulation.";
         }
         
-        const fbPayload = {
-            message: caption_text,
-            link: link_url,
-            access_token: process.env.FB_PAGE_ACCESS_TOKEN
-        };
-
-        const fbResponse = await fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(fbPayload)
-        });
+        let fbResponse;
         
+        if (image_url) {
+            // Post as a Photo! This makes a massive full-bleed image on the timeline.
+            // The link_url must be included in the caption_text so users can click it.
+            const fullMessage = `${caption_text}\n\n👉 Click here: ${link_url}`;
+            const fbPayload = {
+                message: fullMessage,
+                url: image_url, // Uploads the image from the ImgBB/DALL-E URL directly
+                access_token: process.env.FB_PAGE_ACCESS_TOKEN
+            };
+            fbResponse = await fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/photos`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(fbPayload)
+            });
+        } else {
+            // Fallback to standard link post
+            const fbPayload = {
+                message: caption_text,
+                link: link_url,
+                access_token: process.env.FB_PAGE_ACCESS_TOKEN
+            };
+            fbResponse = await fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(fbPayload)
+            });
+        }
+
         const fbResult = await fbResponse.json();
         if (fbResult.error) return `FB API Error: ${fbResult.error.message}`;
         return `SUCCESS: Posted to Facebook with ID ${fbResult.id}`;
@@ -158,10 +176,11 @@ export const publishFacebookPostTool = tool(
   },
   {
       name: "publish_facebook_post",
-      description: "Publishes a snappy, viral caption and a link to the Facebook Page.",
+      description: "Publishes a snappy, viral caption and a gorgeous photo to the Facebook Page.",
       schema: z.object({
-          caption_text: z.string().describe("The viral Facebook caption including emojis, hype about the price, and hashtags"),
-          link_url: z.string().describe("The URL to link in the post. Since this is an affiliate deal, use the Redirect Link.")
+          caption_text: z.string().describe("The viral Facebook caption including emojis, hype about the price, and hashtags. DO NOT include the link here, just the hype text."),
+          link_url: z.string().describe("The URL to link in the post. Since this is an affiliate deal, use the Redirect Link."),
+          image_url: z.string().optional().describe("The URL of the DALL-E generated image returned from publish_seo_blog_post. Providing this creates a highly converting Photo Post instead of a boring Link Post.")
       })
   }
 );
