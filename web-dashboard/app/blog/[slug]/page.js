@@ -7,8 +7,8 @@ import AdBanner from '@/app/components/AdBanner';
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }) {
-    const slug = params.slug;
-    let connection;
+    let slug = "unknown";
+    try { slug = (await params).slug; } catch(e) { slug = params.slug; }
     try {
         connection = await getConnection();
         const [rows] = await connection.execute('SELECT title FROM ai_blog_posts WHERE slug = ?', [slug]);
@@ -18,14 +18,37 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function BlogPostPage({ params }) {
-    const slug = params.slug;
+    let slug = "unknown";
+    try { slug = (await params).slug; } catch(e) { slug = params.slug; }
+    
     let post = null;
     let connection;
+    let dbError = null;
+    let debugRows = [];
+    let rows = [];
     
-    connection = await getConnection();
-    const [rows] = await connection.execute('SELECT * FROM ai_blog_posts WHERE slug = ?', [slug]);
-    const [debugRows] = await connection.execute('SELECT slug FROM ai_blog_posts LIMIT 10');
-    await connection.end();
+    try {
+        connection = await getConnection();
+        [rows] = await connection.execute('SELECT * FROM ai_blog_posts WHERE slug = ?', [slug]);
+        [debugRows] = await connection.execute('SELECT slug FROM ai_blog_posts LIMIT 10');
+    } catch(err) {
+        dbError = err.message;
+        console.error("Vercel Edge DB Crash:", err);
+    } finally {
+        if (connection) {
+            try { await connection.end(); } catch(e) {}
+        }
+    }
+
+    if (dbError) {
+        return (
+            <div style={{ color: 'white', padding: '50px' }}>
+                <h1 style={{ color: 'red' }}>Vercel Database Connection Error</h1>
+                <p><strong>Error Message:</strong> {dbError}</p>
+                <p>Next.js successfully routed to [slug], but PlanetScale/MySQL failed to connect on the edge.</p>
+            </div>
+        );
+    }
 
     if (rows.length === 0) {
         return (
