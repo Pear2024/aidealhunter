@@ -9,6 +9,7 @@ export const dynamic = 'force-dynamic';
 export async function generateMetadata({ params }) {
     let slug = "unknown";
     try { slug = (await params).slug; } catch(e) { slug = params.slug; }
+    let connection = null;
     try {
         connection = await getConnection();
         const [rows] = await connection.execute('SELECT title FROM ai_blog_posts WHERE slug = ?', [slug]);
