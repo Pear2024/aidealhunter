@@ -44,7 +44,7 @@ export async function GET(request) {
     });
     
     // Choose one category at random to limit execution time
-    const CATEGORIES = ['gaming', 'apple', 'tv', 'headphones', 'monitor'];
+    const CATEGORIES = ['food', 'household', 'tech', 'travel'];
     const randomCategory = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
     const url = `https://slickdeals.net/newsearch.php?mode=popular&searcharea=deals&searchin=first&rss=1&q=${randomCategory}`;
     console.log(`📡 Fetching RSS: ${url}`);
