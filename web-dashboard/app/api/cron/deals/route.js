@@ -75,7 +75,7 @@ export async function GET(request) {
         
         // Fetch top highest-scoring Amazon API deals that have NOT been posted to Facebook yet.
         const [deals] = await connection.execute(
-            `SELECT * FROM normalized_deals WHERE status = 'approved' AND api_provider = 'Amazon' AND (url LIKE '%amazon.com%' OR url LIKE '%amzn.to%') ORDER BY profit_score DESC, merchandiser_score DESC LIMIT 20`
+            `SELECT * FROM normalized_deals WHERE status = 'approved' AND (url LIKE '%amazon.com%' OR url LIKE '%amzn.to%') ORDER BY profit_score DESC, merchandiser_score DESC LIMIT 20`
         );
 
         if (deals.length === 0) {
