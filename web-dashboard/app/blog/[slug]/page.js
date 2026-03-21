@@ -24,12 +24,24 @@ export default async function BlogPostPage({ params }) {
     
     connection = await getConnection();
     const [rows] = await connection.execute('SELECT * FROM ai_blog_posts WHERE slug = ?', [slug]);
+    const [debugRows] = await connection.execute('SELECT slug FROM ai_blog_posts LIMIT 10');
     await connection.end();
 
-    if (rows.length === 0) return notFound();
+    if (rows.length === 0) {
+        return (
+            <div style={{ color: 'white', padding: '50px' }}>
+                <h1>Failed to find exact slug.</h1>
+                <p><strong>Next.js Extracted URL Slug:</strong> "{slug}" | Length: {slug?.length}</p>
+                <p><strong>Available Database Slugs:</strong></p>
+                <ul>
+                    {debugRows.map((r, i) => (
+                        <li key={i}>"{r.slug}" | Length: {r.slug.length} | Match? {String(r.slug === slug)}</li>
+                    ))}
+                </ul>
+            </div>
+        );
+    }
     post = rows[0];
-
-    if (!post) return notFound();
 
     return (
         <main className="container fade-in">
