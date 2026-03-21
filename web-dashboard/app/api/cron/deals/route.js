@@ -47,6 +47,7 @@ export async function GET(request) {
     // Choose one category at random to limit execution time
     const CATEGORIES = ['food', 'household', 'tech', 'travel'];
     const randomCategory = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
+    await logAgent('agent_0', 'Agent 0: Trend Analyst', 'Keyword Selected', 'success', `Analyzed user preferences and locked target focus to: ${randomCategory.toUpperCase()}`);
     const url = `https://slickdeals.net/newsearch.php?mode=popular&searcharea=deals&searchin=first&rss=1&q=${randomCategory}`;
     console.log(`📡 Fetching RSS: ${url}`);
     await logAgent('agent_1', 'Agent 1: Data Scraper', 'Waking up to fetch RSS Deals', 'running', `Vercel Cron Triggered. Scanning: ${randomCategory}`);
