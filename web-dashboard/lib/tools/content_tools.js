@@ -1,7 +1,7 @@
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { getConnection } from '@/lib/db';
-import { agentLogger } from '@/lib/agent_logger';
+import { logAgent } from '@/lib/agent_logger';
 
 export const fetchApprovedDealTool = tool(
   async () => {
@@ -101,11 +101,11 @@ export const publishSeoBlogTool = tool(
                 }
             } catch (dalleErr) {
                 console.error("DALL-E 3 / ImgBB Generation Failed, falling back to free Pollinations:", dalleErr);
-                await agentLogger('agent_3', 'Squad 3: Content Marketing', 'DALL-E 3 Subsystem Error', 'failed', dalleErr.message.substring(0, 150));
+                await logAgent('agent_3', 'Squad 3: Content Marketing', 'DALL-E 3 Subsystem Error', 'failed', dalleErr.message.substring(0, 150));
             }
         } else {
             // Also log if they didn't set the key
-            await agentLogger('agent_3', 'Squad 3: Content Marketing', 'Missing OpenAI Key in Vercel', 'failed', 'process.env.OPENAI_API_KEY is completely empty or undefined on the server.');
+            await logAgent('agent_3', 'Squad 3: Content Marketing', 'Missing OpenAI Key in Vercel', 'failed', 'process.env.OPENAI_API_KEY is completely empty or undefined on the server.');
         }
 
         const [insertResult] = await connection.execute(
