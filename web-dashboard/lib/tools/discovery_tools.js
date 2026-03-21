@@ -65,7 +65,7 @@ export const scrapeDealUrlTool = tool(
   }
 );
 
-export const savePendingDealTool = tool(
+export const saveApprovedDealTool = tool(
   async ({ title, brand, original_price, discount_price, url }) => {
     try {
         const connection = await getConnection();
