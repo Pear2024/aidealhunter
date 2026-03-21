@@ -8,6 +8,7 @@ export default function Storefront() {
   const [recommendedDeals, setRecommendedDeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userSegment, setUserSegment] = useState(null);
+  const [activeTab, setActiveTab] = useState('all');
 
   useEffect(() => {
     // 1. Read tracking cookie for Personalization
@@ -19,8 +20,9 @@ export default function Storefront() {
     const preferredBrand = getCookie('preferred_brand');
 
     const fetchDeals = async () => {
+      setLoading(true);
       try {
-        const res = await fetch('/api/deals?status=all');
+        const res = await fetch(`/api/deals?status=all&category=${activeTab}`);
         const data = await res.json();
         const sortedDeals = (data.deals || []).sort((a, b) => (b.merchandiser_score || 0) - (a.merchandiser_score || 0));
         
@@ -79,7 +81,7 @@ export default function Storefront() {
       }
     };
     fetchDeals();
-  }, []);
+  }, [activeTab]);
 
   const handleVote = async (e, dealId) => {
     e.stopPropagation();
@@ -252,6 +254,30 @@ export default function Storefront() {
       {/* PHASE 16: FTC Affiliate Disclosure Banner */}
       <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '12px 20px', textAlign: 'center', fontSize: '0.9rem', color: '#ccc', marginBottom: '2rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
         <strong>Affiliate Disclosure:</strong> As an Amazon Associate, I earn from qualifying purchases. We may earn a small commission if you buy through our links, at no extra cost to you.
+      </div>
+      
+      {/* PHASE 32: Categorical Navigation Tabs */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '3rem', flexWrap: 'wrap' }} className="fade-in">
+        {['all', 'food', 'household', 'tech', 'travel'].map(tab => (
+           <button 
+             key={tab} 
+             onClick={() => setActiveTab(tab)}
+             style={{
+               background: activeTab === tab ? 'var(--accent-gradient)' : 'rgba(255,255,255,0.05)',
+               border: activeTab === tab ? 'none' : '1px solid rgba(255,255,255,0.1)',
+               color: activeTab === tab ? 'white' : '#aaa',
+               padding: '10px 24px',
+               borderRadius: '30px',
+               fontSize: '1rem',
+               fontWeight: 'bold',
+               cursor: 'pointer',
+               textTransform: 'capitalize',
+               transition: 'all 0.3s ease',
+               boxShadow: activeTab === tab ? '0 4px 15px rgba(255,51,102,0.4)' : 'none'
+             }}>
+             {tab === 'all' ? 'All Deals' : tab}
+           </button>
+        ))}
       </div>
       
       {(latestDeals.length === 0 && recommendedDeals.length === 0) ? (
