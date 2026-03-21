@@ -76,20 +76,31 @@ export const publishSeoBlogTool = tool(
                 if (imgData.data && imgData.data[0]) {
                     const remoteUrl = imgData.data[0].url;
                     
-                    // Fetch DALL-E image and save it locally because OpenAI URLs expire in 1 hour
+                    // Fetch DALL-E image and pipe to ImgBB because OpenAI URLs expire in 1 hour
                     const fetchRes = await fetch(remoteUrl);
                     const buffer = await fetchRes.arrayBuffer();
+                    const base64Image = Buffer.from(buffer).toString('base64');
                     
-                    const fs = require('fs');
-                    const path = require('path');
-                    const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'dalle');
-                    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-                    
-                    const filename = `cover_${source_deal_id}_${Date.now()}.png`;
-                    const filepath = path.join(uploadDir, filename);
-                    
-                    fs.writeFileSync(filepath, Buffer.from(buffer));
-                    imageUrl = `/uploads/dalle/${filename}`; // Database will store this permanent local relative URL
+                    if (process.env.IMGBB_API_KEY) {
+                        const imgFormData = new URLSearchParams();
+                        imgFormData.append("image", base64Image);
+                        const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=${process.env.IMGBB_API_KEY}`, {
+                            method: "POST",
+                            body: imgFormData
+                        });
+                        const imgbbData = await imgbbRes.json();
+                        
+                        if (imgbbData.success) {
+                            imageUrl = imgbbData.data.url; // Database will store this permanent ImgBB direct URL
+                            console.log("✅ DALL-E Image successfully uploaded to ImgBB:", imageUrl);
+                        } else {
+                            throw new Error("ImgBB Upload Failed: " + JSON.stringify(imgbbData));
+                        }
+                    } else {
+                         // Fallback mechanism if no ImgBB key
+                         console.warn("No IMGBB_API_KEY found! Using ephemeral DALL-E URL which will expire in 1 hour.");
+                         imageUrl = remoteUrl;
+                    }
                 }
             } catch (dalleErr) {
                 console.error("DALL-E 3 Generation Failed, falling back to free Pollinations:", dalleErr);
