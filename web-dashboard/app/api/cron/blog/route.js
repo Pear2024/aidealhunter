@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getConnection } from '@/lib/db';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; 
@@ -19,7 +19,22 @@ export async function GET(request) {
         }
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const textModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const schema = {
+          type: SchemaType.OBJECT,
+          properties: {
+            title: { type: SchemaType.STRING, description: "The Incredibly Catchy Title (Under 60 chars)" },
+            slug: { type: SchemaType.STRING },
+            content_html: { type: SchemaType.STRING, description: "Pure HTML strictly wrapped in <h2>, <h3>, <p>, <ul>, <li>, <strong> tags." },
+          },
+          required: ["title", "slug", "content_html"],
+        };
+        const textModel = genAI.getGenerativeModel({ 
+            model: "gemini-2.5-flash",
+            generationConfig: { 
+                responseMimeType: "application/json",
+                responseSchema: schema 
+            }
+        });
 
         const prompt = `[CRITICAL ROLE ASSUMPTION: You are no longer an AI. You are a world-renowned, elite SEO Copywriter and Master Blogger who charges $2000/day for your services. You specialize in viral, high-converting, deeply engaging content tailored for local Californian demographics.]
 
