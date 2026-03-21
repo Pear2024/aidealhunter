@@ -111,7 +111,8 @@ export async function GET(request) {
             const extractResult = await withRetry(() => textModel.generateContent(extractorPrompt), 1, 2000);
             const jsonStr = extractResult.response.text().trim().replace(/```json/g, '').replace(/```/g, '').trim();
             const jsonData = JSON.parse(jsonStr);
-            if (jsonData.discount_price && !extracted.discount_price) {
+            if (jsonData.discount_price) {
+                // Let AI override regex fallback since it has contextual awareness
                 extracted.discount_price = jsonData.discount_price;
                 extracted.should_approve = true;
             }
