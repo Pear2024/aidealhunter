@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { SignInButton, UserButton, useUser } from '@clerk/nextjs';
 
 export default function Storefront() {
@@ -238,7 +239,7 @@ export default function Storefront() {
               </SignInButton>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                <a href="/submit" className="btn-outline" style={{ textDecoration: 'none', fontSize: '0.9rem' }}>+ Submit Deal</a>
+                <Link href="/submit" className="btn-outline" style={{ textDecoration: 'none', fontSize: '0.9rem' }}>+ Submit Deal</Link>
                 <UserButton afterSignOutUrl="/" />
               </div>
             )}
@@ -342,7 +343,7 @@ export default function Storefront() {
 
       {/* PHASE 16: Amazon Price Disclaimer Footer */}
       <footer style={{ marginTop: '4rem', padding: '2rem 0', borderTop: '1px solid rgba(255, 255, 255, 0.1)', textAlign: 'center', color: '#888', fontSize: '0.85rem', lineHeight: '1.5' }}>
-        <p>Product prices and availability are accurate as of the date/time indicated and are subject to change. Any price and availability information displayed on the merchant's site (e.g., Amazon) at the time of purchase will apply to the purchase of this product.</p>
+        <p>Product prices and availability are accurate as of the date/time indicated and are subject to change. Any price and availability information displayed on the merchant&apos;s site (e.g., Amazon) at the time of purchase will apply to the purchase of this product.</p>
         <p style={{ marginTop: '10px' }}>&copy; {new Date().getFullYear()} DealHunter Pro. All rights reserved.</p>
       </footer>
     </main>

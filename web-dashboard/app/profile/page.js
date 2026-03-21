@@ -99,7 +99,7 @@ export default function ProfilePage() {
         
         {(!profileData?.deals || profileData.deals.length === 0) ? (
           <div style={{ textAlign: 'center', padding: '4rem 2rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px dashed rgba(255,255,255,0.1)' }}>
-             <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>You haven't submitted any deals yet.</p>
+             <p style={{ color: 'var(--text-secondary)', fontSize: '1.1rem' }}>You haven&apos;t submitted any deals yet.</p>
              <p style={{ color: 'var(--text-secondary)' }}>Find a great discount and share it with the community to start earning reputation!</p>
           </div>
         ) : (

@@ -1,0 +1,36 @@
+
+> web-dashboard@0.1.0 lint
+> eslint
+
+
+/Users/pear/Documents/AntiGravity/Ai news/AI_Deal_Hunter/web-dashboard/app/admin/analytics/page.js
+  62:11  error  Do not use an `<a>` element to navigate to `/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+/Users/pear/Documents/AntiGravity/Ai news/AI_Deal_Hunter/web-dashboard/app/admin/page.js
+   60:11  error    Do not use an `<a>` element to navigate to `/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages                                                                                                                                    @next/next/no-html-link-for-pages
+  100:11  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/pear/Documents/AntiGravity/Ai news/AI_Deal_Hunter/web-dashboard/app/blog/[slug]/Comments.js
+  23:8  warning  React Hook useEffect has a missing dependency: 'fetchComments'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/pear/Documents/AntiGravity/Ai news/AI_Deal_Hunter/web-dashboard/app/blog/[slug]/page.js
+  34:65  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  34:72  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  38:37  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  38:46  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+/Users/pear/Documents/AntiGravity/Ai news/AI_Deal_Hunter/web-dashboard/app/page.js
+   93:6    warning  React Hook useEffect has a missing dependency: 'loadDeals'. Either include it or remove the dependency array                                                                                                                                                                             react-hooks/exhaustive-deps
+  165:11   warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  345:178  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                                                                                                                                                                                          react/no-unescaped-entities
+
+/Users/pear/Documents/AntiGravity/Ai news/AI_Deal_Hunter/web-dashboard/app/profile/page.js
+   57:11  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+  102:89  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                                                                                                                                                                                          react/no-unescaped-entities
+  120:21  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+/Users/pear/Documents/AntiGravity/Ai news/AI_Deal_Hunter/web-dashboard/app/submit/page.js
+  48:11  error  Do not use an `<a>` element to navigate to `/`. Use `<Link />` from `next/link` instead. See: https://nextjs.org/docs/messages/no-html-link-for-pages  @next/next/no-html-link-for-pages
+
+✖ 15 problems (9 errors, 6 warnings)
+

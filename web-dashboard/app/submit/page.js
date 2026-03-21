@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useUser, SignInButton } from '@clerk/nextjs';
+import Link from 'next/link';
 
 export default function SubmitDeal() {
   const { isLoaded, isSignedIn, user } = useUser();
@@ -45,7 +46,7 @@ export default function SubmitDeal() {
       <div style={{ maxWidth: '600px', margin: '0 auto', background: 'var(--card-bg)', padding: '40px', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 10px 30px rgba(0,0,0,0.5)' }}>
         <div style={{ marginBottom: '30px' }}>
           <h1 style={{ fontSize: '2rem', marginBottom: '10px' }}>📤 Submit a Deal</h1>
-          <a href="/" style={{ color: 'var(--accent)', textDecoration: 'none' }}>← Back to Community Board</a>
+          <Link href="/" style={{ color: 'var(--accent)', textDecoration: 'none' }}>← Back to Community Board</Link>
         </div>
 
         {!isSignedIn ? (

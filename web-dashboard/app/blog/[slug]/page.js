@@ -31,11 +31,11 @@ export default async function BlogPostPage({ params }) {
         return (
             <div style={{ color: 'white', padding: '50px' }}>
                 <h1>Failed to find exact slug.</h1>
-                <p><strong>Next.js Extracted URL Slug:</strong> "{slug}" | Length: {slug?.length}</p>
+                <p><strong>Next.js Extracted URL Slug:</strong> &quot;{slug}&quot; | Length: {slug?.length}</p>
                 <p><strong>Available Database Slugs:</strong></p>
                 <ul>
                     {debugRows.map((r, i) => (
-                        <li key={i}>"{r.slug}" | Length: {r.slug.length} | Match? {String(r.slug === slug)}</li>
+                        <li key={i}>&quot;{r.slug}&quot; | Length: {r.slug.length} | Match? {String(r.slug === slug)}</li>
                     ))}
                 </ul>
             </div>

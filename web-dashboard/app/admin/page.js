@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 export default function AdminDashboard() {
   const [deals, setDeals] = useState([]);
@@ -57,9 +58,9 @@ export default function AdminDashboard() {
         <h1>🎯 AI Deal Hunter</h1>
         <p className="subtitle">Admin Review Dashboard (Secret URL)</p>
         <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginTop: '15px' }}>
-          <a href="/" style={{ color: 'var(--accent)', textDecoration: 'none' }}>← Go back to Public Storefront</a>
-          <a href="/admin/analytics" style={{ color: 'var(--success)', textDecoration: 'none' }}>View Analytics 📈</a>
-          <a href="/admin/agents" style={{ color: '#ff9a9e', textDecoration: 'none', fontWeight: 'bold' }}>AI Overlord 🌌 →</a>
+          <Link href="/" style={{ color: 'var(--accent)', textDecoration: 'none' }}>← Go back to Public Storefront</Link>
+          <Link href="/admin/analytics" style={{ color: 'var(--success)', textDecoration: 'none' }}>View Analytics 📈</Link>
+          <Link href="/admin/agents" style={{ color: '#ff9a9e', textDecoration: 'none', fontWeight: 'bold' }}>AI Overlord 🌌 →</Link>
         </div>
       </header>
 

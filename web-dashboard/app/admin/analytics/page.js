@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 export default function AnalyticsDashboard() {
   const [stats, setStats] = useState(null);
@@ -58,8 +59,8 @@ export default function AnalyticsDashboard() {
         <h1>📈 Performance Analytics</h1>
         <p className="subtitle">Track Clicks & Revenue for your Approved Deals</p>
         <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginTop: '15px' }}>
-          <a href="/admin" style={{ color: 'var(--accent)', textDecoration: 'none' }}>← Back to Review Deals</a>
-          <a href="/" style={{ color: 'var(--accent)', textDecoration: 'none' }}>Go to Storefront ↗</a>
+          <Link href="/admin" style={{ color: 'var(--accent)', textDecoration: 'none' }}>← Back to Review Deals</Link>
+          <Link href="/" style={{ color: 'var(--accent)', textDecoration: 'none' }}>Go to Storefront ↗</Link>
         </div>
       </header>
 
