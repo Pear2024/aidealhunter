@@ -8,6 +8,9 @@ export async function logAgent(agentId, agentName, action, status = 'success', d
       `INSERT INTO agent_logs (agent_id, agent_name, action, status, details) VALUES (?, ?, ?, ?, ?)`,
       [agentId, agentName, action, status, typeof details === 'object' ? JSON.stringify(details) : details]
     );
+    
+    // Auto-purge logs older than 3 days (rolling history cap)
+    await connection.execute(`DELETE FROM agent_logs WHERE created_at < NOW() - INTERVAL 3 DAY`);
   } catch (err) {
     console.error(`Failed to log agent action [${agentId}]:`, err);
   } finally {

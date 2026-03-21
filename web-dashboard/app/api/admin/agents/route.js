@@ -14,7 +14,7 @@ export async function GET() {
   try {
     connection = await getConnection();
     const [logs] = await connection.execute(
-      `SELECT * FROM agent_logs ORDER BY created_at DESC LIMIT 100`
+      `SELECT * FROM agent_logs ORDER BY created_at DESC LIMIT 2000`
     );
     return NextResponse.json({ logs });
   } catch (error) {
