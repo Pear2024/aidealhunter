@@ -7,7 +7,7 @@ import AdBanner from '@/app/components/AdBanner';
 export const revalidate = 60; // Revalidate every 60s
 
 export async function generateMetadata({ params }) {
-    const { slug } = params;
+    const { slug } = await params;
     let connection;
     try {
         connection = await getConnection();
@@ -18,7 +18,7 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function BlogPostPage({ params }) {
-    const { slug } = params;
+    const { slug } = await params;
     let post = null;
     let connection;
     
