@@ -7,8 +7,8 @@ export async function GET() {
     let connection;
     try {
         connection = await getConnection();
-        await connection.execute('TRUNCATE TABLE agent_logs');
-        return NextResponse.json({ success: true, message: "Agent logs cleared!" });
+        await connection.execute("DELETE FROM ai_blog_posts WHERE image_url LIKE '%pollinations%'");
+        return NextResponse.json({ success: true, message: "Broken posts deleted!" });
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     } finally {
