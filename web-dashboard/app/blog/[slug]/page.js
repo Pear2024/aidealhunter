@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Comments from './Comments'; 
 import AdBanner from '@/app/components/AdBanner'; 
 
-export const revalidate = 60; // Revalidate every 60s
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }) {
     const { slug } = await params;
