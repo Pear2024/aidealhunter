@@ -47,9 +47,21 @@ async function main() {
             ssl: { rejectUnauthorized: false }
         });
 
-        const [rows] = await conn.execute("SELECT * FROM normalized_deals WHERE image_url IS NOT NULL ORDER BY RAND() LIMIT 1");
+        const [rows] = await conn.execute(`
+            SELECT * FROM normalized_deals 
+            WHERE image_url IS NOT NULL 
+              AND (
+                  discount_percentage > 0 
+                  OR original_price > discount_price
+                  OR title LIKE '%coupon%'
+                  OR title LIKE '%off %'
+                  OR title LIKE '%sale%'
+                  OR title LIKE '%deal%'
+              )
+            ORDER BY RAND() LIMIT 1
+        `);
         if (rows.length === 0) {
-            console.error("❌ No deals found in DB.");
+            console.error("❌ No discounted deals found in DB.");
             return;
         }
         const deal = rows[0];
