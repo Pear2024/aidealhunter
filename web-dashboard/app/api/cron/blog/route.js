@@ -32,7 +32,7 @@ export async function GET(request) {
         // Pick a random high-profit deal from the top 20
         const deal = deals[Math.floor(Math.random() * deals.length)];
         
-        const affiliateTag = process.env.AMAZON_AFFILIATE_TAG || 'pear2024-20';
+        const affiliateTag = process.env.AMAZON_AFFILIATE_TAG || 'smartshop0c33-20';
         const dealUrl = deal.url || '';
         const affiliateUrl = dealUrl.includes('?') ? `${dealUrl}&tag=${affiliateTag}` : `${dealUrl}?tag=${affiliateTag}`;
 
