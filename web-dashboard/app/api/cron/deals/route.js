@@ -102,8 +102,7 @@ export async function GET(request) {
                 rawId = rawResult.insertId;
             } catch(e) { continue; } // Skip duplicates
 
-            if (!deal.title.toLowerCase().includes('amazon')) continue;
-            
+
             let extracted = { should_approve: false, confidence_score: 0.95 };
             let original_price = null;
             let discount_percentage = null;
@@ -139,6 +138,7 @@ export async function GET(request) {
             }
 
             let finalUrl = deal.link;
+            let isAmazon = false;
             try {
                 const sdRes = await fetch(deal.link, { headers: { 'User-Agent': 'Mozilla/5.0' } });
                 const sdHtml = await sdRes.text();
@@ -147,7 +147,8 @@ export async function GET(request) {
                     const href = $sd(el).attr('href');
                     if (href && href.includes('u2=')) {
                         const decoded = decodeURIComponent(href.split('u2=')[1]);
-                        if (decoded.includes('amazon.com')) {
+                        if (decoded.includes('amazon.com') || decoded.includes('amzn.to')) {
+                            isAmazon = true;
                             const asinMatch = decoded.match(/(?:dp|product-reviews|gp\/product)\/([A-Z0-9]{10})/i);
                             if (asinMatch) finalUrl = 'https://www.amazon.com/dp/' + asinMatch[1];
                             else finalUrl = decoded;
@@ -155,8 +156,13 @@ export async function GET(request) {
                     }
                 });
             } catch(e) {}
+            
+            // Also check if the word amazon is loosely in the title or content as a fast-pass
+            if (!isAmazon && (deal.title.toLowerCase().includes('amazon') || htmlContent.toLowerCase().includes('amazon'))) {
+                 isAmazon = true;
+            }
 
-            if (extracted.should_approve && extracted.discount_price && finalUrl.includes('amazon.com')) {
+            if (extracted.should_approve && extracted.discount_price && isAmazon) {
                 await logAgent('agent_6', 'Agent 6: Gatekeeper', 'Quality Assurance Pass', 'success', `Slickdeals payload verified. Amazon exclusivity parameters confirmed.`);
                 await logAgent('agent_4', 'Agent 4: Merchandiser', 'Aesthetics Scoring', 'success', `Assigned visual placement scores and UI aesthetic ranking.`);
                 await logAgent('agent_10', 'Agent 10: Taste Profiler', 'Audience Segmentation', 'success', `Executed psychographic distribution mapping.`);
