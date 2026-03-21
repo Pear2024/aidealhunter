@@ -47,3 +47,4 @@ jobs:
       run: |
         cd web-dashboard
         node generate_reel.js
+
