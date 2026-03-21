@@ -81,7 +81,7 @@ export async function POST(request) {
           const imageURL = rows[0]?.image_url;
           
           // Use our tracking redirect link instead of the original URL
-          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://aidealhunter.vercel.app';
+          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://nadaniadigitalllc.com';
           const trackURL = `${baseUrl}/r/${id}`;
           
           let pct = '';

@@ -16,6 +16,7 @@ export const searchDealsRssTool = tool(
             const html = deal['content:encoded'] || deal.content;
             const $ = cheerio.load(html || '');
             let externalLink = null;
+            let imageUrl = $('img').first().attr('src') || null;
             $('a').each((i, el) => {
                 const href = $(el).attr('href');
                 if (href && (href.includes('amazon.com') || href.includes('amzn.to'))) {
@@ -26,6 +27,7 @@ export const searchDealsRssTool = tool(
                 title: deal.title,
                 link: deal.link, // The slickdeals link
                 externalLink: externalLink,
+                image_url: imageUrl,
                 snippet: deal.contentSnippet?.substring(0, 300)
             });
         });
@@ -78,9 +80,9 @@ export const saveApprovedDealTool = tool(
         await connection.execute(
             `INSERT INTO normalized_deals (
                 title, brand, original_price, discount_price, 
-                url, status, submitter_id, vote_score, merchandiser_score
-            ) VALUES (?, ?, ?, ?, ?, 'approved', 'agent_discovery', 0, 85)`,
-            [title, brand || 'Unknown', original_price || null, discount_price, url]
+                url, status, submitter_id, vote_score, merchandiser_score, image_url
+            ) VALUES (?, ?, ?, ?, ?, 'approved', 'agent_discovery', 0, 85, ?)`,
+            [title, brand || 'Unknown', original_price || null, discount_price, url, image_url]
         );
         await connection.end();
         return "SUCCESS: Deal saved and automatically approved for broadcasting.";
@@ -95,6 +97,7 @@ export const saveApprovedDealTool = tool(
           original_price: z.number().nullable().describe("The original MSRP price before discount. If unknown, pass null."),
           discount_price: z.number().describe("The current discounted price"),
           url: z.string().describe("The EXTERNAL vendor URL (e.g., Amazon link), NOT the Slickdeals link"),
+          image_url: z.string().optional().describe("The thumbnail image URL for the product, extracted from the RSS feed.")
       })
   }
 );

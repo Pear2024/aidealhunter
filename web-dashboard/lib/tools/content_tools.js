@@ -27,6 +27,14 @@ export const fetchApprovedDealTool = tool(
             targetDeal = deals[0];
         }
         
+        const affiliateTag = process.env.AMAZON_AFFILIATE_TAG || 'smartshop0c33-20';
+        let affiliateUrl = targetDeal.url;
+        if (affiliateUrl.includes('?')) {
+            affiliateUrl += `&tag=${affiliateTag}`;
+        } else {
+            affiliateUrl += `?tag=${affiliateTag}`;
+        }
+
         return JSON.stringify({
             source_deal_id: targetDeal.id,
             title: targetDeal.title,
@@ -34,6 +42,7 @@ export const fetchApprovedDealTool = tool(
             original_price: targetDeal.original_price,
             discount_price: targetDeal.discount_price,
             url: targetDeal.url,
+            affiliate_url: affiliateUrl,
             image_url: targetDeal.image_url
         });
     } catch (e) { 

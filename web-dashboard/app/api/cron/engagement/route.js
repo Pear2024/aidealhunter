@@ -46,32 +46,32 @@ export async function GET(request) {
                 type: 'Valentine Specials',
                 prompt: `Act as a savvy shopping expert. Write a fun, engaging 2-3 sentence Facebook post asking followers what they are buying their partner for Valentine's Day, or suggesting they treat themselves. Keep it conversational. Use emojis like ❤️🍫.`,
                 images: [
-                    "https://aidealhunter.vercel.app/holidays/valentine.jpg"
+                    "https://nadaniadigitalllc.com/holidays/valentine.jpg"
                 ]
             };
         } else if (month === 7 && date <= 16) {
             holidayOverride = {
                 type: 'Prime Day Hype',
                 prompt: `Act as an excited Amazon Deal Hunter. Write a 2-sentence Facebook post hyping up Amazon Prime Day. Ask the audience what item they are hoping goes on sale. Use emojis like 🔥🛒.`,
-                images: ["https://aidealhunter.vercel.app/holidays/prime.jpg"]
+                images: ["https://nadaniadigitalllc.com/holidays/prime.jpg"]
             };
         } else if (month === 10 && date >= 15) {
              holidayOverride = {
                 type: 'Halloween Deals',
                 prompt: `Act as a festive community manager. Write a spooky and fun 2-sentence Facebook post asking followers if they are buying their Halloween costumes or candy on Amazon this year. Use emojis like 🎃👻.`,
-                images: ["https://aidealhunter.vercel.app/holidays/halloween.jpg"]
+                images: ["https://nadaniadigitalllc.com/holidays/halloween.jpg"]
              };
         } else if (month === 11 && date >= 15) {
              holidayOverride = {
                 type: 'Black Friday Madness',
                 prompt: `Act as a hardcore shopping deal hunter. Write an intense 2-sentence Facebook post asking followers if they are ready for the Black Friday / Cyber Monday madness on Amazon, and what their budget is. Use emojis like 💸🏃‍♂️.`,
-                images: ["https://aidealhunter.vercel.app/holidays/blackfriday.jpg"]
+                images: ["https://nadaniadigitalllc.com/holidays/blackfriday.jpg"]
              };
         } else if (month === 12 && date <= 25) {
              holidayOverride = {
                 type: 'Christmas Gift Hunting',
                 prompt: `Act as a helpful holiday shopping assistant. Write a warm 2-sentence Facebook post asking the audience if they have finished their Christmas gift shopping yet, or if they wait until the last minute. Use emojis like 🎄🎁.`,
-                images: ["https://aidealhunter.vercel.app/holidays/christmas.jpg"]
+                images: ["https://nadaniadigitalllc.com/holidays/christmas.jpg"]
              };
         }
 
