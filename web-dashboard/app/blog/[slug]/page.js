@@ -72,11 +72,12 @@ export default async function BlogPostPage({ params }) {
             <Link href="/blog" style={{ color: '#ff3366', textDecoration: 'none', fontWeight: 'bold', marginBottom: '20px', display: 'inline-block' }}>&larr; Back to Blog</Link>
             
             <article style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '20px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '3rem' }}>
-                <div style={{ width: '100%', height: '400px', overflow: 'hidden' }}>
+                <div style={{ position: 'relative', width: '100%', height: '400px', overflow: 'hidden', backgroundColor: '#050505' }}>
+                     <img src={post.image_url} alt="" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(25px)', opacity: 0.35, transform: 'scale(1.15)' }} />
                      <img 
                          src={post.image_url} 
                          alt={post.title} 
-                         style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                         style={{ position: 'relative', width: '100%', height: '100%', objectFit: 'contain', zIndex: 1, padding: '20px' }} 
                      />
                 </div>
                 <div style={{ padding: '3rem', maxWidth: '800px', margin: '0 auto' }}>

@@ -36,11 +36,12 @@ export default async function BlogArchive() {
                 ) : posts.map(post => (
                     <Link href={`/blog/${post.slug}`} key={post.id} style={{ textDecoration: 'none', color: 'inherit' }}>
                         <div className="blog-card" style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '15px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
-                            <div style={{ width: '100%', height: '220px', overflow: 'hidden' }}>
+                            <div style={{ position: 'relative', width: '100%', height: '220px', overflow: 'hidden', backgroundColor: '#050505' }}>
+                                <img src={post.image_url} alt="" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(15px)', opacity: 0.4, transform: 'scale(1.1)' }} />
                                 <img 
                                     src={post.image_url} 
                                     alt={post.title} 
-                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                    style={{ position: 'relative', width: '100%', height: '100%', objectFit: 'contain', zIndex: 1, padding: '15px' }} 
                                 />
                             </div>
                             <div style={{ padding: '25px' }}>
