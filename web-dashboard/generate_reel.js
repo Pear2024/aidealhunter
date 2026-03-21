@@ -35,23 +35,24 @@ async function downloadFile(url, filepath, retries = 3) {
 async function main() {
     console.log("🎬 Initiating Facebook Auto-Reels Engine...");
     
-    // 1. Database Connection
-    console.log("🔌 Connecting to MySQL...");
-    const conn = await mysql.createConnection({
-        host: process.env.MYSQL_HOST,
-        user: process.env.MYSQL_USER,
-        password: process.env.MYSQL_PASSWORD,
-        database: process.env.MYSQL_DATABASE,
-        port: parseInt(process.env.MYSQL_PORT || '3306'),
-        ssl: { rejectUnauthorized: false }
-    });
+    try {
+        // 1. Database Connection
+        console.log("🔌 Connecting to MySQL...");
+        const conn = await mysql.createConnection({
+            host: (process.env.MYSQL_HOST || '').trim(),
+            user: (process.env.MYSQL_USER || '').trim(),
+            password: (process.env.MYSQL_PASSWORD || '').trim(),
+            database: (process.env.MYSQL_DATABASE || '').trim(),
+            port: parseInt((process.env.MYSQL_PORT || '3306').trim()),
+            ssl: { rejectUnauthorized: false }
+        });
 
-    const [rows] = await conn.execute("SELECT * FROM normalized_deals WHERE image_url IS NOT NULL ORDER BY RAND() LIMIT 1");
-    if (rows.length === 0) {
-        console.error("❌ No deals found in DB.");
-        return;
-    }
-    const deal = rows[0];
+        const [rows] = await conn.execute("SELECT * FROM normalized_deals WHERE image_url IS NOT NULL ORDER BY RAND() LIMIT 1");
+        if (rows.length === 0) {
+            console.error("❌ No deals found in DB.");
+            return;
+        }
+        const deal = rows[0];
     await conn.end();
 
     console.log(`🎯 Selected Deal: ${deal.title}`);
@@ -94,9 +95,15 @@ async function main() {
     const imagePath = path.join(tempDir, 'reel_image.jpg');
     const outPath = path.join(tempDir, 'auto_reel_test.mp4');
 
-    await downloadFile(url, audioPath);
-    console.log("🖼️  Downloading authentic Product Cover Image...");
-    await downloadFile(deal.image_url, imagePath);
+    try {
+        await downloadFile(url, audioPath);
+        console.log("🖼️  Downloading authentic Product Cover Image...");
+        await downloadFile(deal.image_url.trim(), imagePath);
+    } catch (fetchErr) {
+        console.error("⚠️ CDN Asset failure. Applying emergency solid-color fallback...", fetchErr.message);
+        // Fallback to a solid color if Cloudflare blocks GitHub VM IP
+        require('child_process').execSync(`ffmpeg -f lavfi -i color=c=black:s=1000x1000:d=1 -frames:v 1 ${imagePath}`);
+    }
 
     // 4. Video Assembly
     console.log("⚙️  Assembling MP4 via FFmpeg...");
@@ -161,12 +168,16 @@ async function main() {
 
                 console.log(`🎉 MEGA SUCCESS! Reel LIVE on Facebook! Status:`, response.data);
             } catch (err) {
-                 console.error("❌ Facebook API Error:", err.response ? JSON.stringify(err.response.data) : err.message);
+                 console.error("❌ Facebook API Error:", err.response ? JSON.stringify(err.response.data) : err.stack);
             }
         })
         .on('error', (err) => {
             console.error(`❌ FFmpeg Error: ${err.message}`);
         });
+    } catch (globalErr) {
+        console.error("🚨 FATAL GLOBAL ERROR TERMINATING EXECUTION:", globalErr.stack);
+        process.exit(1);
+    }
 }
 
 main();
