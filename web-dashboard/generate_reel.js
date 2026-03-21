@@ -92,7 +92,7 @@ async function main() {
     const tempDir = os.tmpdir();
     const audioPath = path.join(tempDir, 'reel_audio.mp3');
     const imagePath = path.join(tempDir, 'reel_image.jpg');
-    const outPath = path.join(os.homedir(), 'Desktop', 'auto_reel_test.mp4');
+    const outPath = path.join(tempDir, 'auto_reel_test.mp4');
 
     await downloadFile(url, audioPath);
     console.log("🖼️  Downloading authentic Product Cover Image...");
