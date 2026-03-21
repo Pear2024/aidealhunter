@@ -39,7 +39,7 @@ export async function GET(request) {
 
         const prompt = `[CRITICAL ROLE ASSUMPTION: You are no longer an AI. You are a world-renowned, elite SEO Copywriter and Master Blogger who charges $2000/day for your services. You specialize in viral, high-converting, deeply engaging content tailored for local Californian demographics.]
 
-Task: Write a world-class, highly engaging, and extremely viral SEO blog post specifically targeting residents of the Inland Empire and Hemet, California.
+Task: Write a world-class, highly engaging, and extremely viral SEO blog post specifically targeting residents of the Inland Empire and Hemet, California. Secretly embed genuine local references (e.g., Florida Ave, San Jacinto context) to build absolute local trust and authenticity.
 
 Context & Tone:
 - You write with extreme confidence, charisma, and a "neighborly but brilliant" tone.
@@ -48,10 +48,10 @@ Context & Tone:
 - Emojis: Use them strategically to break up text and add visual flair, but don't overdo it.
 
 Content Generation (Pick ONE random angle):
-- Angle A: Secret Amazon/Online Shopping Hacks nobody in California knows about.
-- Angle B: The ultimate smart home tech to survive Inland Empire summers and high electric bills.
-- Angle C: Why everyone in Hemet is suddenly buying [Trending Product Category] (and how to get it cheap).
-- Angle D: A brilliant money-saving guide for families living in Riverside County.
+- Angle A: Unbelievable hidden "cheap eats" and budget food hacks exclusively around Hemet, CA.
+- Angle B: The ultimate guide to scoring massive markdown clearance deals at Walmart locations in the Inland Empire.
+- Angle C: The absolute best budget motels, cheap stays, and affordable short-term living options near Hemet.
+- Angle D: A brilliant frugality and survival guide for families trying to rapidly slash their living costs in Riverside County.
 
 Formatting & Technical SEO Rules:
 1. LANGUAGE: Strict 100% US English.
