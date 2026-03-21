@@ -6,9 +6,14 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
     try {
         const conn = await getConnection();
-        await conn.execute("UPDATE normalized_deals SET status = 'approved', merchandiser_score = 99 WHERE id = 709");
+        await conn.execute('SET FOREIGN_KEY_CHECKS = 0');
+        await conn.execute('TRUNCATE TABLE ai_blog_posts');
+        await conn.execute('TRUNCATE TABLE normalized_deals');
+        try { await conn.execute('TRUNCATE TABLE deals'); } catch(e) {}
+        try { await conn.execute('TRUNCATE TABLE raw_deals'); } catch(e) {}
+        await conn.execute('SET FOREIGN_KEY_CHECKS = 1');
         await conn.end();
-        return NextResponse.json({ success: true, message: "Deal 709 Approved!" });
+        return NextResponse.json({ success: true, message: "DB Wiped successfully!" });
     } catch (e) {
         return NextResponse.json({ error: e.message });
     }
