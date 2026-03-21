@@ -88,12 +88,11 @@ export async function GET(request) {
             const copywriterPrompt = `Act as an elite $1000/day social media copywriter. Write a highly engaging, "thumb-stopping" Facebook post caption for a deal.\nDeal Title: ${dealToPost.title}\nHighlighted Price: $${dealToPost.discount_price}\nRules: MUST BE IN FULL ENGLISH. Target audience: Residents of Hemet, California and the Inland Empire. Keep it concise (3 sentences max). Sound like a helpful neighbor. Use 2-3 emojis. NO links in body. Do NOT include #Ad hashtags. End with a strong English call to action. Note: Do not hardcode the exact price if it might require a coupon; use hype phrases.`;
             
             let facebookDirectLink = dealToPost.url;
-            if (facebookDirectLink.includes('amazon.com')) {
-               try {
-                   const urlObj = new URL(facebookDirectLink);
-                   urlObj.searchParams.set('tag', process.env.AMAZON_AFFILIATE_TAG || 'pear2024-20');
-                   facebookDirectLink = urlObj.toString();
-               } catch(e) {}
+            const fallbackTag = process.env.AMAZON_AFFILIATE_TAG || 'pear2024-20';
+            if (facebookDirectLink.includes('amazon') || facebookDirectLink.includes('amzn.to')) {
+                facebookDirectLink = facebookDirectLink.includes('?') 
+                    ? `${facebookDirectLink}&tag=${fallbackTag}` 
+                    : `${facebookDirectLink}?tag=${fallbackTag}`;
             }
             
             let trackingLink = facebookDirectLink;
