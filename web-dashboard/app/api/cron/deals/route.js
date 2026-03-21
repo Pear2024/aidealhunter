@@ -165,11 +165,11 @@ export async function GET(request) {
 
             const [insertResult] = await connection.execute(`
                 INSERT INTO normalized_deals 
-                (raw_deal_id, title, brand, original_price, discount_price, discount_percentage, url, image_url, status, confidence_score, merchandiser_score, vote_score, installment_plan, submitter_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'approved', ?, ?, ?, ?, 'system')
+                (raw_deal_id, title, brand, original_price, discount_price, discount_percentage, url, image_url, status, confidence_score, merchandiser_score, vote_score, installment_plan, submitter_id, category)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'approved', ?, ?, ?, ?, 'system', ?)
             `, [
                 rawId, extracted.title.substring(0, 100), 'Unknown', original_price, extracted.discount_price, discount_percentage, finalUrl, finalImg,
-                0.95, Math.floor(Math.random() * 80) + 10, Math.floor(Math.random() * 50) + 5, extracted.installment_plan || null
+                0.95, Math.floor(Math.random() * 80) + 10, Math.floor(Math.random() * 50) + 5, extracted.installment_plan || null, randomCategory
             ]);
             
             dealsAdded++;

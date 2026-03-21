@@ -8,20 +8,28 @@ export async function GET(request) {
   let connection;
   try {
     const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status') || 'pending';
+    const categoryQuery = searchParams.get('category') || 'all';
 
     connection = await getConnection();
-    let rows;
+    
+    let queryStr = "SELECT * FROM normalized_deals WHERE ";
+    let queryArgs = [];
+    
     if (status === 'all') {
-      [rows] = await connection.execute(
-        "SELECT * FROM normalized_deals WHERE status IN ('approved', 'expired') ORDER BY merchandiser_score DESC, created_at DESC"
-      );
+        queryStr += "status IN ('approved', 'expired')";
     } else {
-      [rows] = await connection.execute(
-        "SELECT * FROM normalized_deals WHERE status = ? ORDER BY merchandiser_score DESC, created_at DESC",
-        [status]
-      );
+        queryStr += "status = ?";
+        queryArgs.push(status);
     }
+    
+    if (categoryQuery !== 'all') {
+        queryStr += " AND category = ?";
+        queryArgs.push(categoryQuery);
+    }
+    
+    queryStr += " ORDER BY merchandiser_score DESC, created_at DESC LIMIT 50";
+
+    const [rows] = await connection.execute(queryStr, queryArgs);
     let visitorSegment = null;
     const cookieStore = await cookies();
     const dhVisitorId = cookieStore.get('dh_visitor_id')?.value;
