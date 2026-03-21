@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getConnection } from '@/lib/db';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
+import { sendTelegramAlert } from '@/lib/telegram';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; 
@@ -103,6 +104,7 @@ Formatting & Technical SEO Rules:
         
     } catch (error) {
         console.error("Cron Blog Error:", error);
+        await sendTelegramAlert(`🚨 <b>[Blog SEO Engine Error]</b>\nFailed generating AI Lifestyle Article!\n\n<code>${error.message}</code>`);
         return NextResponse.json({ error: error.message }, { status: 500 });
     } finally {
         if (connection) {

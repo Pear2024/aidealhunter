@@ -4,6 +4,7 @@ import Parser from 'rss-parser';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as cheerio from 'cheerio';
 import { logAgent } from '@/lib/agent_logger';
+import { sendTelegramAlert } from '@/lib/telegram';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; 
@@ -61,6 +62,7 @@ export async function GET(request) {
         } catch(e) {
             console.error("FB request failed:", e);
             await logAgent('agent_3', 'Agent 3: Copywriter', 'Critical Exception', 'failed', e.message);
+            await sendTelegramAlert(`🚨 <b>[Graph API Fault]</b>\nFailed to broadcast to Facebook!\n\n<code>${e.message}</code>`);
             return false;
         }
     }    // ==============================================================
@@ -127,6 +129,7 @@ export async function GET(request) {
         } catch (err) {
              console.error("Facebook Posting Fault:", err);
              await logAgent('agent_3', 'Agent 3: Copywriter', 'Critical Exception', 'failed', err.message);
+             await sendTelegramAlert(`🚨 <b>[Deal Engine Error]</b>\nFacebook Post failed to deploy!\n\n<code>${err.message}</code>`);
         }
     }
     // ==============================================================
@@ -150,7 +153,12 @@ export async function GET(request) {
             if (copyResult.response.text().trim()) caption = copyResult.response.text().trim();
         } catch(e) {}
 
-        await executeGraphAPI('feed', { message: caption, link: topNews.link }, 'Facebook News', `Successfully deployed breaking news post.`);
+        try {
+            const success = await executeGraphAPI('feed', { message: caption, link: topNews.link }, 'Facebook News', `Successfully deployed breaking news post.`);
+            if (!success) throw new Error("Graph API request to external News endpoint failed entirely.");
+        } catch (err) {
+            await sendTelegramAlert(`🚨 <b>[News Engine Error]</b>\nFacebook News failed to deploy!\n\n<code>${err.message}</code>`);
+        }
     }
     // ==============================================================
     // ROUTE 4: THE TIPS ENGINE (Agent 11)

@@ -9,6 +9,16 @@ const { GoogleGenerativeAI, SchemaType } = require('@google/generative-ai');
 const googleTTS = require('google-tts-api');
 const ffmpeg = require('fluent-ffmpeg');
 
+async function sendTelegramAlert(message) {
+    const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8496126366:AAHfGKbMH2Fq_xQmXUMKMNBDO70C02s29xA';
+    const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '8189986883';
+    try {
+        await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            chat_id: TELEGRAM_CHAT_ID, text: message, parse_mode: 'HTML'
+        });
+    } catch (e) {}
+}
+
 async function downloadFile(url, filepath, retries = 3) {
     for (let i = 0; i < retries; i++) {
         try {
@@ -199,6 +209,7 @@ async function main() {
 
             } catch (err) {
                  console.error("❌ Facebook API Error:", err.response ? JSON.stringify(err.response.data) : err.stack);
+                 await sendTelegramAlert(`🚨 <b>[Graph API Fault]</b>\nReels generation succeeded, but Facebook Graph API upload failed!\n\n<code>${err.message}</code>`);
             }
         })
         .on('error', (err) => {
@@ -206,6 +217,11 @@ async function main() {
         });
     } catch (globalErr) {
         console.error("🚨 FATAL GLOBAL ERROR TERMINATING EXECUTION:", globalErr.stack);
+        if (globalErr.code === 'ETIMEDOUT' || globalErr.message.includes('connect')) {
+             await sendTelegramAlert(`🚨 <b>[GitHub Actions Crash]</b>\nReels Generator failed to connect to MySQL!\n\n(Did your DB password change? Update GitHub Secrets!)\n\n<code>${globalErr.message}</code>`);
+        } else {
+             await sendTelegramAlert(`🚨 <b>[GitHub Reels Crash]</b>\nFailed compiling FFmpeg video!\n\n<code>${globalErr.message}</code>`);
+        }
         process.exit(1);
     }
 }
