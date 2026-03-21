@@ -55,8 +55,8 @@ export async function GET(request) {
     try { feed = await parser.parseURL(url); } 
     catch(e) { return NextResponse.json({ error: 'RSS fetch failed', details: e.message }, { status: 500 }); }
     
-    // Process top 3 newest deals
-    const items = feed.items.slice(0, 3);
+    // Process up to 20 deals to hunt for valid Amazon links
+    const items = feed.items.slice(0, 20);
     let dealsAdded = 0;
     
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -233,17 +233,23 @@ export async function GET(request) {
                 } else {
                      console.error("Facebook API Error:", fbResult.error?.message);
                      const fbErrorMsg = fbResult.error?.message || 'Unknown FB Error';
-                     await connection.execute('UPDATE normalized_deals SET brand = ? WHERE id = ?', [fbErrorMsg.substring(0, 50), insertedDealId]);
+                     await logAgent('agent_3', 'Agent 3: Copywriter', 'Facebook Rate Limit', 'failed', `Failed payload due to Graph API: ${fbErrorMsg}`);
+                     await connection.execute('UPDATE normalized_deals SET status = "failed_fb" WHERE id = ?', [insertedDealId]);
                 }
-             } catch(err) {
-                 console.error("Facebook Post Flow Error:", err.message);
-                 await connection.execute('UPDATE normalized_deals SET brand = ? WHERE id = ?', ["App Crash: " + err.message.substring(0, 40), insertedDealId]);
-             } 
+            } catch (err) {
+                console.error("FB Post sequence crashed:", err);
+                await logAgent('agent_3', 'Agent 3: Copywriter', 'Critical Exception', 'failed', err.message);
+                await connection.execute('UPDATE normalized_deals SET status = "failed_fb" WHERE id = ?', [insertedDealId]);
+            }
+            
+            // Hard Stop: Only generate 1 valid post per Cron Trigger to respect 10m frequencies.
+            if (dealsAdded >= 1) break;
+            
+        } // End of Gatekeeper Check
              
              // Sleep 1 second to breathe between deals
              await new Promise(r => setTimeout(r, 1000));
         }
-    }
     
     console.log(`✅ Serverless Scraper Finished. Added ${dealsAdded} deals.`);
     return NextResponse.json({ success: true, added: dealsAdded });
