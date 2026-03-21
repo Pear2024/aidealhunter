@@ -69,7 +69,8 @@ Formatting & Technical SEO Rules:
         const slug = blogData.slug.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
         
         const encodedPrompt = encodeURIComponent(blogData.cover_image_prompt.trim());
-        const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1200&height=630&nologo=true`;
+        const randomSeed = Math.floor(Math.random() * 100000000);
+        const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1200&height=630&nologo=true&seed=${randomSeed}`;
 
         connection = await getConnection();
         
