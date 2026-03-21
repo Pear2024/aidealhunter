@@ -76,14 +76,10 @@ export const publishSeoBlogTool = tool(
                 if (imgData.data && imgData.data[0]) {
                     const remoteUrl = imgData.data[0].url;
                     
-                    // Fetch DALL-E image and pipe to ImgBB because OpenAI URLs expire in 1 hour
-                    const fetchRes = await fetch(remoteUrl);
-                    const buffer = await fetchRes.arrayBuffer();
-                    const base64Image = Buffer.from(buffer).toString('base64');
-                    
                     if (process.env.IMGBB_API_KEY) {
                         const imgFormData = new URLSearchParams();
-                        imgFormData.append("image", base64Image);
+                        imgFormData.append("image", remoteUrl); // Pass the direct DALL-E URL to ImgBB
+
                         const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=${process.env.IMGBB_API_KEY}`, {
                             method: "POST",
                             body: imgFormData
