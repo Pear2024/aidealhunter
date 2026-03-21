@@ -13,7 +13,10 @@ const AGENTS = [
   { id: 'agent_8', name: 'Agent 8: Comment Closer', icon: '💬', desc: 'Replies to FB comments' },
   { id: 'agent_9', name: 'Agent 9: Lead Magnet', icon: '🧲', desc: 'Captures and processes emails' },
   { id: 'agent_10', name: 'Agent 10: Taste Profiler', icon: '🧠', desc: 'Segments user click behaviors' },
-  { id: 'agent_11', name: 'Agent 11: Profit Brain', icon: '💰', desc: 'Calculates affiliate commissions' }
+  { id: 'agent_11', name: 'Agent 11: Profit Brain', icon: '💰', desc: 'Calculates affiliate commissions' },
+  { id: 'agent_12', name: 'Agent 12: Community Bot', icon: '🤖', desc: 'Auto-reacts & replies via background queues' },
+  { id: 'agent_13', name: 'Agent 13: Local SEO Blogger', icon: '📝', desc: 'Writes daily viral Hemet/IE markdown posts' },
+  { id: 'agent_14', name: 'Agent 14: FB Auto-Reels Agent', icon: '🎬', desc: 'Cloud FFmpeg rendering 1080x1920 videos' }
 ];
 
 export default function AgentsDashboard() {
@@ -42,11 +45,21 @@ export default function AgentsDashboard() {
   const handleTrigger = async (agent) => {
     setTriggering(prev => ({ ...prev, [agent.id]: true }));
     try {
-      await fetch('/api/admin/agents', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'trigger', agentId: agent.id, agentName: agent.name })
-      });
+      if (agent.id === 'agent_13') {
+          await fetch('/api/cron/blog?key=super_secret_ai_cron_password_123');
+      } else if (agent.id === 'agent_14') {
+          // GitHub action handles this independently
+          await fetch('/api/admin/agents', {
+            method: 'POST',
+            body: JSON.stringify({ action: 'trigger', agentId: agent.id, agentName: agent.name + ' (Dispatched to GitHub Cloud)' })
+          });
+      } else {
+          await fetch('/api/admin/agents', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'trigger', agentId: agent.id, agentName: agent.name })
+          });
+      }
       fetchLogs();
     } catch (e) {
       console.error(e);
