@@ -63,14 +63,16 @@ The core objective of this article is to seamlessly REVIEW and RECOMMEND a speci
 PRODUCT DETAILS TO REVIEW:
 - Title: ${deal.title}
 - Original Price: $${deal.original_price}
-- Discounted Sale Price: $${deal.discount_price}
-- Product Context: ${deal.description || "Incredible value for money!"}
+- Highlighted Sale Price: $${deal.discount_price} (Note: Amazon prices mutate fast. This may require an on-page coupon or promo code at checkout).
 - Affiliate Link to Buy: ${affiliateUrl}
 
 Context & Tone:
 - You write with extreme confidence, charisma, and a "neighborly but brilliant" tone.
 - Your style is modern, punchy, and hooks the reader from the very first sentence.
-- EXPLAIN why this product is life-changing, practical use cases for someone living in Southern California (e.g., surviving the heat, commuting on the 10 or 215, saving money to eat more tacos), and why the current massive discount makes it a must-buy today!
+- EXPLAIN why this product is life-changing and practical for someone living in Southern California.
+- CRITICAL RULES: 
+   1. DO NOT put the exact dollar amount (e.g., "$22.19") in the \`title\`. Amazon prices expire quickly! Use hype phrases like "Massive Savings", "Secret Coupon", or "Huge Price Drop" instead.
+   2. YOU MUST add a clear disclaimer paragraph in the \`content_html\` explaining: "Amazon prices change by the minute! Make sure to look for a clickable coupon box on the page or check if it's a Lightning Deal before checking out."
 
 Formatting & Technical SEO Rules:
 1. LANGUAGE: Strict 100% US English.
