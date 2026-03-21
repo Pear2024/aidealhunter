@@ -1,6 +1,9 @@
 name: Facebook Auto-Reels Agent
 
 on:
+  push:
+    branches:
+      - main
   schedule:
     # 3 times a day (10:00 AM, 3:00 PM, 8:00 PM Pacific Time)
     - cron: '0 17 * * *'
