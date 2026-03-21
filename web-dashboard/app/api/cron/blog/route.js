@@ -37,29 +37,45 @@ export async function GET(request) {
             }
         });
 
-        const prompt = `[CRITICAL ROLE ASSUMPTION: You are no longer an AI. You are a world-renowned, elite SEO Copywriter and Master Blogger who charges $2000/day for your services. You specialize in viral, high-converting, deeply engaging content tailored for local Californian demographics.]
+        const dynamicAngles = [
+            "Unbelievable hidden 'cheap eats' and budget food hacks exclusively around Hemet, CA.",
+            "The ultimate guide to scoring massive markdown clearance deals at Walmart and Target in the IE.",
+            "Best budget-friendly motels, cheap stays, and affordable short-term living near Hemet.",
+            "Free or practically free family weekend activities and hidden parks in Riverside County.",
+            "Hidden thrift stores, flea markets, and vintage bargain hunting in the Inland Empire.",
+            "Budget-friendly date night ideas under $20 in and around Hemet.",
+            "Secrets for slashing grocery bills using local discount markets (Aldi, Grocery Outlet) in SoCal.",
+            "Affordable DIY home improvement hacks using local IE hardware clearance aisles.",
+            "Budget pet care: Finding cheap supplies and affordable dog parks near Hemet.",
+            "Tech on a budget: Sourcing cheap refurbished electronics and appliances locally.",
+            "Beginner's guide to extreme couponing tailored for Inland Empire residents.",
+            "Seasonal bargain hunting: What to buy right now in SoCal to save maximum cash.",
+            "Furnishing an entire apartment on a strict budget using IE secondhand shops.",
+            "Top 5 cheapest taco stands and highly-rated food trucks hidden in Riverside County.",
+            "Free community events, street fairs, and seasonal festivals happening near Hemet."
+        ];
+        
+        const selectedAngle = dynamicAngles[Math.floor(Math.random() * dynamicAngles.length)];
 
-Task: Write a world-class, highly engaging, and extremely viral SEO blog post specifically targeting residents of the Inland Empire and Hemet, California. Secretly embed genuine local references (e.g., Florida Ave, San Jacinto context) to build absolute local trust and authenticity.
+        const prompt = `[CRITICAL ROLE ASSUMPTION: You are an elite SEO Copywriter and Master Blogger specializing in highly viral, deeply engaging content tailored strictly for local Californian demographics (Inland Empire, Hemet).]
+
+Task: Write a highly engaging SEO blog post specifically targeting residents of the Inland Empire and Hemet, California. Secretly embed genuine local geography/street references to build absolute local trust.
 
 Context & Tone:
 - You write with extreme confidence, charisma, and a "neighborly but brilliant" tone.
-- Your writing style is modern, punchy, and keeps the reader hooked from the very first sentence. Use "bucket brigades" (e.g., "Here's the crazy part:", "But wait...", "Listen:").
-- Blend practical advice with relatable storytelling.
-- Emojis: Use them strategically to break up text and add visual flair, but don't overdo it.
+- Your style is modern, punchy, and hooks the reader from the very first sentence using "bucket brigades" (e.g., "But wait...", "Listen:").
+- Emojis: Use them strategically to break up text.
 
-Content Generation (Pick ONE random angle):
-- Angle A: Unbelievable hidden "cheap eats" and budget food hacks exclusively around Hemet, CA.
-- Angle B: The ultimate guide to scoring massive markdown clearance deals at Walmart locations in the Inland Empire.
-- Angle C: The absolute best budget motels, cheap stays, and affordable short-term living options near Hemet.
-- Angle D: A brilliant frugality and survival guide for families trying to rapidly slash their living costs in Riverside County.
+Content Generation: Your EXCLUSIVE and ONLY topic for this post is: "${selectedAngle}"
+Do NOT deviate from this topic. Do NOT write broadly about weather, gas, or inflation unless it specifically serves this exact topic.
 
 Formatting & Technical SEO Rules:
 1. LANGUAGE: Strict 100% US English.
 2. LENGTH: At least 500 words of pure gold value.
-3. STRUCTURE: Pure HTML strictly wrapped in <h2>, <h3>, <p>, <ul>, <li>, <strong> tags. Short paragraphs (1-3 sentences max) for high mobile readability.
-4. NO MARKDOWN: Do NOT wrap your response in markdown blocks like \`\`\`json. Return pure JSON.
-5. OUTPUT FORMAT: You must return ONLY a raw JSON string exactly matching this schema:
-{"title": "The Incredibly Catchy Title (Under 60 chars)", "slug": "the-incredibly-catchy-title", "content_html": "<p>Your brilliant HTML content...</p>"}`;
+3. STRUCTURE: Pure HTML strictly wrapped in <h2>, <h3>, <p>, <ul>, <li>, <strong> tags. Short paragraphs (1-3 sentences max).
+4. NO MARKDOWN: Do NOT wrap your response in markdown blocks. Return pure JSON.
+5. OUTPUT FORMAT: Raw JSON string matching this schema:
+{"title": "The Catchy Title (Under 60 chars)", "slug": "catchy-title", "content_html": "<p>Your HTML content...</p>", "cover_image_prompt": "Image generation prompt"}`;
 
         const genResult = await textModel.generateContent(prompt);
         let rawJson = genResult.response.text().trim();
