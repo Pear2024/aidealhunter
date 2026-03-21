@@ -20,9 +20,9 @@ export async function GET(request) {
 
         connection = await getConnection();
 
-        // 1. Fetch Top High-Profit Amazon Deals
+        // 1. Fetch Top High-Profit AND Top-Rated (Merchandiser Score) Amazon Deals
         const [deals] = await connection.execute(
-            `SELECT * FROM normalized_deals WHERE status = 'approved' AND network = 'Amazon' AND (discount_price > 0 OR original_price > discount_price) ORDER BY profit_score DESC, id DESC LIMIT 20`
+            `SELECT * FROM normalized_deals WHERE status = 'approved' AND network = 'Amazon' AND (discount_price > 0 OR original_price > discount_price) ORDER BY profit_score DESC, merchandiser_score DESC LIMIT 20`
         );
         
         if (deals.length === 0) {
