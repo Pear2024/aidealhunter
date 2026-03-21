@@ -92,12 +92,18 @@ Formatting & Technical SEO Rules:
         const blogData = JSON.parse(rawJson);
         const slug = blogData.slug.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
         
-        // 3. Save directly utilizing the REAL Amazon Product Image instead of AI Generation
-        const imageUrl = deal.image_url;
+        // 3. Construct Semantic Cover Art utilizing Pollinations AI matching the native Amazon product title!
+        let generatedImageUrl = deal.image_url;
+        
+        // Failsafe: If the Amazon Database inherited a static PS5 placeholder from the legacy Slickdeals API, override it semantically!
+        if (!generatedImageUrl || generatedImageUrl.includes('1606813907291') || generatedImageUrl.includes('unsplash')) {
+             const cleanTitle = deal.title.replace(/[^a-zA-Z0-9 ]/g, '').substring(0, 100);
+             generatedImageUrl = `https://image.pollinations.ai/prompt/Hyper-realistic%20product%20photography%20of%20${encodeURIComponent(cleanTitle)}%20high%20resolution%20commercial%20lighting?width=1200&height=630&nologo=true`;
+        }
 
         const [insertResult] = await connection.execute(
             `INSERT INTO ai_blog_posts (slug, title, content_html, image_url, created_at) VALUES (?, ?, ?, ?, NOW())`,
-            [slug, blogData.title, blogData.content_html, imageUrl]
+            [slug, blogData.title, blogData.content_html, generatedImageUrl]
         );
 
         return NextResponse.json({ success: true, blog_id: insertResult.insertId, slug: slug, source_deal_id: deal.id });
