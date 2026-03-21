@@ -25,8 +25,9 @@ async function regenerateRealBlogs() {
             title: { type: SchemaType.STRING, description: "The Incredibly Catchy Title (Under 60 chars)" },
             slug: { type: SchemaType.STRING },
             content_html: { type: SchemaType.STRING, description: "Pure HTML strictly wrapped in <h2>, <h3>, <p>, <ul>, <li>, <strong> tags." },
+            cover_image_prompt: { type: SchemaType.STRING, description: "A detailed 15-word visual prompt describing a photorealistic header image matching this article's topic." },
           },
-          required: ["title", "slug", "content_html"],
+          required: ["title", "slug", "content_html", "cover_image_prompt"],
         };
     
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -81,11 +82,13 @@ Formatting & Technical SEO Rules:
             
             // Generate clean slug
             const slug = blogData.slug.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') + '-' + Math.floor(Math.random()*1000);
-            const randomImg = aestheticBackgrounds[Math.floor(Math.random() * aestheticBackgrounds.length)];
+            
+            const encodedPrompt = encodeURIComponent(blogData.cover_image_prompt.trim());
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1200&height=630&nologo=true`;
 
             await conn.execute(
                 `INSERT INTO ai_blog_posts (slug, title, content_html, image_url, created_at) VALUES (?, ?, ?, ?, NOW())`,
-                [slug, blogData.title, blogData.content_html, randomImg]
+                [slug, blogData.title, blogData.content_html, imageUrl]
             );
             console.log(`✅ Success! Authentic Blog #${i+1} saved: "${blogData.title}"`);
         } catch (err) {

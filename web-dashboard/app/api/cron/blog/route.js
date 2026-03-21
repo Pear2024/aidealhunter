@@ -25,8 +25,9 @@ export async function GET(request) {
             title: { type: SchemaType.STRING, description: "The Incredibly Catchy Title (Under 60 chars)" },
             slug: { type: SchemaType.STRING },
             content_html: { type: SchemaType.STRING, description: "Pure HTML strictly wrapped in <h2>, <h3>, <p>, <ul>, <li>, <strong> tags." },
+            cover_image_prompt: { type: SchemaType.STRING, description: "A detailed 15-word visual prompt describing a photorealistic header image matching this article's topic." },
           },
-          required: ["title", "slug", "content_html"],
+          required: ["title", "slug", "content_html", "cover_image_prompt"],
         };
         const textModel = genAI.getGenerativeModel({ 
             model: "gemini-2.5-flash",
@@ -66,21 +67,15 @@ Formatting & Technical SEO Rules:
         
         const blogData = JSON.parse(rawJson);
         const slug = blogData.slug.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
-
-        const aestheticBackgrounds = [
-            'https://images.unsplash.com/photo-1542435503-956c469947f6', // Minimal desk
-            'https://images.unsplash.com/photo-1498050108023-c5249f4df085', // Tech table
-            'https://images.unsplash.com/photo-1461151304267-38535e780c79', // Laptop sunset
-            'https://images.unsplash.com/photo-1481481600673-c6cb16d4e160', // Note taking
-            'https://images.unsplash.com/photo-1512756290469-ec264b7fbf87'  // Abstract tech
-        ];
-        const randomImg = aestheticBackgrounds[Math.floor(Math.random() * aestheticBackgrounds.length)] + '?auto=format&fit=crop&w=1200&q=80';
+        
+        const encodedPrompt = encodeURIComponent(blogData.cover_image_prompt.trim());
+        const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1200&height=630&nologo=true`;
 
         connection = await getConnection();
         
         const [insertResult] = await connection.execute(
             `INSERT INTO ai_blog_posts (slug, title, content_html, image_url, created_at) VALUES (?, ?, ?, ?, NOW())`,
-            [slug, blogData.title, blogData.content_html, randomImg]
+            [slug, blogData.title, blogData.content_html, imageUrl]
         );
 
         return NextResponse.json({ success: true, blog_id: insertResult.insertId, slug: slug });
