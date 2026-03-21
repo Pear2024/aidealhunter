@@ -3,6 +3,7 @@ import { getConnection } from '@/lib/db';
 import Parser from 'rss-parser';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as cheerio from 'cheerio';
+import { logAgent } from '@/lib/agent_logger';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Max allowed for hobby
@@ -48,6 +49,7 @@ export async function GET(request) {
     const randomCategory = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
     const url = `https://slickdeals.net/newsearch.php?mode=popular&searcharea=deals&searchin=first&rss=1&q=${randomCategory}`;
     console.log(`📡 Fetching RSS: ${url}`);
+    await logAgent('agent_1', 'Agent 1: Data Scraper', 'Waking up to fetch RSS Deals', 'running', `Vercel Cron Triggered. Scanning: ${randomCategory}`);
     
     let feed;
     try { feed = await parser.parseURL(url); } 
@@ -165,6 +167,7 @@ export async function GET(request) {
             dealsAdded++;
             const insertedDealId = insertResult.insertId;
             console.log(`✅ Approved Deal ID: ${insertedDealId}`);
+            await logAgent('agent_2', 'Agent 2: Validator', 'Deal Approved', 'success', `Passed algorithmic QA check: ${extracted.title.substring(0,40)}...`);
 
             // ----- Agent 3: Copywriter & FB API -----
             try {
@@ -199,6 +202,7 @@ export async function GET(request) {
                             const bData = await bitlyRes.json();
                             trackingLink = bData.link;
                             console.log(`✅ Bitly Link Created: ${trackingLink}`);
+                            await logAgent('agent_7', 'Agent 7: Compliance', 'Bitly Generation', 'success', `Shortened Amazon payload to ${trackingLink}`);
                         } else {
                             console.warn("⚠️ Bitly api returned error status:", bitlyRes.status);
                         }
@@ -221,8 +225,11 @@ export async function GET(request) {
                 });
                 const fbResult = await fbResponse.json();
                 if (!fbResult.error && fbResult.id) {
-                     await connection.execute('UPDATE normalized_deals SET fb_post_id = ? WHERE id = ?', [fbResult.id, insertedDealId]);
-                     console.log(`🚀 Published to FB (ID: ${fbResult.id})`);
+                    console.log(`🚀 Published FB Post Target: ${trackingLink}`);
+                    
+                    // Update Database Post ID
+                    await connection.execute('UPDATE normalized_deals SET fb_post_id = ? WHERE id = ?', [fbResult.id, insertedDealId]);
+                    await logAgent('agent_3', 'Agent 3: Copywriter', 'Facebook Publication', 'success', `Successfully deployed post. Facebook ID: ${fbResult.id}`);
                 } else {
                      console.error("Facebook API Error:", fbResult.error?.message);
                      const fbErrorMsg = fbResult.error?.message || 'Unknown FB Error';

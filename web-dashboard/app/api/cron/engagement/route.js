@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { logAgent } from '@/lib/agent_logger';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const textModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
@@ -12,6 +13,7 @@ export async function GET(request) {
         }
 
         console.log("🤖 Agent 11 (Engagement): Waking up to generate organic content...");
+        await logAgent('agent_11', 'Agent 11: Community Engagement', 'Cron Execution Wakeup', 'running', 'Initiating organic audience interaction prompt sequence.');
 
         // 2. Randomized Content Strategy (1 to 4)
         const categories = [
@@ -122,6 +124,7 @@ export async function GET(request) {
 
         if (fbResult.id) {
             console.log(`🚀 Published Organic Post to Facebook (ID: ${fbResult.id})`);
+            await logAgent('agent_8', 'Agent 8: Comment Closer', 'Routine Post Publication', 'success', `Successfully distributed Engagement Content. Facebook ID: ${fbResult.id}`);
             return new Response(JSON.stringify({ success: true, category: activeCategory.type, post_id: fbResult.id, text: generatedText }), { status: 200, headers: { 'Content-Type': 'application/json' } });
         } else {
             console.error("❌ Facebook Post Failed:", fbResult);
