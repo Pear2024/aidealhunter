@@ -91,6 +91,23 @@ ${newsStringList}
         // Strip markdown backticks just in case Gemini ignored the rule
         finalMessage = finalMessage.replace(/```/g, '');
         
+        // 4.5. Intercept and Compress Massive Google News URLs natively in the text!
+        const urlRegex = new RegExp('https?://[^\\s]+', 'g');
+        const extractedUrls = finalMessage.match(urlRegex) || [];
+        
+        for (const longUrl of extractedUrls) {
+             try {
+                 // Using the unmetered is.gd open API to radically compress the footprint
+                 const shortRes = await fetch(`https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`);
+                 const shortData = await shortRes.json();
+                 if (shortData.shorturl) {
+                     finalMessage = finalMessage.replace(longUrl, shortData.shorturl);
+                 }
+             } catch (shortenErr) {
+                 console.error("URL Compression fault:", shortenErr.message);
+             }
+        }
+        
         // 5. Send directly to Telegram!
         await sendTelegramAlert(finalMessage);
 
