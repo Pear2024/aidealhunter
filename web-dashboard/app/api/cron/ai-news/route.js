@@ -17,20 +17,20 @@ export async function GET(request) {
         }
 
         // 2. Fetch Latest Articles from Google News RSS
-        const rssUrl = \`https://news.google.com/rss/search?q=Artificial+Intelligence+OR+ChatGPT+OR+Generative+AI&hl=en-US&gl=US&ceid=US:en\`;
+        const rssUrl = `https://news.google.com/rss/search?q=Artificial+Intelligence+OR+ChatGPT+OR+Generative+AI&hl=en-US&gl=US&ceid=US:en`;
         
         const response = await fetch(rssUrl, { next: { revalidate: 0 } });
         const xmlText = await response.text();
         
         // Very basic XML Regex Parser to avoid adding new NPM dependencies
         const items = [];
-        const itemMatches = xmlText.match(/<item>([\\s\\S]*?)<\\/item>/g) || [];
+        const itemMatches = xmlText.match(/<item>([\s\S]*?)<\/item>/g) || [];
         
         for (let i = 0; i < Math.min(itemMatches.length, 15); i++) {
             const itemXml = itemMatches[i];
-            const titleMatch = itemXml.match(/<title>([^<]+)<\\/title>/);
-            const linkMatch = itemXml.match(/<link>([^<]+)<\\/link>/);
-            const pubDateMatch = itemXml.match(/<pubDate>([^<]+)<\\/pubDate>/);
+            const titleMatch = itemXml.match(/<title>([^<]+)<\/title>/);
+            const linkMatch = itemXml.match(/<link>([^<]+)<\/link>/);
+            const pubDateMatch = itemXml.match(/<pubDate>([^<]+)<\/pubDate>/);
             
             if (titleMatch && linkMatch) {
                 // Ignore empty or irrelevant titles
@@ -47,14 +47,14 @@ export async function GET(request) {
         }
 
         // 3. Format strictly for Gemini 2.5 Flash
-        const newsStringList = items.map((itm, idx) => \`[\${idx+1}] Title: \${itm.title}\\nDate: \${itm.date}\\nLink: \${itm.link}\\n\`).join("\\n");
+        const newsStringList = items.map((itm, idx) => `[${idx+1}] Title: ${itm.title}\nDate: ${itm.date}\nLink: ${itm.link}\n`).join("\n");
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         const textModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-        const prompt = \`[CRITICAL MISSION]: You are an elite, highly intelligent Personal AI Assistant curated specifically for an entrepreneur living in the modern global economy.
+        const prompt = `[CRITICAL MISSION]: You are an elite, highly intelligent Personal AI Assistant curated specifically for an entrepreneur living in the modern global economy.
 
 Here are the top 15 breaking global news articles regarding Artificial Intelligence over the last 24 hours:
-\${newsStringList}
+${newsStringList}
 
 [YOUR TASK]:
 1. Read the titles and identify exactly THREE (3) news updates that are the absolute most important for:
@@ -82,14 +82,14 @@ Here are the top 15 breaking global news articles regarding Artificial Intellige
 
 💡 *ทริคประจำวัน:* [หยิบ 1 ไอเดียจาก 3 ข่าวนี้มาสรุปสั้นๆ ว่าแอดมินควรเอาไปประยุกต์ทำอะไรต่อในวันนี้เพื่อให้เกิดประโยชน์สูงสุด!]
 
-**RESPOND DIRECTLY WITH THE RAW THAI TELEGRAM TEXT. DO NOT USE MARKDOWN CODE BLOCKS (\`\`\`).**\`;
+**RESPOND DIRECTLY WITH THE RAW THAI TELEGRAM TEXT. DO NOT USE MARKDOWN CODE BLOCKS (\`\`\`).**`;
 
         // 4. Sythesize and Translate content!
         const genResult = await textModel.generateContent(prompt);
         let finalMessage = genResult.response.text().trim();
         
         // Strip markdown backticks just in case Gemini ignored the rule
-        finalMessage = finalMessage.replace(/\`\`\`/g, '');
+        finalMessage = finalMessage.replace(/```/g, '');
         
         // 5. Send directly to Telegram!
         await sendTelegramAlert(finalMessage);
@@ -99,7 +99,7 @@ Here are the top 15 breaking global news articles regarding Artificial Intellige
 
     } catch (error) {
         console.error("AI News Intelligence Fault:", error);
-        await sendTelegramAlert(\`🚨 <b>[News Intelligence Fault]</b>\\nFailed scanning Daily AI Opportunities!\\n\\n<code>\${error.message}</code>\`);
+        await sendTelegramAlert(`🚨 <b>[News Intelligence Fault]</b>\nFailed scanning Daily AI Opportunities!\n\n<code>${error.message}</code>`);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }
