@@ -2,6 +2,7 @@ import { getConnection } from '@/lib/db';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Comments from './Comments'; 
+import AdBanner from '@/app/components/AdBanner'; 
 
 export const revalidate = 60; // Revalidate every 60s
 
@@ -42,7 +43,11 @@ export default async function BlogPostPage({ params }) {
                     </p>
                     <h1 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '2rem', lineHeight: '1.2' }}>{post.title}</h1>
                     
+                    <AdBanner dataAdSlot="top_article_slot" />
+                    
                     <div className="blog-content" dangerouslySetInnerHTML={{ __html: post.content_html }}></div>
+
+                    <AdBanner dataAdSlot="bottom_article_slot" />
                 </div>
             </article>
 
