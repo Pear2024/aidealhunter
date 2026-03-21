@@ -63,164 +63,71 @@ export async function GET(request) {
             await logAgent('agent_3', 'Agent 3: Copywriter', 'Critical Exception', 'failed', e.message);
             return false;
         }
-    };
-
-    // ==============================================================
+    }    // ==============================================================
     // ROUTE 0, 1, 3, 5: THE DEAL ENGINE (Product Sales)
     // ==============================================================
     if (cycleIndex === 0 || cycleIndex === 1 || cycleIndex === 3 || cycleIndex === 5) {
-        console.log("🛒 Executing Route: DEAL ENGINE");
-        const parser = new Parser({ 
-            customFields: { item: ['media:content', 'image'] },
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+        console.log("🛒 Executing Route: DEAL ENGINE (Amazon API Driven)");
+        
+        await logAgent('agent_1', 'Agent 1: Database Broker', 'Waking up to fetch Native Amazon Deals', 'running', `Vercel Cron Triggered. Scanning: normalized_deals`);
+        
+        // Fetch top highest-scoring Amazon API deals that have NOT been posted to Facebook yet.
+        const [deals] = await connection.execute(
+            `SELECT * FROM normalized_deals WHERE status = 'approved' AND api_provider = 'Amazon' AND (url LIKE '%amazon.com%' OR url LIKE '%amzn.to%') ORDER BY profit_score DESC, merchandiser_score DESC LIMIT 20`
+        );
+
+        if (deals.length === 0) {
+             console.log("No un-posted Amazon deals remain. Exiting Deal Engine.");
+             return NextResponse.json({ success: true, message: "No un-posted Amazon deals available." });
+        }
+
+        const dealToPost = deals[Math.floor(Math.random() * deals.length)];
+        await logAgent('agent_6', 'Agent 6: Gatekeeper', 'Quality Assurance Pass', 'success', `Native Amazon API payload verified: ${dealToPost.title}`);
+
+        try {
+            const copywriterPrompt = `Act as an elite $1000/day social media copywriter. Write a highly engaging, "thumb-stopping" Facebook post caption for a deal.\nDeal Title: ${dealToPost.title}\nHighlighted Price: $${dealToPost.discount_price}\nRules: MUST BE IN FULL ENGLISH. Target audience: Residents of Hemet, California and the Inland Empire. Keep it concise (3 sentences max). Sound like a helpful neighbor. Use 2-3 emojis. NO links in body. Do NOT include #Ad hashtags. End with a strong English call to action. Note: Do not hardcode the exact price if it might require a coupon; use hype phrases.`;
+            
+            let facebookDirectLink = dealToPost.url;
+            if (facebookDirectLink.includes('amazon.com')) {
+               try {
+                   const urlObj = new URL(facebookDirectLink);
+                   urlObj.searchParams.set('tag', process.env.AMAZON_AFFILIATE_TAG || 'pear2024-20');
+                   facebookDirectLink = urlObj.toString();
+               } catch(e) {}
             }
-        });
-        
-        const CATEGORIES = ['food', 'household', 'tech', 'travel'];
-        const randomCategory = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
-        await logAgent('agent_0', 'Agent 0: Trend Analyst', 'Keyword Selected', 'success', `Analyzed user preferences and locked target focus to: ${randomCategory.toUpperCase()}`);
-        const url = `https://slickdeals.net/newsearch.php?mode=popular&searcharea=deals&searchin=first&rss=1&q=${randomCategory}`;
-        
-        await logAgent('agent_1', 'Agent 1: Data Scraper', 'Waking up to fetch RSS Deals', 'running', `Vercel Cron Triggered. Scanning: ${randomCategory}`);
-        
-        let feed;
-        try { feed = await parser.parseURL(url); } 
-        catch(e) { return NextResponse.json({ error: 'RSS fetch failed' }, { status: 500 }); }
-        
-        const items = feed.items.slice(0, 20);
-        let dealsAdded = 0;
-
-        for (const deal of items) {
-            let rawId;
-            try {
-                const [rawResult] = await connection.execute(
-                  `INSERT INTO raw_deals (source_url, title, raw_content, published_at) VALUES (?, ?, ?, NOW())`,
-                  [deal.link, deal.title, deal.content || '']
-                );
-                rawId = rawResult.insertId;
-            } catch(e) { continue; } // Skip duplicates
-
-
-            let extracted = { should_approve: false, confidence_score: 0.95 };
-            let original_price = null;
-            let discount_percentage = null;
-
-            try {
-                const priceMatch = deal.title.match(/\$([0-9,.]+)/);
-                if (priceMatch) {
-                    extracted.discount_price = parseFloat(priceMatch[1].replace(/,/g, ''));
-                    const installmentMatch = deal.title.match(/(?:Or\s)?(\$[0-9.,]+\/mo(?:\s\([0-9]+\s*mo\))?)/i);
-                    if (installmentMatch) extracted.installment_plan = installmentMatch[1];
-                    extracted.title = deal.title.replace(/\$([0-9,.]+)/, '').replace(/(?:Or\s)?(\$[0-9.,]+\/mo(?:\s\([0-9]+\s*mo\))?)/i, '').replace(/ at Amazon| at Best Buy| at Walmart| at Target/i, '').trim();
-                    extracted.should_approve = true;
-                }
-            } catch(e) {}
-
-            const htmlContent = deal['content:encoded'] || deal.content || '';
-            try {
-                const extractorPrompt = `Analyze the following deal text and extract numeric values for discount_price, original_price, and discount_percentage. If missing, use null. Return ONLY raw JSON in format: {"discount_price": 99.99, "original_price": 120.00, "discount_percentage": 20.5} (no markdown blocks).\nTitle: ${deal.title}\nContent: ${htmlContent}`;
-                const extractResult = await withRetry(() => textModel.generateContent(extractorPrompt), 1, 1000);
-                const jsonData = JSON.parse(extractResult.response.text().replace(/```json/g, '').replace(/```/g, '').trim());
-                if (jsonData.discount_price) { extracted.discount_price = jsonData.discount_price; extracted.should_approve = true; }
-                if (jsonData.original_price) original_price = parseFloat(jsonData.original_price);
-                if (jsonData.discount_percentage) discount_percentage = parseFloat(jsonData.discount_percentage);
-            } catch (e) {}
-
-            let finalImg = url.includes('apple') ? 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8' : 'https://images.unsplash.com/photo-1606813907291-d86efa9b94db';
-            if (htmlContent) {
+            
+            let trackingLink = facebookDirectLink;
+            if (process.env.BITLY_ACCESS_TOKEN) {
                 try {
-                    const $ = cheerio.load(htmlContent);
-                    const imgSrc = $('img').first().attr('src');
-                    if (imgSrc) finalImg = imgSrc;
+                    const bitlyRes = await fetch('https://api-ssl.bitly.com/v4/shorten', {
+                        method: 'POST', headers: { 'Authorization': `Bearer ${process.env.BITLY_ACCESS_TOKEN}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ long_url: facebookDirectLink, domain: "bit.ly" })
+                    });
+                    if (bitlyRes.ok) {
+                        trackingLink = (await bitlyRes.json()).link;
+                        await logAgent('agent_7', 'Agent 7: Compliance', 'Bitly Generation', 'success', `Shortened Amazon payload to ${trackingLink}`);
+                    }
                 } catch(e) {}
             }
 
-            let finalUrl = deal.link;
-            let isAmazon = false;
+            let caption = `💥 IE DEALS ALERT! 💥\n\n${dealToPost.title}\n\n💸 MASSIVE SAVINGS ALERT!\n🛒 Hurry and grab yours here: ${trackingLink}`;
             try {
-                const sdRes = await fetch(deal.link, { headers: { 'User-Agent': 'Mozilla/5.0' } });
-                const sdHtml = await sdRes.text();
-                const $sd = cheerio.load(sdHtml);
-                $sd('a').each((i, el) => {
-                    const href = $sd(el).attr('href');
-                    if (href && href.includes('u2=')) {
-                        const decoded = decodeURIComponent(href.split('u2=')[1]);
-                        if (decoded.includes('amazon.com') || decoded.includes('amzn.to')) {
-                            isAmazon = true;
-                            const asinMatch = decoded.match(/(?:dp|product-reviews|gp\/product)\/([A-Z0-9]{10})/i);
-                            if (asinMatch) finalUrl = 'https://www.amazon.com/dp/' + asinMatch[1];
-                            else finalUrl = decoded;
-                        }
-                    }
-                });
+                const copyResult = await withRetry(() => textModel.generateContent(copywriterPrompt), 1, 1000);
+                const generatedText = copyResult.response.text().trim();
+                if (generatedText) caption = `${generatedText}\n\n🛒 Grab Deal Here: ${trackingLink}`;
             } catch(e) {}
             
-            // Also check if the word amazon is loosely in the title or content as a fast-pass
-            if (!isAmazon && (deal.title.toLowerCase().includes('amazon') || htmlContent.toLowerCase().includes('amazon'))) {
-                 isAmazon = true;
+            // Post an image link natively resolving the Facebook Open Graph UI.
+            const success = await executeGraphAPI('photos', { url: dealToPost.image_url, caption: caption }, 'Facebook Publication', `Successfully deployed native Amazon API deal post.`);
+            if (success) {
+                await connection.execute('UPDATE normalized_deals SET status = "posted_fb" WHERE id = ?', [dealToPost.id]);
+                await logAgent('agent_8', 'Agent 8: Comment Closer', 'Listener Deployed', 'running', `Standing by for inbound Facebook audience interactions.`);
+            } else {
+                await connection.execute('UPDATE normalized_deals SET status = "failed_fb" WHERE id = ?', [dealToPost.id]);
             }
-
-            if (extracted.should_approve && extracted.discount_price && isAmazon) {
-                await logAgent('agent_6', 'Agent 6: Gatekeeper', 'Quality Assurance Pass', 'success', `Slickdeals payload verified. Amazon exclusivity parameters confirmed.`);
-                await logAgent('agent_4', 'Agent 4: Merchandiser', 'Aesthetics Scoring', 'success', `Assigned visual placement scores and UI aesthetic ranking.`);
-                await logAgent('agent_10', 'Agent 10: Taste Profiler', 'Audience Segmentation', 'success', `Executed psychographic distribution mapping.`);
-                await logAgent('agent_11', 'Agent 11: Profit Brain', 'Financial Modeling', 'success', `Predictive affiliate commission matrix initialized.`);
-
-                const [insertResult] = await connection.execute(`
-                    INSERT INTO normalized_deals 
-                    (raw_deal_id, title, brand, original_price, discount_price, discount_percentage, url, image_url, status, confidence_score, merchandiser_score, vote_score, installment_plan, submitter_id, category)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'approved', ?, ?, ?, ?, 'system', ?)
-                `, [rawId, extracted.title.substring(0, 100), 'Unknown', original_price, extracted.discount_price, discount_percentage, finalUrl, finalImg, 0.95, Math.floor(Math.random() * 80) + 10, Math.floor(Math.random() * 50) + 5, extracted.installment_plan || null, randomCategory]);
-                
-                dealsAdded++;
-                const insertedDealId = insertResult.insertId;
-                await logAgent('agent_2', 'Agent 2: Validator', 'Deal Approved', 'success', `Passed algorithmic QA check.`);
-
-                try {
-                    const copywriterPrompt = `Act as an elite $1000/day social media copywriter. Write a highly engaging, "thumb-stopping" Facebook post caption for a deal.\nDeal Title: ${extracted.title}\nPrice: $${extracted.discount_price}\nRules: MUST BE IN ENGLISH. Target audience: Residents of Hemet, California and the Inland Empire. Keep it concise (3 sentences max). Sound like a helpful neighbor. Use 2-3 emojis. NO links in body. Do NOT include #Ad hashtags. End with a strong English call to action.`;
-                    
-                    let facebookDirectLink = finalUrl;
-                    if (facebookDirectLink.includes('amazon.com')) {
-                       try {
-                           const urlObj = new URL(facebookDirectLink);
-                           urlObj.searchParams.set('tag', process.env.AMAZON_AFFILIATE_TAG || 'smartshop0c33-20');
-                           facebookDirectLink = urlObj.toString();
-                       } catch(e) {}
-                    }
-                    
-                    let trackingLink = facebookDirectLink;
-                    if (process.env.BITLY_ACCESS_TOKEN) {
-                        try {
-                            const bitlyRes = await fetch('https://api-ssl.bitly.com/v4/shorten', {
-                                method: 'POST', headers: { 'Authorization': `Bearer ${process.env.BITLY_ACCESS_TOKEN}`, 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ long_url: facebookDirectLink, domain: "bit.ly" })
-                            });
-                            if (bitlyRes.ok) {
-                                trackingLink = (await bitlyRes.json()).link;
-                                await logAgent('agent_7', 'Agent 7: Compliance', 'Bitly Generation', 'success', `Shortened Amazon payload to ${trackingLink}`);
-                            }
-                        } catch(e) {}
-                    }
-
-                    let caption = `💥 IE DEALS ALERT! 💥\n\n${extracted.title}\n\n💸 NOW ONLY: $${extracted.discount_price}\n🛒 Hurry and grab yours here: ${trackingLink}`;
-                    try {
-                        const copyResult = await withRetry(() => textModel.generateContent(copywriterPrompt), 1, 1000);
-                        const generatedText = copyResult.response.text().trim();
-                        if (generatedText) caption = `${generatedText}\n\n🛒 Grab Deal Here: ${trackingLink}`;
-                    } catch(e) {}
-                    
-                    const success = await executeGraphAPI('feed', { message: caption, link: trackingLink }, 'Facebook Publication', `Successfully deployed deal post.`);
-                    if (success) {
-                        await logAgent('agent_8', 'Agent 8: Comment Closer', 'Listener Deployed', 'running', `Standing by for inbound Facebook audience interactions.`);
-                        await logAgent('agent_9', 'Agent 9: Lead Magnet', 'Funnel Activation', 'running', `Sales funnel sensors active.`);
-                    } else {
-                        await connection.execute('UPDATE normalized_deals SET status = "failed_fb" WHERE id = ?', [insertedDealId]);
-                    }
-                } catch (err) {}
-                break; // Only 1 deal post per trigger
-            }
+        } catch (err) {
+             console.error("Facebook Posting Fault:", err);
+             await logAgent('agent_3', 'Agent 3: Copywriter', 'Critical Exception', 'failed', err.message);
         }
     }
     // ==============================================================
