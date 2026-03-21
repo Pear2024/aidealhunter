@@ -1,8 +1,7 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
+export default {
+    images: {
+        remotePatterns: [
+            { protocol: 'https', hostname: 'image.pollinations.ai' }
+        ]
+    }
 };
-
-export default nextConfig;
