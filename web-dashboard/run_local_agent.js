@@ -179,7 +179,28 @@ async function runAgent() {
                                facebookDirectLink = urlObj.toString();
                            } catch(e) {}
                         }
-                        const trackingLink = facebookDirectLink;
+                        
+                        let trackingLink = facebookDirectLink;
+
+                        // --- Auto Generate Link (Bitly API) ---
+                        if (process.env.BITLY_ACCESS_TOKEN) {
+                            try {
+                                console.log("🔗 Generating Bitly Shortlink...");
+                                const bitlyRes = await fetch('https://api-ssl.bitly.com/v4/shorten', {
+                                    method: 'POST',
+                                    headers: { 'Authorization': `Bearer ${process.env.BITLY_ACCESS_TOKEN}`, 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ long_url: facebookDirectLink, domain: "bit.ly" })
+                                });
+                                if (bitlyRes.ok) {
+                                    const bData = await bitlyRes.json();
+                                    trackingLink = bData.link;
+                                    console.log(`✅ Bitly Link Created: ${trackingLink}`);
+                                } else {
+                                    console.warn("⚠️ Bitly api returned error status:", bitlyRes.status);
+                                }
+                            } catch(e) { console.error("❌ Bitly pipeline failure:", e); }
+                        }
+
                         let caption = `💥 DEALS ALERT! 💥\n\n${extracted.title}\n\n💸 NOW ONLY: $${extracted.discount_price}\n🛒 Hurry and grab yours here: ${trackingLink}\n\n#Ad`;
                         try {
                             const copyResult = await withRetry(() => textModel.generateContent(copywriterPrompt), 2, 2000);
