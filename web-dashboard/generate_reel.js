@@ -10,7 +10,7 @@ const googleTTS = require('google-tts-api');
 const ffmpeg = require('fluent-ffmpeg');
 
 async function sendTelegramAlert(message) {
-    const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '8496126366:AAHfGKbMH2Fq_xQmXUMKMNBDO70C02s29xA';
+    const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
     const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID || '8189986883';
     try {
         await axios.post(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
