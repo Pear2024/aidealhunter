@@ -121,10 +121,10 @@ export async function GET(request) {
             // Post an image link natively resolving the Facebook Open Graph UI.
             const success = await executeGraphAPI('photos', { url: dealToPost.image_url, caption: caption }, 'Facebook Publication', `Successfully deployed native Amazon API deal post.`);
             if (success) {
-                await connection.execute('UPDATE normalized_deals SET status = "posted_fb" WHERE id = ?', [dealToPost.id]);
+                await connection.execute("UPDATE normalized_deals SET status = 'published' WHERE id = ?", [dealToPost.id]);
                 await logAgent('agent_8', 'Agent 8: Comment Closer', 'Listener Deployed', 'running', `Standing by for inbound Facebook audience interactions.`);
             } else {
-                await connection.execute('UPDATE normalized_deals SET status = "failed_fb" WHERE id = ?', [dealToPost.id]);
+                await connection.execute("UPDATE normalized_deals SET status = 'rejected' WHERE id = ?", [dealToPost.id]);
             }
         } catch (err) {
              console.error("Facebook Posting Fault:", err);

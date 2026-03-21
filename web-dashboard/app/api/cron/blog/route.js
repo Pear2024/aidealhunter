@@ -22,8 +22,9 @@ export async function GET(request) {
         connection = await getConnection();
 
         // 1. Fetch Top High-Profit AND Top-Rated (Merchandiser Score) Amazon Deals
+        // CRITICAL DE-DUPLICATION: Exclude any deal that has already been posted to the \`ai_blog_posts\` table!
         const [deals] = await connection.execute(
-            `SELECT * FROM normalized_deals WHERE status = 'approved' AND (url LIKE '%amazon.com%' OR url LIKE '%amzn.to%') AND (discount_price > 0 OR original_price > discount_price) ORDER BY profit_score DESC, merchandiser_score DESC LIMIT 20`
+            `SELECT * FROM normalized_deals WHERE status = 'approved' AND id NOT IN (SELECT source_deal_id FROM ai_blog_posts WHERE source_deal_id IS NOT NULL) AND (url LIKE '%amazon.com%' OR url LIKE '%amzn.to%') AND (discount_price > 0 OR original_price > discount_price) ORDER BY profit_score DESC, merchandiser_score DESC LIMIT 20`
         );
         
         if (deals.length === 0) {
@@ -102,8 +103,8 @@ Formatting & Technical SEO Rules:
         }
 
         const [insertResult] = await connection.execute(
-            `INSERT INTO ai_blog_posts (slug, title, content_html, image_url, created_at) VALUES (?, ?, ?, ?, NOW())`,
-            [slug, blogData.title, blogData.content_html, generatedImageUrl]
+            `INSERT INTO ai_blog_posts (slug, title, content_html, image_url, source_deal_id, created_at) VALUES (?, ?, ?, ?, ?, NOW())`,
+            [slug, blogData.title, blogData.content_html, generatedImageUrl, deal.id]
         );
 
         return NextResponse.json({ success: true, blog_id: insertResult.insertId, slug: slug, source_deal_id: deal.id });
