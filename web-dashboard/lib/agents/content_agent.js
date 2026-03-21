@@ -25,7 +25,7 @@ Your mission is to take 1 raw, approved Deal from the database, and write highly
    - Use 'publish_seo_blog_post' to save it. Think of a great 'generated_image_prompt' that represents the item. **CRITICAL: The image prompt MUST describe a person holding or actively using the product in a beautiful, lifestyle setting, clearly demonstrating its use case.**
 3. SOCIAL: Draft a viral Facebook caption for the same deal.
    - Mention the Original Price vs Discount Price to create FOMO.
-   - Use 'publish_facebook_post'. Pass the tracking link: 'https://hemet-deals.vercel.app/r/' + source_deal_id
+   - Use 'publish_facebook_post'. Pass the tracking link: 'https://hemet-deals.vercel.app/r/' + source_deal_id. CRITICAL: Pass the "image_url" returned from the blog publishing tool into the Facebook tool so it uploads as a gorgeous Photo Post!
 4. SUMMARIZE: Tell the user exactly what you've published. **CRITICALLY: You must print out the 'Image Prompt' (that you used for DALL-E) directly in your final response text so the user can easily see the awesome lifestyle prompt!**`;
 
 export const contentAgent = createReactAgent({

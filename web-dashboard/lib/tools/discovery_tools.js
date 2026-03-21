@@ -18,7 +18,7 @@ export const searchDealsRssTool = tool(
             let externalLink = null;
             $('a').each((i, el) => {
                 const href = $(el).attr('href');
-                if (href && (href.includes('amazon.com') || href.includes('walmart.com') || href.includes('bestbuy.com'))) {
+                if (href && (href.includes('amazon.com') || href.includes('amzn.to'))) {
                    externalLink = href;
                 }
             });
@@ -50,7 +50,7 @@ export const scrapeDealUrlTool = tool(
             const href = $(el).attr('href'); 
             if (href && href.includes('u2=')) { 
                 const decoded = decodeURIComponent(href.split('u2=')[1]);
-                if (decoded.includes('amazon.com') || decoded.includes('walmart.com')) {
+                if (decoded.includes('amazon.com') || decoded.includes('amzn.to')) {
                     rawVendorUrl = decoded;
                 }
             } 
