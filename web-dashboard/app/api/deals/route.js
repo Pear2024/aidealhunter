@@ -48,7 +48,15 @@ export async function GET(request) {
         }
     }
 
-    return NextResponse.json({ deals: rows, visitorSegment });
+    let latestBlogs = [];
+    if (page === 1 && status === 'all' && categoryQuery === 'all') {
+        const [blogRows] = await connection.execute(
+            `SELECT id, slug, title, image_url, created_at FROM ai_blog_posts ORDER BY created_at DESC LIMIT 3`
+        );
+        latestBlogs = blogRows;
+    }
+
+    return NextResponse.json({ deals: rows, visitorSegment, blogs: latestBlogs });
   } catch (error) {
     console.error('Database Error:', error);
     return NextResponse.json({ error: 'Failed to fetch deals: ' + error.message }, { status: 500 });

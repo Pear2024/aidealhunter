@@ -7,6 +7,7 @@ export default function Storefront() {
   const { isSignedIn } = useUser();
   const [latestDeals, setLatestDeals] = useState([]);
   const [recommendedDeals, setRecommendedDeals] = useState([]);
+  const [latestBlogs, setLatestBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userSegment, setUserSegment] = useState(null);
   const [activeTab, setActiveTab] = useState('all');
@@ -28,6 +29,11 @@ export default function Storefront() {
       try {
         const res = await fetch(`/api/deals?status=all&category=${activeTab}&page=${pageNum}`);
         const data = await res.json();
+        
+        if (data.blogs && data.blogs.length > 0) {
+            setLatestBlogs(data.blogs);
+        }
+        
         const sortedDeals = (data.deals || []).sort((a, b) => (b.merchandiser_score || 0) - (a.merchandiser_score || 0));
         
         if (sortedDeals.length < 50) setHasMore(false);
@@ -232,6 +238,12 @@ export default function Storefront() {
             <span style={{ fontSize: '1.8rem' }}>💎</span> 
             <span style={{ background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>DealHunter Pro</span>
           </div>
+          
+          <div style={{ display: 'none', '@media (minWidth: 768px)': { display: 'flex' }, gap: '24px', alignItems: 'center', margin: '0 2rem' }} className="desktop-nav">
+              <Link href="/" style={{ color: 'white', textDecoration: 'none', fontWeight: 'bold' }}>🛍️ Shop Deals</Link>
+              <Link href="/blog" style={{ color: '#aaa', textDecoration: 'none', fontWeight: 'bold', transition: 'color 0.2s' }} onMouseOver={e => e.target.style.color='white'} onMouseOut={e => e.target.style.color='#aaa'}>📝 AI Reviews & Guides</Link>
+          </div>
+          
           <div>
             {!isSignedIn ? (
               <SignInButton mode="modal">
@@ -275,7 +287,7 @@ export default function Storefront() {
       
       {/* PHASE 32: Categorical Navigation Tabs */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '3rem', flexWrap: 'wrap' }} className="fade-in">
-        {['all', 'food', 'household', 'tech', 'travel'].map(tab => (
+        {['all', 'digital', 'tech', 'food', 'household', 'travel'].map(tab => (
            <button 
              key={tab} 
              onClick={() => setActiveTab(tab)}
@@ -315,6 +327,39 @@ export default function Storefront() {
                 {recommendedDeals.map(deal => renderDeal(deal))}
               </div>
             </div>
+          )}
+          
+          {latestBlogs.length > 0 && (
+             <div style={{ marginBottom: '4rem', padding: '2rem 0', borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#fff', margin: 0 }}>
+                      <span style={{ fontSize: '1.8rem' }}>📝</span> Latest Buying Guides
+                    </h2>
+                    <Link href="/blog" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem' }}>View All Reviews →</Link>
+                </div>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+                   {latestBlogs.map(blog => (
+                      <Link href={`/blog/${blog.slug}`} key={blog.id} style={{ textDecoration: 'none', color: 'inherit' }}>
+                          <div className="deal-card fade-in" style={{ cursor: 'pointer', background: 'rgba(255, 255, 255, 0.03)', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                             <div style={{ height: '160px', overflow: 'hidden', borderRadius: '12px 12px 0 0', position: 'relative' }}>
+                                 {blog.image_url ? (
+                                    <img src={blog.image_url} alt={blog.title} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s ease' }} onMouseOver={e => e.target.style.transform='scale(1.05)'} onMouseOut={e => e.target.style.transform='scale(1)'} referrerPolicy="no-referrer" />
+                                 ) : (
+                                    <div style={{ width: '100%', height: '100%', background: '#2d3748', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a0aec0' }}>No Image</div>
+                                 )}
+                             </div>
+                             <div style={{ padding: '15px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                 <h3 style={{ fontSize: '1.1rem', margin: '0 0 10px 0', lineHeight: '1.4', fontWeight: 'bold' }}>{blog.title}</h3>
+                                 <div style={{ marginTop: 'auto', color: '#9ca3af', fontSize: '0.8rem' }}>
+                                     {new Date(blog.created_at).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })}
+                                 </div>
+                             </div>
+                          </div>
+                      </Link>
+                   ))}
+                </div>
+             </div>
           )}
           
           <div>
