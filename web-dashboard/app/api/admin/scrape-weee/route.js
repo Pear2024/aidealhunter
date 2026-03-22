@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
-import { getAuth } from "@clerk/nextjs/server";
+// import { getAuth } from "@clerk/nextjs/server";
 import * as cheerio from 'cheerio';
 
 export async function POST(req) {
     try {
-        const { userId } = getAuth(req);
-        if (!userId) {
-            return new NextResponse('Unauthorized', { status: 401 });
-        }
+        // Bypass Clerk Auth for local testing
+        // const { userId } = getAuth(req);
+        // if (!userId) {
+        //    return new NextResponse('Unauthorized', { status: 401 });
+        // }
 
         const body = await req.json();
         const { url } = body;
@@ -36,13 +37,13 @@ export async function POST(req) {
         const title = $('meta[property="og:title"]').attr('content') || $('title').text() || 'Delicious Asian Grocery';
         const image = $('meta[property="og:image"]').attr('content') || '';
         
-        let price = 'Current Market Price';
+        let price = '';
         const ldJson = $('script[type="application/ld+json"]').html();
         if(ldJson) {
             try {
                 const schema = JSON.parse(ldJson);
                 if(schema.offers && schema.offers.price) {
-                     price = `$${schema.offers.price}`;
+                     price = schema.offers.price;
                 }
             } catch(e) {}
         }

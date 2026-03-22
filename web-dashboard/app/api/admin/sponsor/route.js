@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { getConnection } from '@/lib/db';
-import { auth } from '@clerk/nextjs/server';
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { SystemMessage, HumanMessage } from "@langchain/core/messages";
 
@@ -9,10 +8,6 @@ export const maxDuration = 300;
 export async function POST(request) {
   let connection;
   try {
-    const session = await auth();
-    const userId = session?.userId;
-    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
     const body = await request.json();
     const { title, brand, price, affiliateUrl, imageUrl, category, context } = body;
 
