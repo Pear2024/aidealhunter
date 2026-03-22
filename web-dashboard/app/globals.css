@@ -393,8 +393,9 @@ input:focus {
 }
 
 /* AI Blog Styling */
-.blog-content h2 { font-size: 1.8rem; margin-top: 2rem; margin-bottom: 1rem; color: #ffcc80; }
-.blog-content h3 { font-size: 1.4rem; margin-top: 1.5rem; margin-bottom: 1rem; color: #ccc; }
+.blog-content h1 { font-size: 2.2rem; margin-top: 2.5rem; margin-bottom: 1.2rem; color: #ffffff; font-weight: 800; }
+.blog-content h2 { font-size: 1.8rem; margin-top: 2rem; margin-bottom: 1rem; color: #ffcc80; font-weight: 700; }
+.blog-content h3 { font-size: 1.4rem; margin-top: 1.5rem; margin-bottom: 1rem; color: #e5e7eb; font-weight: 600; }
 .blog-content p { font-size: 1.1rem; line-height: 1.8; margin-bottom: 1.5rem; color: #ddd; }
 .blog-content ul { padding-left: 20px; margin-bottom: 1.5rem; color: #ddd; }
 .blog-content li { margin-bottom: 10px; line-height: 1.6; }

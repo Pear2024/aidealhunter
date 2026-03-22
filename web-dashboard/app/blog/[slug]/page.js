@@ -84,7 +84,7 @@ export default async function BlogPostPage({ params }) {
                     <p style={{ color: '#ff3366', fontWeight: 'bold', marginBottom: '1rem', textTransform: 'uppercase' }}>
                         {new Date(post.created_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                     </p>
-                    <h1 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '2rem', lineHeight: '1.2' }}>{post.title}</h1>
+                    <h1 style={{ fontSize: '2.5rem', fontWeight: '800', marginBottom: '2rem', lineHeight: '1.2', color: '#ffffff' }}>{post.title}</h1>
                     
                     <AdBanner dataAdSlot="top_article_slot" />
                     
