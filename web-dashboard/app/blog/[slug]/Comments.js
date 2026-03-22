@@ -87,7 +87,22 @@ export default function Comments({ postId }) {
                             style={{ width: '100%', background: 'rgba(255,255,255,0.05)', color: 'white', border: '1px solid rgba(255,255,255,0.2)', padding: '15px', borderRadius: '10px', fontFamily: 'inherit', resize: 'vertical' }}
                         />
                         <div style={{ textAlign: 'right', marginTop: '15px' }}>
-                            <button type="submit" disabled={submitting || !newComment.trim()} className="btn-primary" style={{ padding: '10px 30px', borderRadius: '30px', fontWeight: 'bold', opacity: submitting ? 0.7 : 1, cursor: submitting ? 'wait' : 'pointer' }}>
+                            <button 
+                                type="submit" 
+                                disabled={submitting || !newComment.trim()} 
+                                className="btn-primary" 
+                                style={{ 
+                                    padding: '10px 30px', 
+                                    borderRadius: '30px', 
+                                    fontWeight: 'bold', 
+                                    opacity: submitting ? 0.7 : (!newComment.trim() ? 0.6 : 1), 
+                                    cursor: submitting ? 'wait' : (!newComment.trim() ? 'not-allowed' : 'pointer'),
+                                    backgroundColor: (!newComment.trim() || submitting) ? '#444' : '#ff3366',
+                                    color: '#ffffff',
+                                    border: 'none',
+                                    transition: 'all 0.3s ease'
+                                }}
+                            >
                                 {submitting ? 'Posting...' : 'Post Comment'}
                             </button>
                         </div>
