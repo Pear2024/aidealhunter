@@ -22,7 +22,7 @@ export const fetchPopularEnvatoItemsTool = tool(
                 title: i.item,
                 url: i.url,
                 price: parseFloat(i.cost),
-                thumbnail: i.thumbnail,
+                thumbnail: i.live_preview_url || i.thumbnail,
                 sales: parseInt(i.sales)
             }));
             return JSON.stringify({ success: true, items: topItems });
