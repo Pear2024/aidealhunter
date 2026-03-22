@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { Trash2, ExternalLink, Calendar, Search, LogOut, CheckCircle, Database, Users, Star, BrainCircuit, Activity, Settings, BarChart3, Bot, DollarSign } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [deals, setDeals] = useState([]);
@@ -65,6 +66,22 @@ export default function AdminDashboard() {
       </header>
 
       <SearchModule onSearchComplete={fetchDeals} />
+
+      {/* Quick Actions */}
+      <h2 className="text-xl font-bold mb-4 text-white">Administration Tools</h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <Link href="/admin/sponsor" style={{ textDecoration: 'none' }}>
+              <div className="p-6 rounded-2xl bg-[#111] border border-[#222] hover:border-[#00D084] transition-all cursor-pointer">
+                  <div className="flex items-center gap-4 mb-4">
+                      <div className="p-3 rounded-full bg-[#00D084]/20 text-[#00D084]">
+                          <DollarSign size={24} />
+                      </div>
+                      <h3 className="font-bold text-lg text-white">High-Ticket / Sponsor</h3>
+                  </div>
+                  <p className="text-gray-400 text-sm">Force-inject Impact CPA links and auto-generate SEO blogs.</p>
+              </div>
+          </Link>
+      </div>
 
       {deals.length === 0 ? (
         <div className="empty-state">
