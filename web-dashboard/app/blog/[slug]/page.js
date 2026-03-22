@@ -96,7 +96,7 @@ export default async function BlogPostPage({ params }) {
 
             {/* Community Engagement Section */}
             <section style={{ maxWidth: '800px', margin: '0 auto', background: 'rgba(255,255,255,0.02)', padding: '2rem', borderRadius: '15px' }}>
-                <h2 style={{ fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <h2 style={{ fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '10px', color: '#ffffff' }}>
                    💬 Community Discussion
                 </h2>
                 <Comments postId={post.id} />
