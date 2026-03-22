@@ -41,6 +41,12 @@ export async function POST(request) {
 
     connection = await getConnection();
 
+    // 2.5 De-Duplication Check
+    const [existing] = await connection.execute("SELECT id FROM normalized_deals WHERE url = ?", [affiliateUrl]);
+    if (existing.length > 0) {
+        return NextResponse.json({ error: 'Duplicate Error: This Deal/URL has already been injected into the system!' }, { status: 409 });
+    }
+
     // 3. Insert into normalized_deals
     const [dealResult] = await connection.execute(
         `INSERT INTO normalized_deals (
@@ -54,7 +60,7 @@ export async function POST(request) {
 
     // 4. Insert into ai_blog_posts for the specific Deal
     await connection.execute(
-        `INSERT INTO ai_blog_posts (deal_id, slug, title, content_html, image_url) VALUES (?, ?, ?, ?, ?)`,
+        `INSERT INTO ai_blog_posts (source_deal_id, slug, title, content_html, image_url) VALUES (?, ?, ?, ?, ?)`,
         [dealId, title, title, blogHtml, imageUrl]
     );
 

@@ -81,6 +81,17 @@ export default function AdminDashboard() {
                   <p className="text-gray-400 text-sm">Force-inject Impact CPA links and auto-generate SEO blogs.</p>
               </div>
           </Link>
+          <Link href="/admin/queue" style={{ textDecoration: 'none' }}>
+              <div className="p-6 rounded-2xl bg-[#111] border border-[#222] hover:border-[#ffcc80] transition-all cursor-pointer">
+                  <div className="flex items-center gap-4 mb-4">
+                      <div className="p-3 rounded-full bg-[#ffcc80]/20 text-[#ffcc80]">
+                          <Database size={24} />
+                      </div>
+                      <h3 className="font-bold text-lg text-white">Publishing Queue</h3>
+                  </div>
+                  <p className="text-gray-400 text-sm">Track discovering deals and AI copywriter on-air scheduling.</p>
+              </div>
+          </Link>
       </div>
 
       {deals.length === 0 ? (

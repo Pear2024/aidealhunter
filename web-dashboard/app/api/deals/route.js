@@ -56,7 +56,7 @@ export async function GET(request) {
         if (categoryQuery !== 'all') {
             blogQuery = `SELECT b.id, b.slug, b.title, b.image_url, b.created_at 
                          FROM ai_blog_posts b 
-                         JOIN normalized_deals d ON b.deal_id = d.id 
+                         JOIN normalized_deals d ON b.source_deal_id = d.id 
                          WHERE d.category = ? 
                          ORDER BY b.created_at DESC LIMIT 3`;
             blogArgs.push(categoryQuery);
