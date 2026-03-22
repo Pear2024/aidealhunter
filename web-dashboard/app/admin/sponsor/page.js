@@ -9,7 +9,7 @@ export default function SponsorInjector() {
   const [price, setPrice] = useState('');
   const [affiliateUrl, setAffiliateUrl] = useState('');
   const [imageUrl, setImageUrl] = useState('');
-  const [category, setCategory] = useState('Groceries & Subs'); // Changed default category
+  const [category, setCategory] = useState('food'); // Changed default category
   const [context, setContext] = useState('');
 
   const [loading, setLoading] = useState(false);
@@ -40,7 +40,7 @@ export default function SponsorInjector() {
             setImageUrl(data.image || '');
             setPrice(data.price || '');
             setBrand('SayWeee!');
-            setCategory('Groceries & Subs');
+            setCategory('food');
             setContext(`Promoting ${data.title} from SayWeee!`);
             // Point the tracking link DIRECTLY to the product page with the referral code attached!
             const trackingUrl = weeeUrl.includes('?') 
@@ -87,7 +87,7 @@ export default function SponsorInjector() {
         setPrice('');
         setAffiliateUrl('');
         setImageUrl('');
-        setCategory('Groceries & Subs');
+        setCategory('food');
         setContext('');
         setWeeeUrl(''); // Clear Weee URL after successful submission
       } else {

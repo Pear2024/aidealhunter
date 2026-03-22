@@ -30,7 +30,7 @@ export default function Storefront() {
         const res = await fetch(`/api/deals?status=all&category=${activeTab}&page=${pageNum}`);
         const data = await res.json();
         
-        if (data.blogs && data.blogs.length > 0) {
+        if (data.blogs) {
             setLatestBlogs(data.blogs);
         }
         
@@ -329,7 +329,7 @@ export default function Storefront() {
             </div>
           )}
           
-          {latestBlogs.length > 0 && (
+          {latestBlogs.length > 0 && activeTab === 'all' && (
              <div style={{ marginBottom: '4rem', padding: '2rem 0', borderTop: '1px solid rgba(255,255,255,0.05)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                     <h2 style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#fff', margin: 0 }}>

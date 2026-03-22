@@ -49,10 +49,19 @@ export async function GET(request) {
     }
 
     let latestBlogs = [];
-    if (page === 1 && status === 'all' && categoryQuery === 'all') {
-        const [blogRows] = await connection.execute(
-            `SELECT id, slug, title, image_url, created_at FROM ai_blog_posts ORDER BY created_at DESC LIMIT 3`
-        );
+    if (page === 1 && status === 'all') {
+        let blogQuery = `SELECT id, slug, title, image_url, created_at FROM ai_blog_posts ORDER BY created_at DESC LIMIT 3`;
+        let blogArgs = [];
+        
+        if (categoryQuery !== 'all') {
+            blogQuery = `SELECT b.id, b.slug, b.title, b.image_url, b.created_at 
+                         FROM ai_blog_posts b 
+                         JOIN normalized_deals d ON b.deal_id = d.id 
+                         WHERE d.category = ? 
+                         ORDER BY b.created_at DESC LIMIT 3`;
+            blogArgs.push(categoryQuery);
+        }
+        const [blogRows] = await connection.execute(blogQuery, blogArgs);
         latestBlogs = blogRows;
     }
 
