@@ -23,6 +23,17 @@ export default function RootLayout({ children }) {
     <ClerkProvider>
       <html lang="en">
         <head>
+          {/* Google Tag Manager */}
+          <Script id="google-tag-manager" strategy="beforeInteractive">
+            {`
+              (function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+              new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+              j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+              'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+              })(window,document,'script','dataLayer','GTM-N9ZWGK5G');
+            `}
+          </Script>
+          {/* End Google Tag Manager */}
           <script 
               async 
               src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9052384752598699"
@@ -30,6 +41,14 @@ export default function RootLayout({ children }) {
           ></script>
         </head>
         <body className={`${geistSans.variable} ${geistMono.variable}`}>
+          {/* Google Tag Manager (noscript) */}
+          <noscript>
+            <iframe 
+              src="https://www.googletagmanager.com/ns.html?id=GTM-N9ZWGK5G"
+              height="0" width="0" style={{ display: 'none', visibility: 'hidden' }}
+            ></iframe>
+          </noscript>
+          {/* End Google Tag Manager (noscript) */}
           {children}
         </body>
       </html>
