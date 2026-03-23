@@ -106,7 +106,7 @@ export async function POST(request) {
             pct = Math.round((1 - data.discount_price / data.original_price) * 100);
           }
 
-          const caption = `🔥 MEGA DEAL! 🔥\n\n${data.title}\n\n💸 NOW ONLY: $${parseFloat(data.discount_price).toFixed(2)} ${data.original_price ? `(Was $${parseFloat(data.original_price).toFixed(2)} - Save ${pct}%!)` : ''}\n✨ Brand: ${data.brand || 'Premium'}\n\n👇 GRAB IT HERE: 👇\n${trackURL}\n\n#InlandEmpire #SmartShopper #HemetDeals`;
+          const caption = `You guys... is anyone else obsessed with this brand, or just me? 😅 I was just looking at the ${data.title} and trying to decide if it's actually worth it.\n\nIf you own one of these, drop a comment below and tell me the honest truth! 👇\n\n🔗 (Link for context: ${trackURL})`;
           
           let fbEndpoint = `https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed`;
           const fbPayload = {

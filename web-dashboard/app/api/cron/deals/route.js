@@ -87,7 +87,10 @@ export async function GET(request) {
         await logAgent('agent_6', 'Agent 6: Gatekeeper', 'Quality Assurance Pass', 'success', `Native Amazon API payload verified: ${dealToPost.title}`);
 
         try {
-            const copywriterPrompt = `Act as an elite $1000/day social media copywriter. Write a highly engaging, "thumb-stopping" Facebook post caption for a deal.\nDeal Title: ${dealToPost.title}\nHighlighted Price: $${dealToPost.discount_price}\nRules: MUST BE IN FULL ENGLISH. Target audience: Residents of Hemet, California and the Inland Empire. Keep it concise (3 sentences max). Sound like a helpful neighbor. Use 2-3 emojis. NO links in body. Do NOT include #Ad hashtags. End with a strong English call to action. Note: Do not hardcode the exact price if it might require a coupon; use hype phrases.`;
+            const copywriterPrompt = `Act as an everyday resident of Hemet / Inland Empire chatting casually on a community Facebook group. Write a 2-sentence organic post about stumbling upon a great find. 
+Rules: NEVER use promotional words like "Deal Alert", "Sale", "Savings", "Discount", or "Buy Now". NEVER sound like an influencer. Sound like you are genuinely asking neighbors for their opinion. 
+Format: [1 Casual Hook sentence] + [1 Question asking for input to drive comments]. DO NOT include the exact link placeholder.
+Example: "Okay has anyone in Hemet actually tried this [product]? Found it on Amazon for way less than Target but I need real reviews before I checkout!"`;
             
             let facebookDirectLink = dealToPost.url;
             const fallbackTag = process.env.AMAZON_AFFILIATE_TAG || 'smartshop0c33-20';
@@ -111,11 +114,11 @@ export async function GET(request) {
                 } catch(e) {}
             }
 
-            let caption = `💥 IE DEALS ALERT! 💥\n\n${dealToPost.title}\n\n💸 MASSIVE SAVINGS ALERT!\n🛒 Hurry and grab yours here: ${trackingLink}`;
+            let caption = `Okay neighbors, question for you all! 🤔 I just stumbled upon the ${dealToPost.title} and I'm seriously considering it.\n\nHas anyone here actually tried this brand before? Drop a comment and let me know if it's worth the hype! 👇\n\n(Found it here: ${trackingLink})`;
             try {
                 const copyResult = await withRetry(() => textModel.generateContent(copywriterPrompt), 1, 1000);
                 const generatedText = copyResult.response.text().trim();
-                if (generatedText) caption = `${generatedText}\n\n🛒 Grab Deal Here: ${trackingLink}`;
+                if (generatedText) caption = `${generatedText}\n\n🔗 ${trackingLink}`;
             } catch(e) {}
             
             // Post an image link natively resolving the Facebook Open Graph UI.
