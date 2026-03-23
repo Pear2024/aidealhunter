@@ -21,7 +21,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
-      <html lang="en">
+      <html lang="en" style={{ backgroundColor: '#050505', color: '#ffffff' }}>
         <head>
           {/* Google Tag Manager */}
           <script
@@ -42,7 +42,7 @@ export default function RootLayout({ children }) {
               crossOrigin="anonymous"
           ></script>
         </head>
-        <body className={`${geistSans.variable} ${geistMono.variable}`}>
+        <body className={`${geistSans.variable} ${geistMono.variable}`} style={{ backgroundColor: '#050505', color: '#ffffff', minHeight: '100vh', margin: 0 }}>
           {/* Google Tag Manager (noscript) */}
           <noscript>
             <iframe 

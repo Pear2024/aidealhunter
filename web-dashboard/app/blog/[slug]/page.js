@@ -71,8 +71,8 @@ export default async function BlogPostPage({ params }) {
         <main className="container fade-in">
             <Link href="/blog" style={{ color: '#ff3366', textDecoration: 'none', fontWeight: 'bold', marginBottom: '20px', display: 'inline-block' }}>&larr; Back to Blog</Link>
             
-            <article style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '20px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)', marginBottom: '3rem' }}>
-                <div style={{ position: 'relative', width: '100%', height: '400px', overflow: 'hidden', backgroundColor: '#050505' }}>
+            <article style={{ backgroundColor: '#111111', borderRadius: '20px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '3rem', boxShadow: '0 4px 30px rgba(0,0,0,0.5)' }}>
+                <div style={{ position: 'relative', width: '100%', height: '400px', overflow: 'hidden', backgroundColor: '#000000' }}>
                      <img src={post.image_url} alt="" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'blur(25px)', opacity: 0.35, transform: 'scale(1.15)' }} />
                      <img 
                          src={post.image_url} 
