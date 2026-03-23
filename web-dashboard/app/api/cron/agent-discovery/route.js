@@ -15,12 +15,24 @@ export async function GET(request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const keyword = searchParams.get('keyword') || 'laptop';
-        console.log(`🚀 Dispatching Discovery Agent for keyword: ${keyword}...`);
+        const trendingNiches = [
+            "Stanley 40oz Tumbler",
+            "Apple AirPods Pro",
+            "Ninja Creami Ice Cream Maker",
+            "CeraVe Moisturizing Cream",
+            "Anker Portable Charger",
+            "Dyson V8 Vacuum",
+            "Echo Dot Smart Speaker",
+            "Laneige Lip Sleeping Mask"
+        ];
+        
+        // Randomly select an e-commerce proven keyword if none is passed
+        const keyword = searchParams.get('keyword') || trendingNiches[Math.floor(Math.random() * trendingNiches.length)];
+        console.log(`🚀 Dispatching Discovery Agent for Amazon hits keyword: ${keyword}...`);
         
         const initialState = {
             messages: [
-                new HumanMessage(`Please find the top deals for the keyword "${keyword}". Parse them, extract correct pricing, and save the best 2 deals to the database using the raw vendor URLs. Ignore duplicate URLs.`)
+                new HumanMessage(`Please search Amazon for current hits and discounted deals related to "${keyword}". Parse the results, extract the correct pricing/discounts, and save the absolute best 2 ranking deals to the database using the raw vendor URLs. Ignore duplicate URLs.`)
             ]
         };
 

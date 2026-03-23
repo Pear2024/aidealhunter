@@ -1,0 +1,19 @@
+name: 🛒 AI Deal Hunter (Discovery Squad)
+
+on:
+  schedule:
+    # Runs every 2 hours
+    - cron: '0 */2 * * *'
+  # Allows you to trigger this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  dispatch-discovery-squad:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚀 Invoking LangGraph Discovery Agent
+        # Maximum timeout set to 120 seconds for safety
+        run: |
+          echo "Starting the Amazon Deal Discovery process..."
+          curl -v -m 120 "https://aidealhunter.vercel.app/api/cron/agent-discovery?key=super_secret_ai_cron_password_123"
+          echo -e "\n\n✅ Mission complete. The AI Discovery Agent has restocked the Trending Product Pool."
