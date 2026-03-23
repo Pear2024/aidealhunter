@@ -20,10 +20,9 @@ export default function QueueBoard() {
   }, []);
 
   const calculateETA = (index) => {
-      // Assuming cron runs every 4 hours, and processes 1 item per run.
-      // Adjust this logic if the cron schedule is different.
-      if (index === 0) return 'Next Cron Run (Within 4 Hrs)';
-      return `In ~${index * 4} Hours`;
+      // Adjusted to sync with the official GitHub Actions 1-Hour schedule
+      if (index === 0) return 'Next Cron Run (Within 1 Hr)';
+      return `In ~${index * 1} Hours`;
   };
 
   return (
@@ -49,10 +48,10 @@ export default function QueueBoard() {
                     <div style={{ background: '#111', borderRadius: '16px', border: '1px solid #333', padding: '20px', minHeight: '600px' }}>
                         <div style={{ paddingBottom: '15px', borderBottom: '1px solid #333', marginBottom: '15px' }}>
                             <h2 style={{ fontSize: '1.2rem', color: '#ff3b30', display: 'flex', justifyContent: 'space-between' }}>
-                                <span>1. Awaiting Validation 🚧</span>
+                                <span>1. Trending Product Pool 🔥</span>
                                 <span style={{ background: '#331111', padding: '2px 10px', borderRadius: '12px', fontSize: '0.9rem' }}>{data.pending.length}</span>
                             </h2>
-                            <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '5px' }}>Found by Discovery Agents. Waiting for Quality Check.</p>
+                            <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '5px' }}>Stockpiled by AI Discovery. Writer randomly selects from here.</p>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {data.pending.length === 0 && <p style={{ color: '#555', textAlign: 'center', padding: '20px' }}>No items in queue.</p>}

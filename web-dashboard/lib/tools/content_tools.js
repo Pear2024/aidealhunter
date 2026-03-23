@@ -8,23 +8,28 @@ export const fetchApprovedDealTool = tool(
     let connection;
     try {
         connection = await getConnection();
-        const [deals] = await connection.execute(
-            `SELECT * FROM normalized_deals WHERE status = 'approved' AND id NOT IN (SELECT source_deal_id FROM ai_blog_posts WHERE source_deal_id IS NOT NULL) ORDER BY merchandiser_score DESC, created_at DESC LIMIT 1`
+        let [deals] = await connection.execute(
+            `SELECT * FROM normalized_deals WHERE status = 'approved' AND id NOT IN (SELECT source_deal_id FROM ai_blog_posts WHERE source_deal_id IS NOT NULL) ORDER BY merchandiser_score DESC, created_at ASC LIMIT 1`
         );
         
         let targetDeal = null;
 
-        if (deals.length === 0) {
-            // FALLBACK FOR TESTING: If cron jobs snatched it, just grab ANY approved deal so the user can test DALL-E 3!
-            const [backupDeals] = await connection.execute(
-                `SELECT * FROM normalized_deals WHERE status = 'approved' ORDER BY id DESC LIMIT 1`
-            );
-            if (backupDeals.length === 0) {
-                return "No pending approved deals available. Mission abort.";
-            }
-            targetDeal = backupDeals[0];
-        } else {
+        if (deals.length > 0) {
+            // 1. We found a priority deal waiting in the Approved queue
             targetDeal = deals[0];
+        } else {
+            // 2. Priority queue is empty. Randomly pluck an unwritten deal from the Trending Pool (Pending)!
+            const [poolDeals] = await connection.execute(
+                `SELECT * FROM normalized_deals WHERE status = 'pending' AND id NOT IN (SELECT source_deal_id FROM ai_blog_posts WHERE source_deal_id IS NOT NULL) ORDER BY RAND() LIMIT 1`
+            );
+            
+            if (poolDeals.length > 0) {
+                targetDeal = poolDeals[0];
+                // CRITICAL: We instantly auto-approve it so it drops into the Writer queue and never gets rewritten
+                await connection.execute(`UPDATE normalized_deals SET status = 'approved' WHERE id = ?`, [targetDeal.id]);
+            } else {
+                return "The Trending Pipeline is completely empty. Both Priority and Trending pools have been exhausted. Mission abort.";
+            }
         }
         
         const affiliateTag = process.env.AMAZON_AFFILIATE_TAG || 'smartshop0c33-20';
