@@ -20,7 +20,10 @@ export const searchDealsRssTool = tool(
             $('a').each((i, el) => {
                 const href = $(el).attr('href');
                 if (href && (href.includes('amazon.com') || href.includes('amzn.to'))) {
-                   externalLink = href;
+                   // Ensure it's a deep link, not just the homepage
+                   if (href.length > 28 || href.includes('/dp/') || href.includes('/gp/')) {
+                       if (!externalLink) externalLink = href; // Take the FIRST valid link
+                   }
                 }
             });
             deals.push({
