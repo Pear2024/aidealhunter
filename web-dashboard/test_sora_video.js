@@ -39,8 +39,24 @@ async function probeSora() {
             status = checkRes.data.status;
             
             if (status === 'completed') {
-                console.log("\\n🎉 VIDEO COMPLETED! Final Payload:");
-                console.log(JSON.stringify(checkRes.data, null, 2));
+                console.log("\\n🎉 GPU RENDERING COMPLETED!");
+                console.log("📥 Initiating MP4 Binary Stream Extraction...");
+                
+                const fs = require('fs');
+                const streamRes = await axios.get(`https://api.openai.com/v1/videos/${videoId}/content`, {
+                    headers: { 'Authorization': `Bearer ${OPENAI_API_KEY}` },
+                    responseType: 'stream'
+                });
+                
+                const writer = fs.createWriteStream('sora_preview.mp4');
+                streamRes.data.pipe(writer);
+                
+                await new Promise((resolve, reject) => {
+                    writer.on('finish', resolve);
+                    writer.on('error', reject);
+                });
+                
+                console.log("🎞️ SUCCESS: 'sora_preview.mp4' has been saved to disk!");
                 break;
             } else if (status === 'failed' || status === 'rejected') {
                 console.error("\\n❌ VIDEO GENERATION FAILED:", JSON.stringify(checkRes.data, null, 2));
