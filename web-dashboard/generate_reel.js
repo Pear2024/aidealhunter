@@ -6,7 +6,6 @@ const axios = require('axios');
 const FormData = require('form-data');
 const mysql = require('mysql2/promise');
 const { GoogleGenerativeAI, SchemaType } = require('@google/generative-ai');
-const googleTTS = require('google-tts-api');
 const ffmpeg = require('fluent-ffmpeg');
 
 async function sendTelegramAlert(message) {
@@ -81,15 +80,19 @@ async function main() {
     console.log(`🎯 Selected Deal: ${deal.title}`);
 
     // 2. Gemini Script Generation
-    console.log("✍️  Generating 15s Viral Script via Gemini...");
+    console.log("✍️  Generating 15s Story-Driven Script via Gemini...");
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const schema = {
         type: SchemaType.OBJECT,
         properties: {
-            script: { type: SchemaType.STRING, description: "A catchy, fast-paced 15-second viral voiceover script. ABSOLUTE MAXIMUM 180 CHARACTERS OVERALL. Hook them instantly. Say link in bio." },
-            short_caption: { type: SchemaType.STRING, description: "A highly visible 4-6 word clickbait caption to overlay in the middle of the video." }
+            script: { type: SchemaType.STRING, description: "The full spoken voiceover script. MUST speak like a real human influencer finding a crazy cheat code or secret. Use pauses and excitement. Maximum 20 seconds long." },
+            subtitles: { 
+                type: SchemaType.ARRAY, 
+                items: { type: SchemaType.STRING },
+                description: "The script broken down into 4 to 6 short, punchy 3-word chunks with emojis. Must perfectly match the spoken script chronologically." 
+            }
         },
-        required: ["script", "short_caption"]
+        required: ["script", "subtitles"]
     };
     
     const textModel = genAI.getGenerativeModel({ 
@@ -100,49 +103,72 @@ async function main() {
     const actualPrice = deal.discount_price || deal.original_price || "an amazing value";
     const oldPriceStr = deal.original_price ? `(Was $${deal.original_price})` : "";
     
-    const prompt = `Write a viral 15-second TikTok/Reels voiceover script based on this product deal:\nTitle: ${deal.title}\nDiscount Price: $${actualPrice} ${oldPriceStr}\nIt must sound like an enthusiastic frugal influencer trying to get the viewer to steal this deal immediately. Hook them instantly. YOU MUST MENTION THE EXACT DISCOUNT PRICE IN THE AUDIO. STRICT RULE: Cannot exceed 180 characters total.`;
+    const prompt = `Write a viral, story-driven TikTok/Reels voiceover script based on this product deal:\nTitle: ${deal.title}\nDiscount Price: $${actualPrice} ${oldPriceStr}\nBrand: ${deal.brand}\n\n[INSTRUCTIONS]: You are a highly professional, relatable UGC influencer. Do NOT sound like an ad. Hook them instantly (e.g., 'I almost paid full price until I found this secret...'). YOU MUST MENTION THE EXACT DISCOUNT PRICE IN THE AUDIO. Break the dialogue into exciting subtitle chunks with emojis.`;
     const result = await textModel.generateContent(prompt);
     const aiResponse = JSON.parse(result.response.text());
     
-    // Hard-cap the text to 195 to prevent TTS API explosion
-    const cleanScript = aiResponse.script.slice(0, 195);
+    // Hard-cap the text to 300 to prevent ultra-long audios
+    let cleanScript = aiResponse.script.slice(0, 300);
     console.log(`📜 Script: "${cleanScript}"`);
+    console.log(`🗨️ Subtitles:`, aiResponse.subtitles);
 
     // 3. Audio & Image Acquisition
-    console.log("🎙️  Synthesizing TTS Audio...");
-    const url = googleTTS.getAudioUrl(cleanScript, {
-        lang: 'en',
-        slow: false,
-        host: 'https://translate.google.com',
-    });
-    
+    console.log("🗣️ Synthesizing Ultra-Realistic Human Audio via OpenAI...");
     const tempDir = os.tmpdir();
     const audioPath = path.join(tempDir, 'reel_audio.mp3');
+    // Fetch OpenAI TTS
+    const openAIResponse = await axios.post('https://api.openai.com/v1/audio/speech', {
+        model: "tts-1",
+        voice: "onyx", // Deep, professional, charismatic male voice
+        input: cleanScript
+    }, {
+        headers: {
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+            'Content-Type': 'application/json'
+        },
+        responseType: 'arraybuffer'
+    });
+    
+    fs.writeFileSync(audioPath, openAIResponse.data);
     const imagePath = path.join(tempDir, 'reel_image.jpg');
     const outPath = path.join(tempDir, 'auto_reel_test.mp4');
 
     try {
-        await downloadFile(url, audioPath);
         console.log("🖼️  Downloading authentic Product Cover Image...");
         await downloadFile(deal.image_url.trim(), imagePath);
     } catch (fetchErr) {
         console.error("⚠️ CDN Asset failure. Applying emergency solid-color fallback...", fetchErr.message);
-        // Fallback to a solid color if Cloudflare blocks GitHub VM IP
         require('child_process').execSync(`ffmpeg -f lavfi -i color=c=black:s=1000x1000:d=1 -frames:v 1 ${imagePath}`);
     }
 
-    // 4. Video Assembly
-    console.log("⚙️  Assembling MP4 via FFmpeg...");
+    // 4. Video Assembly + Bouncing Subtitles
+    console.log("⚙️  Assembling MP4 via FFmpeg with Advanced Subtitles...");
     
+    // Determine dynamic duration based on script chunks (Assuming average audio is ~12-15 seconds)
+    // We will distribute the subtitle arrays uniformly across the estimated video runtime.
+    // For safety, we set a 12 second baseline, FFmpeg will '-shortest' to the audio track anyway.
+    const audioDurationEstimate = Math.max(8, cleanScript.split(' ').length * 0.4); 
+    const chunkTime = audioDurationEstimate / Math.max(1, aiResponse.subtitles.length);
+    
+    let drawtextFilters = aiResponse.subtitles.map((text, i) => {
+        const start = i * chunkTime;
+        const end = (i + 1) * chunkTime;
+        // Escape characters for FFmpeg
+        const cleanText = text.replace(/'/g, "").replace(/:/g, '\\\\:');
+        // 'Bouncing' physical motion equation via Y-axis sine wave + word-pop scaling
+        return `drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='${cleanText}':fontcolor=white:fontsize=95:borderw=4:bordercolor=black:shadowcolor=black:shadowx=3:shadowy=3:x='(w-tw)/2':y='(h-th)/2 + 25*sin(t*8)':enable='between(t,${start},${end})'`;
+    }).join(',');
+
     ffmpeg()
         .input(imagePath)
         .loop() // Loop the single image
         .input(audioPath)
-        // Video Filter: Extremely blurry 9:16 background, and cleanly proportioned foreground
+        // Video Filter: Highly cinematic blurred background, centered popup foreground, and dynamic subtitles!
         .complexFilter([
-            '[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,gblur=sigma=50[bg]',
+            '[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,gblur=sigma=45[bg]',
             '[0:v]scale=900:1200:force_original_aspect_ratio=decrease[fg]',
-            '[bg][fg]overlay=(W-w)/2:(H-h)/2[final]'
+            '[bg][fg]overlay=(W-w)/2:(H-h)/2[vid]',
+            `[vid]${drawtextFilters}[final]`
         ])
         .outputOptions([
             '-map [final]',
@@ -152,11 +178,11 @@ async function main() {
             '-pix_fmt yuv420p',
             '-c:a aac',         // Audio codec
             '-b:a 192k',
-            '-shortest'         // End video when shortest stream (audio) ends
+            '-shortest'         // End video when shortest stream (audio track) ends
         ])
         .save(outPath)
         .on('end', async () => {
-            console.log(`✅ SUCCESS! Reel rendered flawlessly to: ${outPath}`);
+            console.log(`✅ SUCCESS! Professional Reel rendered flawlessly to: ${outPath}`);
             console.log("🚀 Initiating Facebook Graph API Reels Upload...");
 
             try {
