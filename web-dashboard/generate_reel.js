@@ -59,15 +59,7 @@ async function main() {
         const [rows] = await conn.execute(`
             SELECT * FROM normalized_deals 
             WHERE image_url IS NOT NULL 
-              AND status != 'published'
-              AND (
-                  discount_percentage > 0 
-                  OR original_price > discount_price
-                  OR title LIKE '%coupon%'
-                  OR title LIKE '%off %'
-                  OR title LIKE '%sale%'
-                  OR title LIKE '%deal%'
-              )
+              AND status = 'approved'
             ORDER BY RAND() LIMIT 1
         `);
         if (rows.length === 0) {
