@@ -106,6 +106,7 @@ async function main() {
 
     // 2.5. Sora Cinematic Background Video Generation
     console.log("🎥 Ordering Sora Cinematic B-Roll Generator...");
+    const tempDir = os.tmpdir();
     let soraPath = path.join(tempDir, 'sora_background.mp4');
     try {
         const soraPromptSchema = {
@@ -150,8 +151,7 @@ async function main() {
 
     // 3. Audio & Image Acquisition
     console.log("🗣️ Synthesizing Ultra-Realistic Human Audio via OpenAI...");
-    const tempDir2 = os.tmpdir();
-    const audioPath = path.join(tempDir2, 'reel_audio.mp3');
+    const audioPath = path.join(tempDir, 'reel_audio.mp3');
     // Fetch OpenAI TTS
     const openAIResponse = await axios.post('https://api.openai.com/v1/audio/speech', {
         model: "tts-1",
@@ -166,8 +166,8 @@ async function main() {
     });
     
     fs.writeFileSync(audioPath, openAIResponse.data);
-    const imagePath = path.join(tempDir2, 'reel_image.jpg');
-    const outPath = path.join(tempDir2, 'auto_reel_test.mp4');
+    const imagePath = path.join(tempDir, 'reel_image.jpg');
+    const outPath = path.join(tempDir, 'auto_reel_test.mp4');
 
     try {
         console.log("🖼️  Downloading authentic Product Cover Image...");
