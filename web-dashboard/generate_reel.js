@@ -237,7 +237,13 @@ async function main() {
                 let finalUrl = deal.url;
                 if (finalUrl && finalUrl.includes('amazon.com')) {
                     const affiliateTag = process.env.AMAZON_AFFILIATE_TAG || "smartshop0c33-20";
-                    if (!finalUrl.includes('tag=')) {
+                    // Robust ASIN Regex Extractor (Catches /dp/, /gp/product/, /product-reviews/, etc)
+                    const asinMatch = finalUrl.match(/\\/(?:dp|gp\\/product|product-reviews|aw\\/d)\\/([A-Z0-9]{10})/i);
+                    if (asinMatch && asinMatch[1]) {
+                        // Force pristine high-converting canonical URL
+                        finalUrl = `https://www.amazon.com/dp/${asinMatch[1]}/?tag=${affiliateTag}`;
+                    } else if (!finalUrl.includes('tag=')) {
+                        // Fallback
                         finalUrl += (finalUrl.includes('?') ? '&' : '?') + `tag=${affiliateTag}`;
                     }
                 }
