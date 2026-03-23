@@ -26,10 +26,10 @@ export async function GET(request) {
         
         let allItems = [];
         for (const url of rssUrls) {
-            const response = await fetch(url, { next: { revalidate: 0 } });
+            const response = await fetch(url, { cache: 'no-store', headers: {'Pragma': 'no-cache', 'Cache-Control': 'no-cache'} });
             const xmlText = await response.text();
             
-            const urlRegex = /<item>([\\s\\S]*?)<\\/item>/g;
+            const urlRegex = /<item>([\s\S]*?)<\/item>/g;
             const itemMatches = xmlText.match(urlRegex) || [];
             
             for (let i = 0; i < Math.min(itemMatches.length, 12); i++) {
@@ -64,7 +64,13 @@ export async function GET(request) {
         }
 
         if (unreadItems.length === 0) {
-            return NextResponse.json({ error: 'No new unread articles to broadcast.' }, { status: 200 });
+            return NextResponse.json({ 
+                error: 'No new unread articles to broadcast.', 
+                debug: {
+                    rss_matched_items: allItems.length,
+                    first_item_title: allItems.length > 0 ? allItems[0].title : null
+                }
+            }, { status: 200 });
         }
 
         // 3. Format strictly for Gemini 2.5 Flash
