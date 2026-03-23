@@ -2,8 +2,8 @@ name: 🛒 AI Deal Hunter (Discovery Squad)
 
 on:
   schedule:
-    # Runs every 2 hours
-    - cron: '0 */2 * * *'
+    # Runs every 30 minutes
+    - cron: '*/30 * * * *'
   # Allows you to trigger this workflow manually from the Actions tab
   workflow_dispatch:
 
