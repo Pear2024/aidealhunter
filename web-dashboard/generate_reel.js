@@ -166,16 +166,7 @@ async function main() {
     });
     
     fs.writeFileSync(audioPath, openAIResponse.data);
-    const imagePath = path.join(tempDir, 'reel_image.jpg');
     const outPath = path.join(tempDir, 'auto_reel_test.mp4');
-
-    try {
-        console.log("🖼️  Downloading authentic Product Cover Image...");
-        await downloadFile(deal.image_url.trim(), imagePath);
-    } catch (fetchErr) {
-        console.error("⚠️ CDN Asset failure. Applying emergency solid-color fallback...", fetchErr.message);
-        require('child_process').execSync(`ffmpeg -f lavfi -i color=c=transparent:s=1000x1000:d=1 -frames:v 1 ${imagePath}`);
-    }
 
     // 4. Video Assembly + Static Lower-Third Subtitles
     console.log("⚙️  Assembling Sora MP4 via FFmpeg with Layered Architecture...");
@@ -198,18 +189,15 @@ async function main() {
     ffmpeg()
         .input(soraPath)
         .inputOption('-stream_loop -1') // Loop the short Sora video endlessly to fill audio duration if needed
-        .input(imagePath)
         .input(audioPath)
-        // Video Filter: Map Sora to BG, Product to FG, Composite together!
+        // Video Filter: Map Sora to BG, Composite Subtitles directly over it
         .complexFilter([
-            '[0:v]scale=1080:1920,crop=1080:1920[bg]',
-            '[1:v]scale=900:1200:force_original_aspect_ratio=decrease[fg]',
-            '[bg][fg]overlay=(W-w)/2:(H-h)/2[vid]',
-            `[vid]${drawtextFilters}[final]`
+            '[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]',
+            `[bg]${drawtextFilters}[final]`
         ])
         .outputOptions([
             '-map [final]',
-            '-map 2:a',         // Map audio (now input index 2)
+            '-map 1:a',         // Map audio (now input index 1)
             '-c:v libx264',     // Video codec
             '-preset fast',
             '-pix_fmt yuv420p',
