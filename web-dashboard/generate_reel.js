@@ -111,7 +111,7 @@ async function main() {
     try {
         const soraPromptSchema = {
             type: SchemaType.OBJECT,
-            properties: { sora_prompt: { type: SchemaType.STRING, description: "Write a highly detailed, photorealistic 4k cinematic video prompt for OpenAI Sora showcasing a hilarious 15-second physical comedy scene involving the user's product. Describe an exaggerated, relatable daily struggle that gets magically and comically solved by the product entering the frame. Exactly 1 continuous sentence. Do NOT include text overlays." } },
+            properties: { sora_prompt: { type: SchemaType.STRING, description: "Write a highly detailed, photorealistic 4k cinematic video prompt for OpenAI Sora showcasing a hilarious 15-second physical comedy scene involving the user's product. Describe an exaggerated, relatable daily struggle that gets magically and comically solved by the product entering the frame. CRITICAL PHYSICAL CONSTRAINTS: You must explicitly instruct Sora to maintain perfect human anatomy (exact number of limbs, no missing or merging legs/arms) and perfect object physics (e.g. hands gripping items naturally, no hovering objects, no spilling liquids unless intentional for the comedy). Exactly 1 continuous sentence. Do NOT include text overlays." } },
             required: ["sora_prompt"]
         };
         const soraModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash", generationConfig: { responseMimeType: "application/json", responseSchema: soraPromptSchema } });
