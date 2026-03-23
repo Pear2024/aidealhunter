@@ -67,7 +67,7 @@ export const scrapeDealUrlTool = tool(
   }
 );
 
-export const saveApprovedDealTool = tool(
+export const savePendingDealTool = tool(
   async ({ title, brand, original_price, discount_price, url }) => {
     try {
         const connection = await getConnection();
@@ -81,16 +81,16 @@ export const saveApprovedDealTool = tool(
             `INSERT INTO normalized_deals (
                 title, brand, original_price, discount_price, 
                 url, status, submitter_id, vote_score, merchandiser_score, image_url
-            ) VALUES (?, ?, ?, ?, ?, 'approved', 'agent_discovery', 0, 85, ?)`,
+            ) VALUES (?, ?, ?, ?, ?, 'pending', 'agent_discovery', 0, 85, ?)`,
             [title, brand || 'Unknown', original_price || null, discount_price, url, image_url]
         );
         await connection.end();
-        return "SUCCESS: Deal saved and automatically approved for broadcasting.";
+        return "SUCCESS: Deal saved to the manual validation queue. Awaiting human or gatekeeper approval.";
     } catch (e) { return `Database Insert Error: ${e.message}`; }
   },
   {
-      name: "save_approved_deal",
-      description: "Saves a validated, hot deal into the database AS APPROVED so the system can broadcast it automatically. NEVER save duplicate urls. Url must be the Vendor link.",
+      name: "save_pending_deal",
+      description: "Saves a hot deal into the database AS PENDING so the user can review it on the Kanban board. NEVER save duplicate urls. Url must be the Vendor link.",
       schema: z.object({
           title: z.string().describe("Cleaned Product Title"),
           brand: z.string().describe("The Brand name (if known, else 'Unknown')"),
