@@ -147,8 +147,8 @@ async function main() {
         const end = (i + 1) * chunkTime;
         // Aggressively strip emojis and non-standard unicode to protect Linux Freetype
         const cleanText = text.replace(/[^a-zA-Z0-9 \$\!\?\%\.\,]/g, "").replace(/:/g, '\\\\:').trim();
-        // 'Bouncing' physical motion equation via Y-axis sine wave + word-pop scaling
-        return `drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='${cleanText}':fontcolor=white:fontsize=95:borderw=4:bordercolor=black:shadowcolor=black:shadowx=3:shadowy=3:x='(w-tw)/2':y='(h-th)/2 + 25*sin(t*8)':enable='between(t,${start},${end})'`;
+        // Clean, cinematic static lower-third subtitle (no bouncing, moved below the main product)
+        return `drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='${cleanText}':fontcolor=white:fontsize=75:borderw=3:bordercolor=black:shadowcolor=black:shadowx=2:shadowy=2:x='(w-tw)/2':y='h-th-300':enable='between(t,${start},${end})'`;
     }).join(',');
 
     ffmpeg()
