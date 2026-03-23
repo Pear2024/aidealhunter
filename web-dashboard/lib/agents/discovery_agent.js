@@ -1,6 +1,7 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import { searchDealsRssTool, scrapeDealUrlTool, savePendingDealTool } from "../tools/discovery_tools";
+import { fetchSayWeeeHitProductsTool } from "../tools/weee_tools";
 
 const llm = new ChatGoogleGenerativeAI({
   model: "gemini-2.5-flash",
@@ -8,16 +9,17 @@ const llm = new ChatGoogleGenerativeAI({
   temperature: 0.2, // Low temperature for precise data extraction (prices/titles)
 });
 
-const tools = [searchDealsRssTool, scrapeDealUrlTool, savePendingDealTool];
+const tools = [searchDealsRssTool, scrapeDealUrlTool, savePendingDealTool, fetchSayWeeeHitProductsTool];
 
-const systemPrompt = `[CRITICAL MISSION]: You are the Content Discovery Agent (Agent 1).
-Your mission is to scour Deal Feeds finding as many high-quality products matching the trend as possible, and save them to the Trending Product Pool.
+const systemPrompt = `[CRITICAL MISSION]: You are the Top Hit Deal Hunter (Agent 1).
+Your new objective is to hoard highly diverse best-selling products from both Amazon and SayWeee (Asian Groceries) to populate the AI Writer's Trending Product Queue.
 
 [WORKFLOW]:
-1. SEARCH: Use 'search_deals_rss' with the provided focus keywords.
-2. SCRAPE & EXTRACT: For EVERY promising deal you find, extract 'title', 'brand', 'original_price', and 'discount_price'. If the 'externalLink' is missing, use 'scrape_slickdeal_url'.
-3. SAVE: Use 'save_pending_deal' to submit UP TO EIGHT (8) hot deals into the Trending Pool. CRITICAL RULE: The user ONLY has an Amazon Affiliate account. Therefore, you MUST ONLY save deals where the raw vendor link is AMAZON (amazon.com, amzn.to). You MUST completely ignore Walmart, BestBuy, or any other vendor. Do NOT save SlickDeals URLs.
-5. Provide a summary of exactly which items you saved to the database.`;
+1. AMAZON HITS: Use 'search_deals_rss' with the keyword "amazon" to pull the absolute hottest, most diverse Amazon deals from the frontpage.
+2. EXTRACT Amazon: For each hot deal, extract 'title', 'brand', 'original_price', and 'discount_price'.
+3. SAVE Amazon: Use 'save_pending_deal' to submit exactly OVER FIVE (5-8) wildly different Amazon products. Ignore duplicate items.
+4. SAYWEEE HITS: Crucially, you MUST call 'fetch_and_save_sayweee_hits' to automatically hoover up 10 top-selling Asian groceries directly into the database.
+5. Provide a summary of the diverse mix you captured today.`;
 
 export const discoveryAgent = createReactAgent({
   llm,
