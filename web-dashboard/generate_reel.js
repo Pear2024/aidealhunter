@@ -238,7 +238,7 @@ async function main() {
                 if (finalUrl && finalUrl.includes('amazon.com')) {
                     const affiliateTag = process.env.AMAZON_AFFILIATE_TAG || "smartshop0c33-20";
                     // Robust ASIN Regex Extractor (Catches /dp/, /gp/product/, /product-reviews/, etc)
-                    const asinMatch = finalUrl.match(/\\/(?:dp|gp\\/product|product-reviews|aw\\/d)\\/([A-Z0-9]{10})/i);
+                    const asinMatch = finalUrl.match(new RegExp('/(?:dp|gp/product|product-reviews|aw/d)/([A-Z0-9]{10})', 'i'));
                     if (asinMatch && asinMatch[1]) {
                         // Force pristine high-converting canonical URL
                         finalUrl = `https://www.amazon.com/dp/${asinMatch[1]}/?tag=${affiliateTag}`;
