@@ -29,7 +29,7 @@ export async function GET(request) {
             const response = await fetch(url, { next: { revalidate: 0 } });
             const xmlText = await response.text();
             
-            const urlRegex = new RegExp("<item>([\\\\s\\\\S]*?)<\\\\/item>", "g");
+            const urlRegex = /<item>([\\s\\S]*?)<\\/item>/g;
             const itemMatches = xmlText.match(urlRegex) || [];
             
             for (let i = 0; i < Math.min(itemMatches.length, 12); i++) {
