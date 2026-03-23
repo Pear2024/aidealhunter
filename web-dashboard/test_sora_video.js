@@ -10,7 +10,7 @@ async function probeSora() {
     }
 
     const payload = {
-        model: "sora", // Target model
+        model: "sora-2", // Updated based on cloud telemetry
         prompt: "A breathtaking, hyper-realistic cinematic tracking shot of an expansive futuristic city bathed in golden hour neon light. Shallow depth of field, 4k resolution."
     };
 
