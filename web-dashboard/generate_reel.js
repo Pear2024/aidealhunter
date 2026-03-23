@@ -215,7 +215,8 @@ async function main() {
                 const response = await axios.post(`https://graph.facebook.com/v19.0/${pageId}/videos`, form, {
                     headers: form.getHeaders(),
                     maxContentLength: Infinity,
-                    maxBodyLength: Infinity
+                    maxBodyLength: Infinity,
+                    timeout: 60000 // 60 seconds hard timeout for Facebook Server stalls
                 });
 
                 console.log(`🎉 MEGA SUCCESS! Reel LIVE on Facebook! Status:`, response.data);
@@ -232,14 +233,19 @@ async function main() {
                 });
                 await updateConn.execute("UPDATE normalized_deals SET status = 'published' WHERE id = ?", [deal.id]);
                 await updateConn.end();
+                
+                console.log("🏁 Execution complete. Tearing down process.");
+                process.exit(0);
 
             } catch (err) {
                  console.error("❌ Facebook API Error:", err.response ? JSON.stringify(err.response.data) : err.stack);
                  await sendTelegramAlert(`🚨 <b>[Graph API Fault]</b>\nReels generation succeeded, but Facebook Graph API upload failed!\n\n<code>${err.message}</code>`);
+                 process.exit(1);
             }
         })
         .on('error', (err) => {
             console.error(`❌ FFmpeg Error: ${err.message}`);
+            process.exit(1);
         });
     } catch (globalErr) {
         console.error("🚨 FATAL GLOBAL ERROR TERMINATING EXECUTION:", globalErr.stack);
