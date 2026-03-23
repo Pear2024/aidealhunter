@@ -153,8 +153,8 @@ async function main() {
     let drawtextFilters = aiResponse.subtitles.map((text, i) => {
         const start = i * chunkTime;
         const end = (i + 1) * chunkTime;
-        // Escape characters for FFmpeg
-        const cleanText = text.replace(/'/g, "").replace(/:/g, '\\\\:');
+        // Aggressively strip emojis and non-standard unicode to protect Linux Freetype
+        const cleanText = text.replace(/[^a-zA-Z0-9 \$\!\?\%\.\,]/g, "").replace(/:/g, '\\\\:').trim();
         // 'Bouncing' physical motion equation via Y-axis sine wave + word-pop scaling
         return `drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='${cleanText}':fontcolor=white:fontsize=95:borderw=4:bordercolor=black:shadowcolor=black:shadowx=3:shadowy=3:x='(w-tw)/2':y='(h-th)/2 + 25*sin(t*8)':enable='between(t,${start},${end})'`;
     }).join(',');

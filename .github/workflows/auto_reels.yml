@@ -20,7 +20,7 @@ jobs:
         node-version: '20'
 
     - name: Install FFmpeg natively on Ubuntu VM
-      run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      run: sudo apt-get update && sudo apt-get install -y ffmpeg fonts-dejavu-core
 
     - name: Install NPM Dependencies
       run: |
