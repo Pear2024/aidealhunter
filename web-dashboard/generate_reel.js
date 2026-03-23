@@ -236,7 +236,7 @@ async function main() {
                     }
                 }
                 const affiliateLink = finalUrl || "https://aidealhunter.vercel.app";
-                const caption = `🚨 🔥 DEAL DROP: ${deal.title}\n💰 Just $${actualPrice} ${oldPriceStr}!\n\n👉 Steal this deal right here: ${affiliateLink}\n\n#Hemet #InlandEmpire #DealHunter #Promos`;
+                const caption = `Anyone else struggling with this lately? 😅 Found the ${deal.title} and wondering if it actually works as well as people say.\n\nDrop a comment if you've tried it! 👇`;
 
                 const form = new FormData();
                 form.append('access_token', token);
@@ -251,6 +251,19 @@ async function main() {
                 });
 
                 console.log(`🎉 MEGA SUCCESS! Reel LIVE on Facebook! Status:`, response.data);
+                
+                // INJECT FIRST COMMENT
+                if (response.data && response.data.id) {
+                     try {
+                          await axios.post(`https://graph.facebook.com/v19.0/${response.data.id}/comments`, {
+                              message: `🔗 Here is the exact link I found: ${affiliateLink}`,
+                              access_token: token
+                          });
+                          console.log(`✅ Secondary First Comment Proxy Executed for Video ${response.data.id}`);
+                     } catch(err) {
+                          console.error('First Comment Proxy Error:', err.message);
+                     }
+                }
                 
                 // Finalize duplicate-prevention state
                 console.log("🔒 Marking deal as published to block duplicates...");
