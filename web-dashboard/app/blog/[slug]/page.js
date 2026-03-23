@@ -88,7 +88,7 @@ export default async function BlogPostPage({ params }) {
                     
                     <AdBanner dataAdSlot="top_article_slot" />
                     
-                    <div className="blog-content" dangerouslySetInnerHTML={{ __html: post.content_html }}></div>
+                    <div className="blog-content" dangerouslySetInnerHTML={{ __html: post.content_html.replace(/background(-color)?\s*:\s*[^;"'>]+/gi, '') }}></div>
 
                     <AdBanner dataAdSlot="bottom_article_slot" />
                 </div>
