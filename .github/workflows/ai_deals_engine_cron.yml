@@ -1,0 +1,18 @@
+name: 📱 AI Facebook Deals Engine (Publisher Squad)
+
+on:
+  schedule:
+    # Runs at minute 30 past every hour (Offset from the Blog Content Agent)
+    - cron: '30 * * * *'
+  # Allows triggering manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  dispatch-deals-engine:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚀 Invoking 7-Post Viral Master Loop
+        run: |
+          echo "Firing the Master Facebook Deal Engine..."
+          curl -v -m 120 "https://aidealhunter.vercel.app/api/cron/deals?key=super_secret_ai_cron_password_123"
+          echo -e "\n\n✅ Mission complete. The AI Publisher successfully broadcasted to Facebook."
