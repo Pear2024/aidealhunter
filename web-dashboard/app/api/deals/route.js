@@ -20,7 +20,7 @@ export async function GET(request) {
     let queryArgs = [];
     
     if (status === 'all') {
-        queryStr += "status IN ('approved', 'expired')";
+        queryStr += "status IN ('approved', 'published', 'expired')";
     } else {
         queryStr += "status = ?";
         queryArgs.push(status);
