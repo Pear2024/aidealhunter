@@ -129,17 +129,55 @@ Example: "Okay has anyone in Hemet actually tried this [product]? Found it on Am
             }
 
             let caption = `Okay neighbors, question for you all! 🤔 I just stumbled upon the ${dealToPost.title} and I'm seriously considering it.\n\nHas anyone here actually tried this brand before? Drop a comment and let me know if it's worth the hype! 👇`;
+            let finalImageUrl = dealToPost.image_url;
+
             try {
-                const copyResult = await withRetry(() => textModel.generateContent(copywriterPrompt), 1, 1000);
-                const generatedText = copyResult.response.text().trim();
-                if (generatedText) caption = generatedText;
-            } catch(e) {}
+                // RUN GEMINI & DALL-E IN PARALLEL FOR SPEED
+                const [copyResult, dalleResult] = await Promise.allSettled([
+                    withRetry(() => textModel.generateContent(copywriterPrompt), 1, 1000),
+                    (async () => {
+                         if (!process.env.OPENAI_API_KEY) return null;
+                         const aiRes = await fetch("https://api.openai.com/v1/images/generations", {
+                             method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.OPENAI_API_KEY}` },
+                             body: JSON.stringify({
+                                 model: "dall-e-3",
+                                 prompt: `A bright, aesthetic, high-end commercial lifestyle photograph of a beautiful celebrity or highly attractive model happily interacting with / holding this product: ${dealToPost.title}. The lighting is bright, sunny, and inviting. Ultra-realistic, expressive, sharp focus. NO TEXT. NO WORDS.`,
+                                 n: 1, size: "1024x1024", response_format: "url"
+                             })
+                         });
+                         const imgData = await aiRes.json();
+                         if (imgData.data && imgData.data[0]) {
+                             let remoteUrl = imgData.data[0].url;
+                             if (process.env.IMGBB_API_KEY) {
+                                 const imgFormData = new URLSearchParams();
+                                 imgFormData.append("image", remoteUrl);
+                                 const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=${process.env.IMGBB_API_KEY}`, { method: "POST", body: imgFormData });
+                                 const imgbbData = await imgbbRes.json();
+                                 if (imgbbData.success) return imgbbData.data.url;
+                             }
+                             return remoteUrl;
+                         }
+                         return null;
+                    })()
+                ]);
+
+                if (copyResult.status === 'fulfilled' && copyResult.value) {
+                    const generatedText = copyResult.value.response.text().trim();
+                    if (generatedText) caption = generatedText;
+                }
+                
+                if (dalleResult.status === 'fulfilled' && dalleResult.value) {
+                    finalImageUrl = dalleResult.value;
+                    console.log("✅ DALL-E 3 Lifestyle Image successfully synthesized:", finalImageUrl);
+                    await logAgent('agent_3', 'Agent 3: Designer', 'DALL-E 3 Image Synthesized', 'success', `Generated premium aesthetic lifestyle image for product.`);
+                }
+            } catch(e) { console.error("Generation Error:", e); }
             
             // Post an image link natively resolving the Facebook Open Graph UI.
-            const postId = await executeGraphAPI('photos', { url: dealToPost.image_url, caption: caption }, 'Facebook Publication', `Successfully deployed native Amazon API deal post.`);
+            const postId = await executeGraphAPI('photos', { url: finalImageUrl, caption: caption }, 'Facebook Publication', `Successfully deployed native Amazon API deal post.`);
             if (postId) {
                 await executeGraphComment(postId, `🔗 Here is the link to the item I mentioned: ${trackingLink}`);
-                await connection.execute("UPDATE normalized_deals SET status = 'published' WHERE id = ?", [dealToPost.id]);
+                await connection.execute("UPDATE normalized_deals SET status = 'published', image_url = ? WHERE id = ?", [finalImageUrl, dealToPost.id]);
                 await logAgent('agent_8', 'Agent 8: Comment Closer', 'Listener Deployed', 'running', `Standing by for inbound Facebook audience interactions.`);
             } else {
                 await connection.execute("UPDATE normalized_deals SET status = 'rejected' WHERE id = ?", [dealToPost.id]);
