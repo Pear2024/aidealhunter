@@ -52,19 +52,33 @@ export async function GET(request) {
             const fbResult = await fbResponse.json();
             if (!fbResult.error && fbResult.id) {
                 await logAgent('agent_3', 'Agent 3: Copywriter', actionType, 'success', logSuccess);
-                return true;
+                return fbResult.id;
             } else {
                 const fbErrorMsg = fbResult.error?.message || 'Unknown FB Error';
                 console.error("FB Graph error:", fbErrorMsg);
                 await logAgent('agent_3', 'Agent 3: Copywriter', 'Facebook Error', 'failed', fbErrorMsg);
-                return false;
+                return null;
             }
         } catch(e) {
             console.error("FB request failed:", e);
             await logAgent('agent_3', 'Agent 3: Copywriter', 'Critical Exception', 'failed', e.message);
             await sendTelegramAlert(`🚨 <b>[Graph API Fault]</b>\nFailed to broadcast to Facebook!\n\n<code>${e.message}</code>`);
-            return false;
+            return null;
         }
+    }
+
+    const executeGraphComment = async (postId, message) => {
+        try {
+            const fbResponse = await fetch(`https://graph.facebook.com/v19.0/${postId}/comments?access_token=${process.env.FB_PAGE_ACCESS_TOKEN}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message })
+            });
+            const fbResult = await fbResponse.json();
+            if (!fbResult.error && fbResult.id) {
+                console.log("✅ Successfully injected First Comment Proxy:", fbResult.id);
+            } else {
+                console.error("❌ Failed to inject comment:", fbResult.error);
+            }
+        } catch(e) { console.error("Comment inject failed:", e); }
     }    // ==============================================================
     // ROUTE 0, 1, 3, 5: THE DEAL ENGINE (Product Sales)
     // ==============================================================
@@ -114,16 +128,17 @@ Example: "Okay has anyone in Hemet actually tried this [product]? Found it on Am
                 } catch(e) {}
             }
 
-            let caption = `Okay neighbors, question for you all! 🤔 I just stumbled upon the ${dealToPost.title} and I'm seriously considering it.\n\nHas anyone here actually tried this brand before? Drop a comment and let me know if it's worth the hype! 👇\n\n(Found it here: ${trackingLink})`;
+            let caption = `Okay neighbors, question for you all! 🤔 I just stumbled upon the ${dealToPost.title} and I'm seriously considering it.\n\nHas anyone here actually tried this brand before? Drop a comment and let me know if it's worth the hype! 👇`;
             try {
                 const copyResult = await withRetry(() => textModel.generateContent(copywriterPrompt), 1, 1000);
                 const generatedText = copyResult.response.text().trim();
-                if (generatedText) caption = `${generatedText}\n\n🔗 ${trackingLink}`;
+                if (generatedText) caption = generatedText;
             } catch(e) {}
             
             // Post an image link natively resolving the Facebook Open Graph UI.
-            const success = await executeGraphAPI('photos', { url: dealToPost.image_url, caption: caption }, 'Facebook Publication', `Successfully deployed native Amazon API deal post.`);
-            if (success) {
+            const postId = await executeGraphAPI('photos', { url: dealToPost.image_url, caption: caption }, 'Facebook Publication', `Successfully deployed native Amazon API deal post.`);
+            if (postId) {
+                await executeGraphComment(postId, `🔗 Here is the link to the item I mentioned: ${trackingLink}`);
                 await connection.execute("UPDATE normalized_deals SET status = 'published' WHERE id = ?", [dealToPost.id]);
                 await logAgent('agent_8', 'Agent 8: Comment Closer', 'Listener Deployed', 'running', `Standing by for inbound Facebook audience interactions.`);
             } else {

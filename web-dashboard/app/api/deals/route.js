@@ -106,12 +106,11 @@ export async function POST(request) {
             pct = Math.round((1 - data.discount_price / data.original_price) * 100);
           }
 
-          const caption = `You guys... is anyone else obsessed with this brand, or just me? 😅 I was just looking at the ${data.title} and trying to decide if it's actually worth it.\n\nIf you own one of these, drop a comment below and tell me the honest truth! 👇\n\n🔗 (Link for context: ${trackURL})`;
+          const caption = `You guys... is anyone else obsessed with this brand, or just me? 😅 I was just looking at the ${data.title} and trying to decide if it's actually worth it.\n\nIf you own one of these, drop a comment below and tell me the honest truth! 👇`;
           
           let fbEndpoint = `https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed`;
           const fbPayload = {
             message: caption,
-            link: trackURL,
             access_token: process.env.FB_PAGE_ACCESS_TOKEN
           };
 
@@ -120,7 +119,6 @@ export async function POST(request) {
             fbPayload.url = imageURL;
             fbPayload.caption = caption;
             delete fbPayload.message;
-            delete fbPayload.link;
           }
 
           let currentEndpoint = fbEndpoint;
@@ -136,13 +134,12 @@ export async function POST(request) {
           console.log('--- FB API RAW RESPONSE (Attempt 1) ---');
           console.log(fbResult);
           
-          // Fallback logic: If uploading a photo failed, try posting just the link
+          // Fallback logic: If uploading a photo failed, try posting standard feed
           if (fbResult.error && imageURL) {
             console.warn('FB Photo upload failed, falling back to standard link post:', fbResult.error);
             currentEndpoint = `https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/feed`;
             currentPayload = {
               message: caption,
-              link: trackURL,
               access_token: process.env.FB_PAGE_ACCESS_TOKEN
             };
             
@@ -152,14 +149,19 @@ export async function POST(request) {
               body: JSON.stringify(currentPayload)
             });
             fbResult = await fbResponse.json();
-            console.log('--- FB API RAW RESPONSE (Fallback) ---');
-            console.log(fbResult);
           }
 
           if (fbResult.error) {
             console.error('FB Error Object:', fbResult.error);
           } else {
             console.log('Successfully Posted to FB:', fbResult.id);
+            // --- INJECT FIRST COMMENT PROXY ---
+            try {
+                await fetch(`https://graph.facebook.com/v19.0/${fbResult.id}/comments?access_token=${process.env.FB_PAGE_ACCESS_TOKEN}`, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message: `🔗 Here is the link for context: ${trackURL}` })
+                });
+                console.log('✅ Secondary First Comment Proxy Executed');
+            } catch(e) { console.error('First Comment Proxy Error:', e); }
           }
         } catch (e) {
           console.error('FB API catch block triggered', e);
