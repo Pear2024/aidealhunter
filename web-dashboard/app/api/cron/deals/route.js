@@ -137,11 +137,21 @@ Example: "Okay has anyone in Hemet actually tried this [product]? Found it on Am
                     withRetry(() => textModel.generateContent(copywriterPrompt), 1, 1000),
                     (async () => {
                          if (!process.env.OPENAI_API_KEY) return null;
+                         
+                         const aesthetics = [
+                             `A bright, aesthetic, high-end commercial lifestyle photograph of a beautiful celebrity or highly attractive model happily interacting with / holding this product: ${dealToPost.title}. The lighting is bright, sunny, and inviting. Ultra-realistic, expressive, sharp focus. NO TEXT. NO WORDS.`,
+                             `A cozy, warm, inviting home setting. A relatable, highly attractive person enjoying a quiet morning coffee while using this product: ${dealToPost.title}. Realism, cinematic lighting, 8k resolution, highly detailed, expressive. NO TEXT. NO WORDS.`,
+                             `An energetic, fitness-focused bright sunny day outdoors. A fit, gorgeous model holding or wearing this product: ${dealToPost.title}. High-end activewear commercial photography, beautiful bokeh, vibrant colors, ultra-realistic. NO TEXT. NO WORDS.`,
+                             `A sleek, luxurious modern minimalist luxury apartment. A sophisticated, attractive person utilizing this product: ${dealToPost.title}. Evening moody but beautiful lighting, high fashion, elegant, highly detailed. NO TEXT. NO WORDS.`,
+                             `A fun, colorful, pop-art inspired lifestyle shot. A young stunning influencer taking a selfie or showing off this product: ${dealToPost.title}. Pastel colors, bright studio lighting, viral social media aesthetic, hyper-realistic. NO TEXT. NO WORDS.`
+                         ];
+                         const selectedAesthetic = aesthetics[Math.floor(Math.random() * aesthetics.length)];
+
                          const aiRes = await fetch("https://api.openai.com/v1/images/generations", {
                              method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.OPENAI_API_KEY}` },
                              body: JSON.stringify({
                                  model: "dall-e-3",
-                                 prompt: `A bright, aesthetic, high-end commercial lifestyle photograph of a beautiful celebrity or highly attractive model happily interacting with / holding this product: ${dealToPost.title}. The lighting is bright, sunny, and inviting. Ultra-realistic, expressive, sharp focus. NO TEXT. NO WORDS.`,
+                                 prompt: selectedAesthetic,
                                  n: 1, size: "1024x1024", response_format: "url"
                              })
                          });
