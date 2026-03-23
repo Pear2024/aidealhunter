@@ -104,10 +104,54 @@ async function main() {
     console.log(`📜 Script: "${cleanScript}"`);
     console.log(`🗨️ Subtitles:`, aiResponse.subtitles);
 
+    // 2.5. Sora Cinematic Background Video Generation
+    console.log("🎥 Ordering Sora Cinematic B-Roll Generator...");
+    let soraPath = path.join(tempDir, 'sora_background.mp4');
+    try {
+        const soraPromptSchema = {
+            type: SchemaType.OBJECT,
+            properties: { sora_prompt: { type: SchemaType.STRING, description: "Write a highly detailed, breathtaking cinematic tracking shot video prompt for OpenAI Sora showcasing the product. Strictly 1 sentence. Focus on gorgeous lighting, 4k detail, and beautiful backdrops. Do NOT include human faces or text overlays." } },
+            required: ["sora_prompt"]
+        };
+        const soraModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash", generationConfig: { responseMimeType: "application/json", responseSchema: soraPromptSchema } });
+        const soraRes = await soraModel.generateContent(`Product: ${deal.title} by ${deal.brand}.`);
+        const soraPrompt = JSON.parse(soraRes.response.text()).sora_prompt;
+        console.log(`📝 Sora Cinematic Prompt: "${soraPrompt}"`);
+
+        const soraPayload = { model: "sora-2", prompt: soraPrompt };
+        const soraInit = await axios.post('https://api.openai.com/v1/videos', soraPayload, { headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' } });
+        const videoId = soraInit.data.id;
+        console.log(`✅ Sora Job Created: ${videoId}. Initiating asynchronous GPU polling loop...`);
+
+        let soraStatus = soraInit.data.status;
+        let attempts = 0;
+        while (soraStatus === 'queued' || soraStatus === 'in_progress') {
+            attempts++;
+            await new Promise(r => setTimeout(r, 15000));
+            console.log(`⏳ Polling Sora [${attempts}]... Waiting for GPU cluster...`);
+            const checkRes = await axios.get(`https://api.openai.com/v1/videos/${videoId}`, { headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` } });
+            soraStatus = checkRes.data.status;
+            if (soraStatus === 'completed') {
+                console.log("📥 Downloading Sora MP4 Binary Stream...");
+                const streamRes = await axios.get(`https://api.openai.com/v1/videos/${videoId}/content`, { headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` }, responseType: 'stream' });
+                const writer = fs.createWriteStream(soraPath);
+                streamRes.data.pipe(writer);
+                await new Promise((resolve, reject) => { writer.on('finish', resolve); writer.on('error', reject); });
+                console.log("🎞️ Sora Background Materialized successfully.");
+                break;
+            } else if (soraStatus === 'failed' || soraStatus === 'rejected') {
+                throw new Error("Sora generation status marked as failed.");
+            }
+        }
+    } catch (soraErr) {
+        console.error("⚠️ Sora Error. Falling back to static color background...", soraErr.message);
+        require('child_process').execSync(`ffmpeg -f lavfi -i color=c=black:s=720x1280:d=10 -frames:v 300 ${soraPath}`);
+    }
+
     // 3. Audio & Image Acquisition
     console.log("🗣️ Synthesizing Ultra-Realistic Human Audio via OpenAI...");
-    const tempDir = os.tmpdir();
-    const audioPath = path.join(tempDir, 'reel_audio.mp3');
+    const tempDir2 = os.tmpdir();
+    const audioPath = path.join(tempDir2, 'reel_audio.mp3');
     // Fetch OpenAI TTS
     const openAIResponse = await axios.post('https://api.openai.com/v1/audio/speech', {
         model: "tts-1",
@@ -122,19 +166,19 @@ async function main() {
     });
     
     fs.writeFileSync(audioPath, openAIResponse.data);
-    const imagePath = path.join(tempDir, 'reel_image.jpg');
-    const outPath = path.join(tempDir, 'auto_reel_test.mp4');
+    const imagePath = path.join(tempDir2, 'reel_image.jpg');
+    const outPath = path.join(tempDir2, 'auto_reel_test.mp4');
 
     try {
         console.log("🖼️  Downloading authentic Product Cover Image...");
         await downloadFile(deal.image_url.trim(), imagePath);
     } catch (fetchErr) {
         console.error("⚠️ CDN Asset failure. Applying emergency solid-color fallback...", fetchErr.message);
-        require('child_process').execSync(`ffmpeg -f lavfi -i color=c=black:s=1000x1000:d=1 -frames:v 1 ${imagePath}`);
+        require('child_process').execSync(`ffmpeg -f lavfi -i color=c=transparent:s=1000x1000:d=1 -frames:v 1 ${imagePath}`);
     }
 
-    // 4. Video Assembly + Bouncing Subtitles
-    console.log("⚙️  Assembling MP4 via FFmpeg with Advanced Subtitles...");
+    // 4. Video Assembly + Static Lower-Third Subtitles
+    console.log("⚙️  Assembling Sora MP4 via FFmpeg with Layered Architecture...");
     
     // Determine dynamic duration based on script chunks (Assuming average audio is ~12-15 seconds)
     // We will distribute the subtitle arrays uniformly across the estimated video runtime.
@@ -152,19 +196,20 @@ async function main() {
     }).join(',');
 
     ffmpeg()
+        .input(soraPath)
+        .inputOption('-stream_loop -1') // Loop the short Sora video endlessly to fill audio duration if needed
         .input(imagePath)
-        .loop() // Loop the single image
         .input(audioPath)
-        // Video Filter: Highly cinematic blurred background, centered popup foreground, and dynamic subtitles!
+        // Video Filter: Map Sora to BG, Product to FG, Composite together!
         .complexFilter([
-            '[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,gblur=sigma=45[bg]',
-            '[0:v]scale=900:1200:force_original_aspect_ratio=decrease[fg]',
+            '[0:v]scale=1080:1920,crop=1080:1920[bg]',
+            '[1:v]scale=900:1200:force_original_aspect_ratio=decrease[fg]',
             '[bg][fg]overlay=(W-w)/2:(H-h)/2[vid]',
             `[vid]${drawtextFilters}[final]`
         ])
         .outputOptions([
             '-map [final]',
-            '-map 1:a',         // Map audio
+            '-map 2:a',         // Map audio (now input index 2)
             '-c:v libx264',     // Video codec
             '-preset fast',
             '-pix_fmt yuv420p',
