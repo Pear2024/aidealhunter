@@ -2,10 +2,8 @@ name: Facebook Auto-Reels Agent
 
 on:
   schedule:
-    # 3 times a day (10:00 AM, 3:00 PM, 8:00 PM Pacific Time)
-    - cron: '0 17 * * *'
-    - cron: '0 22 * * *'
-    - cron: '0 3 * * *'
+    # Every 30 minutes to saturate the Facebook Reels algorithm
+    - cron: '*/30 * * * *'
   workflow_dispatch: # Allow manual triggering to test immediately
 
 jobs:

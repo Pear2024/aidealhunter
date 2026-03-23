@@ -43,7 +43,7 @@ export async function GET(request) {
             ]
         };
 
-        const discoveryResult = await discoveryAgent.invoke(discoveryState);
+        const discoveryResult = await discoveryAgent.invoke(discoveryState, { recursionLimit: 100 });
         let discoveryOutput = discoveryResult.messages[discoveryResult.messages.length - 1].content;
         if (Array.isArray(discoveryOutput)) discoveryOutput = discoveryOutput.map(p => p.text).join(' ');
 
