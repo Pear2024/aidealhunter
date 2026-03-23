@@ -95,7 +95,7 @@ async function main() {
     const actualPrice = deal.discount_price || deal.original_price || "an amazing value";
     const oldPriceStr = deal.original_price ? `(Was $${deal.original_price})` : "";
     
-    const prompt = `Write a viral, story-driven TikTok/Reels voiceover script based on this product deal:\nTitle: ${deal.title}\nDiscount Price: $${actualPrice} ${oldPriceStr}\nBrand: ${deal.brand}\n\n[INSTRUCTIONS]: You are a highly professional, relatable UGC influencer. Do NOT sound like an ad. Hook them instantly (e.g., 'I almost paid full price until I found this secret...'). YOU MUST MENTION THE EXACT DISCOUNT PRICE IN THE AUDIO. Break the dialogue into exciting subtitle chunks with emojis.`;
+    const prompt = `Write a viral, HILARIOUS TikTok/Reels voiceover script based on this product deal:\nTitle: ${deal.title}\nDiscount Price: $${actualPrice} ${oldPriceStr}\n\n[INSTRUCTIONS]: You are a hilarious, chaotic, and highly relatable comedian. Write a 15-second funny script about a deeply relatable daily struggle, and how this specific product is the ultimate lifesaver. Keep it punchy, chaotic, and witty. YOU MUST MENTION THE EXACT DISCOUNT PRICE IN THE AUDIO. Break the dialogue into exciting subtitle chunks with emojis.`;
     const result = await textModel.generateContent(prompt);
     const aiResponse = JSON.parse(result.response.text());
     
@@ -111,7 +111,7 @@ async function main() {
     try {
         const soraPromptSchema = {
             type: SchemaType.OBJECT,
-            properties: { sora_prompt: { type: SchemaType.STRING, description: "Write a highly detailed, breathtaking cinematic tracking shot video prompt for OpenAI Sora showcasing the product. Strictly 1 sentence. Focus on gorgeous lighting, 4k detail, and beautiful backdrops. Do NOT include human faces or text overlays." } },
+            properties: { sora_prompt: { type: SchemaType.STRING, description: "Write a highly detailed, photorealistic 4k cinematic video prompt for OpenAI Sora showcasing a hilarious 15-second physical comedy scene involving the user's product. Describe an exaggerated, relatable daily struggle that gets magically and comically solved by the product entering the frame. Exactly 1 continuous sentence. Do NOT include text overlays." } },
             required: ["sora_prompt"]
         };
         const soraModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash", generationConfig: { responseMimeType: "application/json", responseSchema: soraPromptSchema } });
