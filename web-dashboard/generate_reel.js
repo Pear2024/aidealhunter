@@ -51,8 +51,8 @@ async function main() {
             host: (process.env.MYSQL_HOST || '').trim(),
             user: (process.env.MYSQL_USER || '').trim(),
             password: (process.env.MYSQL_PASSWORD || '').trim(),
-            database: (process.env.MYSQL_DATABASE || '').trim(),
-            port: parseInt((process.env.MYSQL_PORT || '3306').trim()),
+            database: (process.env.MYSQL_DATABASE || 'defaultdb').trim(),
+            port: parseInt((process.env.MYSQL_PORT || '20007').trim()),
             ssl: { rejectUnauthorized: false }
         });
 
@@ -227,8 +227,8 @@ async function main() {
                     host: (process.env.MYSQL_HOST || '').trim(),
                     user: (process.env.MYSQL_USER || '').trim(),
                     password: (process.env.MYSQL_PASSWORD || '').trim(),
-                    database: (process.env.MYSQL_DATABASE || '').trim(),
-                    port: parseInt((process.env.MYSQL_PORT || '3306').trim()),
+                    database: (process.env.MYSQL_DATABASE || 'defaultdb').trim(),
+                    port: parseInt((process.env.MYSQL_PORT || '20007').trim()),
                     ssl: { rejectUnauthorized: false }
                 });
                 await updateConn.execute("UPDATE normalized_deals SET status = 'published' WHERE id = ?", [deal.id]);
