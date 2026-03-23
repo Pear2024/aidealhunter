@@ -5,19 +5,49 @@ import Link from 'next/link';
 export default function QueueBoard() {
   const [data, setData] = useState({ pending: [], queued: [], published: [] });
   const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false); // State for the QA agent button
+
+  const fetchQueues = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/queue');
+      const d = await res.json();
+      setData(d);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    fetch('/api/admin/queue')
-      .then(res => res.json())
-      .then(d => {
-        setData(d);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setLoading(false);
-      });
+    fetchQueues();
   }, []);
+
+  const handleManualApprove = async (id, currentStatus) => {
+    // ... code truncated for brevity, standard handle block ...
+    try {
+      const res = await fetch('/api/admin/deals/status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status: 'approved' })
+      });
+      if(res.ok) fetchQueues();
+    } catch(e) {}
+  };
+
+  const dispatchQAAgent = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/cron/agent-qa?key=super_secret_ai_cron_password_123');
+      const data = await res.json();
+      alert('QA Agent Report:\n' + data.agent_report);
+      fetchQueues();
+    } catch(e) {
+      alert('Error triggering QA Agent');
+    }
+    setIsLoading(false);
+  };
 
   const calculateETA = (index) => {
       // Adjusted to sync with the official GitHub Actions 1-Hour schedule
@@ -46,12 +76,31 @@ export default function QueueBoard() {
                     
                     {/* Column 1: Awaiting Validation */}
                     <div style={{ background: '#111', borderRadius: '16px', border: '1px solid #333', padding: '20px', minHeight: '600px' }}>
-                        <div style={{ paddingBottom: '15px', borderBottom: '1px solid #333', marginBottom: '15px' }}>
-                            <h2 style={{ fontSize: '1.2rem', color: '#ff3b30', display: 'flex', justifyContent: 'space-between' }}>
-                                <span>1. Trending Product Pool 🔥</span>
-                                <span style={{ background: '#331111', padding: '2px 10px', borderRadius: '12px', fontSize: '0.9rem' }}>{data.pending.length}</span>
-                            </h2>
-                            <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '5px' }}>Stockpiled by AI Discovery. Writer randomly selects from here.</p>
+                        <div style={{ paddingBottom: '15px', borderBottom: '1px solid #333', marginBottom: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                                <h2 style={{ fontSize: '1.2rem', color: '#ff3b30', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span>1. Trending Product Pool 🔥</span>
+                                    <span style={{ background: '#331111', padding: '2px 10px', borderRadius: '12px', fontSize: '0.9rem' }}>{data.pending.length}</span>
+                                </h2>
+                                <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '5px' }}>Stockpiled by AI Discovery. Writer randomly selects from here.</p>
+                            </div>
+                            <button onClick={dispatchQAAgent} disabled={isLoading} style={{
+                                fontSize: '0.75rem',
+                                background: isLoading ? 'rgba(255,204,128,0.1)' : 'rgba(255,204,128,0.2)',
+                                color: '#ffcc80',
+                                padding: '6px 12px',
+                                borderRadius: '9999px',
+                                transition: 'background-color 0.2s',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                fontWeight: 'bold',
+                                border: '1px solid rgba(255,204,128,0.3)',
+                                cursor: isLoading ? 'not-allowed' : 'pointer'
+                            }}>
+                                <svg style={{ width: '12px', height: '12px' }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                                {isLoading ? 'Scanning...' : 'Auto-Approve AI'}
+                            </button>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {data.pending.length === 0 && <p style={{ color: '#555', textAlign: 'center', padding: '20px' }}>No items in queue.</p>}
