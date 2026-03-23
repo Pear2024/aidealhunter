@@ -1,0 +1,19 @@
+name: 📰 AI News Telegram Cron
+
+on:
+  schedule:
+    # Runs every 1 hour
+    - cron: '0 * * * *'
+  # Allows manual triggering
+  workflow_dispatch:
+
+jobs:
+  dispatch-news-squad:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚀 Invoking AI News Agent
+        # Maximum timeout set to 120 seconds for deep Gemini translation
+        run: |
+          echo "Starting the AI News harvesting and Telegram translation process..."
+          curl -v -m 120 "https://aidealhunter.vercel.app/api/cron/ai-news?key=super_secret_ai_cron_password_123"
+          echo -e "\n\n✅ Mission complete. The AI News has been transmitted."
