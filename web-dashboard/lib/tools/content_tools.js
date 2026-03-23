@@ -34,10 +34,14 @@ export const fetchApprovedDealTool = tool(
         
         const affiliateTag = process.env.AMAZON_AFFILIATE_TAG || 'smartshop0c33-20';
         let affiliateUrl = targetDeal.url;
-        if (affiliateUrl.includes('?')) {
-            affiliateUrl += `&tag=${affiliateTag}`;
-        } else {
-            affiliateUrl += `?tag=${affiliateTag}`;
+        
+        // Only append Amazon Affiliate specifics if it's an actual Amazon marketplace link
+        if (affiliateUrl.includes('amazon.com') || affiliateUrl.includes('amzn.to')) {
+            if (affiliateUrl.includes('?')) {
+                affiliateUrl += `&tag=${affiliateTag}`;
+            } else {
+                affiliateUrl += `?tag=${affiliateTag}`;
+            }
         }
 
         return JSON.stringify({
