@@ -18,34 +18,39 @@ async function probeSora() {
 
     // Probe 1: Standard /v1/videos
     try {
-        console.log("\n📡 Probe [A]: POST https://api.openai.com/v1/videos");
-        const resA = await axios.post('https://api.openai.com/v1/videos', payload, {
-            headers: { 
-                'Authorization': `Bearer ${OPENAI_API_KEY}`, 
-                'Content-Type': 'application/json' 
+        console.log("\\n📡 Probe: POST https://api.openai.com/v1/videos");
+        const headers = { 
+            'Authorization': `Bearer ${OPENAI_API_KEY}`, 
+            'Content-Type': 'application/json' 
+        };
+        const resA = await axios.post('https://api.openai.com/v1/videos', payload, { headers });
+        const videoId = resA.data.id;
+        console.log(`✅ SUCCESS! Job created: ${videoId}. Now polling for completion...`);
+
+        let status = resA.data.status;
+        let attempts = 0;
+        
+        while (status === 'queued' || status === 'in_progress') {
+            attempts++;
+            await new Promise(r => setTimeout(r, 15000)); // wait 15 seconds
+            console.log(`⏳ Polling attempt [${attempts}]... Waiting for Sora GPU cluster...`);
+            
+            const checkRes = await axios.get(`https://api.openai.com/v1/videos/${videoId}`, { headers });
+            status = checkRes.data.status;
+            
+            if (status === 'completed') {
+                console.log("\\n🎉 VIDEO COMPLETED! Final Payload:");
+                console.log(JSON.stringify(checkRes.data, null, 2));
+                break;
+            } else if (status === 'failed' || status === 'rejected') {
+                console.error("\\n❌ VIDEO GENERATION FAILED:", JSON.stringify(checkRes.data, null, 2));
+                process.exit(1);
             }
-        });
-        console.log("✅ SUCCESS Probe [A]!", JSON.stringify(resA.data, null, 2));
+        }
         process.exit(0);
     } catch (e1) {
-        console.error("❌ Probe [A] Failed. Response Payload:", e1.response ? JSON.stringify(e1.response.data, null, 2) : e1.message);
-        
-        // Probe 2: Alternative /v1/videos/generations
-        console.log("\n📡 Probe [B]: POST https://api.openai.com/v1/videos/generations");
-        try {
-            const resB = await axios.post('https://api.openai.com/v1/videos/generations', payload, {
-                headers: { 
-                    'Authorization': `Bearer ${OPENAI_API_KEY}`, 
-                    'Content-Type': 'application/json' 
-                }
-            });
-            console.log("✅ SUCCESS Probe [B]!", JSON.stringify(resB.data, null, 2));
-            process.exit(0);
-        } catch (e2) {
-            console.error("❌ Probe [B] Failed. Response Payload:", e2.response ? JSON.stringify(e2.response.data, null, 2) : e2.message);
-            console.log("\n⚠️ BOTH endpoints failed. This indicates the precise Sora endpoint requires a specific beta header, or the account lacks video generation permissions.");
-            process.exit(1);
-        }
+        console.error("❌ Probe Failed. Response Payload:", e1.response ? JSON.stringify(e1.response.data, null, 2) : e1.message);
+        process.exit(1);
     }
 }
 
