@@ -37,6 +37,15 @@ export async function GET(request) {
         for (const candidate of deals) {
              const verify = await verifyAmazonIntegrity(candidate.url, candidate.discount_price);
              if (verify.success && verify.priceMatch) {
+                 // 🎯 OPTIMISTIC LOCK: Reserve this deal immediately!
+                 const [updateRes] = await connection.execute(
+                     "UPDATE normalized_deals SET is_blog_posted = TRUE WHERE id = ? AND is_blog_posted = FALSE",
+                     [candidate.id]
+                 );
+                 if (updateRes.affectedRows === 0) {
+                     console.log(`🚨 Race condition mitigated! Deal ${candidate.id} snatched by parallel Blog worker.`);
+                     continue;
+                 }
                  deal = candidate;
                  break;
              } else if (verify.success && verify.livePrice !== 'Unknown' && !verify.priceMatch) {
@@ -137,9 +146,8 @@ Formatting & Technical SEO Rules:
             [slug, blogData.title, blogData.content_html, generatedImageUrl, deal.id]
         );
 
-        // UPDATE STATE MACHINE (Single Source of Truth)
-        await connection.execute("UPDATE normalized_deals SET is_blog_posted = TRUE WHERE id = ?", [deal.id]);
-
+        // State Machine was already locked optimistically in the discovery phase.
+        
         // 4. Publish exactly as requested: Image + Caption first, Link in Comment
         let fbPostId = 'none';
         try {
@@ -177,11 +185,18 @@ Formatting & Technical SEO Rules:
         
     } catch (error) {
         console.error("Cron Blog Error:", error);
-        await sendTelegramAlert(`🚨 <b>[Blog SEO Engine Error]</b>\nFailed generating AI Lifestyle Article!\n\n<code>${error.message}</code>`);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        
+        // 🔄 REVERT LOCK: If the AI failed, release the lock so it can be picked up by the next cron.
+        if (deal) {
+            await connection.execute("UPDATE normalized_deals SET is_blog_posted = FALSE WHERE id = ?", [deal.id]);
+        }
+        
+        await sendTelegramAlert(`🚨 <b>[Blog Engine Error]</b>\nFailed to generate SEO deep dive!\nLock Reverted.\n\n<code>${error.message}</code>`);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     } finally {
         if (connection) {
             try { await connection.end(); } catch(e) {}
         }
     }
 }
+```
