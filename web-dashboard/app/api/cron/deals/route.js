@@ -123,7 +123,7 @@ export async function GET(request) {
              if (verify.success && verify.priceMatch) {
                  // 🎯 OPTIMISTIC LOCK: Reserve this deal immediately before AI processing!
                  const [updateRes] = await connection.execute(
-                     "UPDATE normalized_deals SET is_fb_posted = TRUE WHERE id = ? AND is_fb_posted = FALSE",
+                     "UPDATE normalized_deals SET is_fb_posted = TRUE, locked_at = NOW() WHERE id = ? AND is_fb_posted = FALSE",
                      [deal.id]
                  );
                  
@@ -259,7 +259,7 @@ DO NOT include the exact link placeholder. Keep it extremely casual and slightly
         } catch (err) {
              console.error("Facebook Posting Fault:", err);
              // 🔄 REVERT LOCK: If the AI or FB failed entirely, release the lock so it can be retried later.
-             await connection.execute("UPDATE normalized_deals SET is_fb_posted = FALSE WHERE id = ?", [dealToPost.id]);
+             await connection.execute("UPDATE normalized_deals SET is_fb_posted = FALSE, locked_at = NULL WHERE id = ?", [dealToPost.id]);
              await logAgent('agent_3', 'Agent 3: Copywriter', 'Critical Exception', 'failed', err.message);
              await sendTelegramAlert(`🚨 <b>[Deal Engine Error]</b>\nFacebook Post failed to deploy!\nLock Reverted.\n\n<code>${err.message}</code>`);
         }

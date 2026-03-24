@@ -20,10 +20,26 @@ export async function GET(request) {
         }
 
         console.log("🧹 Agent 7 (Sweeper): Waking up to purge dead deals...");
-        await logAgent('agent_7', 'Agent 7: The Sweeper', 'Cron Execution Wakeup', 'running', 'Initiating background integrity sweep of all pending items.');
+        await logAgent('agent_7', 'Agent 7: The Sweeper', 'Cron Execution Wakeup', 'running', 'Initiating background integrity sweep and Stale Lock recovery.');
 
         connection = await getConnection();
+
+        // 🚨 1. STALE LOCK REAPER (Crash Recovery & Retry Strategy) 🚨
+        // Target: Deals successfully locked by a worker (is_fb_posted or is_blog_posted) but whose process 
+        // crashed (OOM / Timeout > 60s) before reaching the finish line (status still 'approved').
+        const [reaperResult] = await connection.execute(
+             `UPDATE normalized_deals 
+              SET is_fb_posted = FALSE, is_blog_posted = FALSE, locked_at = NULL 
+              WHERE status = 'approved' AND locked_at < NOW() - INTERVAL 10 MINUTE 
+              AND (is_fb_posted = TRUE OR is_blog_posted = TRUE)`
+        );
         
+        if (reaperResult.affectedRows > 0) {
+             console.log(`💀 Reaper Process cleaned up ${reaperResult.affectedRows} Stale/Zombie Locks! (Process Crash Recovered)`);
+             await logAgent('agent_7', 'Agent 7: The Sweeper', 'Stale Lock Cleanup', 'success', `Un-locked \${reaperResult.affectedRows} zombie deals for retry queue.`);
+        }
+
+        // 2. Regular Pending Sweeper
         // Grab pending amazon deals. Limit to 15 per run to prevent Edge timeout (60s).
         const [deals] = await connection.execute(
             `SELECT id, title, url, discount_price FROM normalized_deals WHERE status = 'pending' AND (url LIKE '%amazon.com%' OR url LIKE '%amzn.to%') LIMIT 15`
