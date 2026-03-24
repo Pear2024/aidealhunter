@@ -40,14 +40,17 @@ export async function GET() {
                              const clicks = cData.total_clicks || 0;
                              trueTotalClicks += clicks;
                              
-                             metrics.push({
-                                 id: lk.id,
-                                 title: lk.title || "Amazon Generated Shortlink",
-                                 brand: "Amazon Affiliate",
-                                 url: lk.long_url,
-                                 clicks: clicks,
-                                 earned_revenue: (clicks * 0.03 * 30 * 0.04).toFixed(2) // Predictive 3% Conversion * $30 Avg * 4% Commission
-                             });
+                             // Only track Amazon-specific links for Deal Hunter metrics
+                             if (lk.long_url && (lk.long_url.includes('amazon') || lk.long_url.includes('amzn.to'))) {
+                                 metrics.push({
+                                     id: lk.id,
+                                     title: lk.title || "Amazon Generated Shortlink",
+                                     brand: "Amazon Affiliate",
+                                     url: lk.long_url,
+                                     clicks: clicks,
+                                     earned_revenue: (clicks * 0.03 * 30 * 0.04).toFixed(2) // Predictive 3% Conversion * $30 Avg * 4% Commission
+                                 });
+                             }
                          } catch(e) {}
                      }
                      // Sort by highest clicks
