@@ -107,6 +107,30 @@ Formatting & Technical SEO Rules:
             [slug, blogData.title, blogData.content_html, generatedImageUrl, deal.id]
         );
 
+        // 4. Publish exactly as requested: Image + Caption first, Link in Comment
+        try {
+            const blogUrl = `https://nadaniadigitalllc.com/blog/${slug}`;
+            const fbCaption = `Hey IE neighbors! 🌴 We just dropped a massive deep dive review on the ${deal.title}.\n\nIf you're on the fence about getting one, check out our honest thoughts before you checkout! 👇`;
+            
+            const fbResponse = await fetch(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/photos?access_token=${process.env.FB_PAGE_ACCESS_TOKEN}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: generatedImageUrl, caption: fbCaption })
+            });
+            const fbResult = await fbResponse.json();
+
+            if (fbResult.id) {
+                // Drop the link safely in the comments
+                await fetch(`https://graph.facebook.com/v19.0/${fbResult.id}/comments?access_token=${process.env.FB_PAGE_ACCESS_TOKEN}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: `🔗 Read the full review here: ${blogUrl}` })
+                });
+            }
+        } catch (e) {
+            console.error("Failed to blast blog to Facebook:", e);
+        }
+
         return NextResponse.json({ success: true, blog_id: insertResult.insertId, slug: slug, source_deal_id: deal.id });
         
     } catch (error) {
