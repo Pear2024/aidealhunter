@@ -37,11 +37,11 @@ export async function GET() {
                          try {
                              const cRes = await fetch(`https://api-ssl.bitly.com/v4/bitlinks/${lk.id}/clicks/summary?unit=month&units=-1`, { headers });
                              const cData = await cRes.json();
-                             const clicks = cData.total_clicks || 0;
-                             trueTotalClicks += clicks;
-                             
                              // Only track Amazon-specific links for Deal Hunter metrics
                              if (lk.long_url && (lk.long_url.includes('amazon') || lk.long_url.includes('amzn.to'))) {
+                                 const clicks = cData.total_clicks || 0;
+                                 trueTotalClicks += clicks;
+                                 
                                  metrics.push({
                                      id: lk.id,
                                      title: lk.title || "Amazon Generated Shortlink",
