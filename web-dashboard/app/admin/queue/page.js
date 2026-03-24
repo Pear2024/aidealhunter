@@ -125,14 +125,24 @@ export default function QueueBoard() {
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {data.queued.length === 0 && <p style={{ color: '#555', textAlign: 'center', padding: '20px' }}>No items in queue.</p>}
-                            {data.queued.map((item, i) => (
+                             {data.queued.map((item, i) => (
                                 <div key={i} style={{ background: '#1a1a1a', border: '1px solid #ffcc8044', padding: '15px', borderRadius: '10px', position: 'relative' }}>
                                     <div style={{ position: 'absolute', top: '-10px', right: '10px', background: '#ffcc80', color: '#000', padding: '2px 8px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 'bold' }}>
                                         {calculateETA(i)}
                                     </div>
                                     <div style={{ fontSize: '0.9rem', color: '#888', marginBottom: '5px', marginTop: '5px' }}>{item.brand || 'No Brand'} • {item.category}</div>
                                     <div style={{ fontWeight: 'bold', fontSize: '1rem', lineHeight: '1.4', color: '#fff' }}>{item.title}</div>
-                                    <div style={{ fontSize: '0.8rem', color: '#00D084', marginTop: '8px', fontWeight: 'bold' }}>Position: #{i + 1} in queue</div>
+                                    
+                                    <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                                         <div style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '0.8rem', background: item.is_fb_posted ? 'rgba(0,208,132,0.1)' : 'rgba(255,255,255,0.05)', color: item.is_fb_posted ? '#00D084' : '#666', border: `1px solid ${item.is_fb_posted ? '#00D08455' : '#444'}` }}>
+                                              {item.is_fb_posted ? '✅ FB Posted' : '⏳ Wait FB'}
+                                         </div>
+                                         <div style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '0.8rem', background: item.is_blog_posted ? 'rgba(0,208,132,0.1)' : 'rgba(255,255,255,0.05)', color: item.is_blog_posted ? '#00D084' : '#666', border: `1px solid ${item.is_blog_posted ? '#00D08455' : '#444'}` }}>
+                                              {item.is_blog_posted ? '✅ Blog Done' : '⏳ Wait Blog'}
+                                         </div>
+                                    </div>
+
+                                    <div style={{ fontSize: '0.8rem', color: '#00D084', marginTop: '12px', fontWeight: 'bold' }}>Position: #{i + 1} in queue</div>
                                 </div>
                             ))}
                         </div>
