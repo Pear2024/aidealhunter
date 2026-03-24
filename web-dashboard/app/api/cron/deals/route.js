@@ -5,6 +5,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as cheerio from 'cheerio';
 import { logAgent } from '@/lib/agent_logger';
 import { sendTelegramAlert } from '@/lib/telegram';
+import { verifyAmazonIntegrity } from '@/lib/verifier';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; 
@@ -97,8 +98,27 @@ export async function GET(request) {
              return NextResponse.json({ success: true, message: "No un-posted Amazon deals available." });
         }
 
-        const dealToPost = deals[Math.floor(Math.random() * deals.length)];
-        await logAgent('agent_6', 'Agent 6: Gatekeeper', 'Quality Assurance Pass', 'success', `Native Amazon API payload verified: ${dealToPost.title}`);
+        let dealToPost = null;
+        for (const deal of deals) {
+             console.log(`🔍 Verifying Integrity for: ${deal.title}`);
+             const verify = await verifyAmazonIntegrity(deal.url, deal.discount_price);
+             
+             if (verify.success && verify.priceMatch) {
+                 dealToPost = deal;
+                 break;
+             } else if (verify.success && verify.livePrice !== 'Unknown' && !verify.priceMatch) {
+                 console.log(`❌ Price Mismatch Detected. Expected $${deal.discount_price}, saw $${verify.livePrice}. Rejecting deal.`);
+                 await connection.execute("UPDATE normalized_deals SET status = 'rejected' WHERE id = ?", [deal.id]);
+             }
+        }
+
+        if (!dealToPost) {
+             console.log("⚠️ No live Amazon deals passed verification. Exiting this cycle.");
+             await logAgent('agent_6', 'Agent 6: Gatekeeper', 'All Pending Quality Checks Failed', 'failed', `None of the top 20 deals survived integrity validation.`);
+             return NextResponse.json({ success: true, message: "No live deals survived verification." });
+        }
+        
+        await logAgent('agent_6', 'Agent 6: Gatekeeper', 'Quality Assurance Pass', 'success', `Native Amazon API payload verified & Price Match confirmed: ${dealToPost.title}`);
 
         try {
             const copywriterPrompt = `Act as an everyday resident of Hemet / Inland Empire chatting casually on a community Facebook group. Write a 2-sentence organic post about stumbling upon a great find. 

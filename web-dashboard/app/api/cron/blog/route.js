@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getConnection } from '@/lib/db';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import { sendTelegramAlert } from '@/lib/telegram';
+import { verifyAmazonIntegrity } from '@/lib/verifier';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; 
@@ -31,8 +32,23 @@ export async function GET(request) {
             return NextResponse.json({ error: 'No active Amazon deals found to broadcast.' }, { status: 404 });
         }
 
-        // Pick a random high-profit deal from the top 20
-        const deal = deals[Math.floor(Math.random() * deals.length)];
+        // Automated Pre-flight Validation
+        let deal = null;
+        for (const candidate of deals) {
+             const verify = await verifyAmazonIntegrity(candidate.url, candidate.discount_price);
+             if (verify.success && verify.priceMatch) {
+                 deal = candidate;
+                 break;
+             } else if (verify.success && verify.livePrice !== 'Unknown' && !verify.priceMatch) {
+                 // Reject mismatched deals silently so they aren't blogged about!
+                 await connection.execute("UPDATE normalized_deals SET status = 'rejected' WHERE id = ?", [candidate.id]);
+             }
+        }
+
+        // If nothing passed validation
+        if (!deal) {
+            return NextResponse.json({ error: 'No verified deals passed the integrity check.' }, { status: 404 });
+        }
         
         const affiliateTag = process.env.AMAZON_AFFILIATE_TAG || 'smartshop0c33-20';
         const dealUrl = deal.url || '';
