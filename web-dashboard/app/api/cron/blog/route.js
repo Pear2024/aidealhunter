@@ -199,4 +199,3 @@ Formatting & Technical SEO Rules:
         }
     }
 }
-```
