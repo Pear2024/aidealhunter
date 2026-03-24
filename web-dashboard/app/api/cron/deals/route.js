@@ -70,14 +70,30 @@ export async function GET(request) {
 
     const executeGraphComment = async (postId, message) => {
         try {
-            const fbResponse = await fetch(`https://graph.facebook.com/v19.0/${postId}/comments?access_token=${process.env.FB_PAGE_ACCESS_TOKEN}`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message })
-            });
-            const fbResult = await fbResponse.json();
-            if (!fbResult.error && fbResult.id) {
-                console.log("✅ Successfully injected First Comment Proxy:", fbResult.id);
+            if (postId) {
+                await fetch(`https://graph.facebook.com/v19.0/${postId}/comments?access_token=${process.env.FB_PAGE_ACCESS_TOKEN}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: `🔗 Here is the link to the item I mentioned: ${trackingLink}` })
+                });
+
+                // UPDATE STATE MACHINE (Single Source of Truth)
+                await connection.execute(
+                    "UPDATE normalized_deals SET is_fb_posted = TRUE, fb_post_id = ? WHERE id = ?",
+                    [postId, dealToPost.id]
+                );
+
+                const strictLogMessage = `[STEP] Facebook Post Agent
+[INPUT] deal_id=${dealToPost.id}
+[ACTION] generate image + caption + bitly tracking
+[OUTPUT] post_id=${postId}
+[STATUS] success
+[TIME] ${new Date().toISOString()}`;
+
+                await logAgent('agent_1', 'Facebook Pipeline', 'Publish Success', 'success', strictLogMessage);
+                return NextResponse.json({ success: true, deal_id: dealToPost.id, fb_post_id: postId });
             } else {
-                console.error("❌ Failed to inject comment:", fbResult.error);
+                console.error("❌ Failed to inject comment: Post ID was null or undefined.");
             }
         } catch(e) { console.error("Comment inject failed:", e); }
     }    // ==============================================================
@@ -89,8 +105,9 @@ export async function GET(request) {
         await logAgent('agent_1', 'Agent 1: Database Broker', 'Waking up to fetch Native Amazon Deals', 'running', `Vercel Cron Triggered. Scanning: normalized_deals`);
         
         // Fetch top highest-scoring Amazon API deals that have NOT been posted to Facebook yet.
+        // Ensure strict Step Lock: ONLY pick deals that have NOT been posted to Facebook yet!
         const [deals] = await connection.execute(
-            `SELECT * FROM normalized_deals WHERE status = 'approved' AND (url LIKE '%amazon.com%' OR url LIKE '%amzn.to%') ORDER BY profit_score DESC, merchandiser_score DESC LIMIT 20`
+            `SELECT * FROM normalized_deals WHERE status = 'approved' AND is_fb_posted = FALSE AND (url LIKE '%amazon.com%' OR url LIKE '%amzn.to%') ORDER BY created_at DESC LIMIT 20`
         );
 
         if (deals.length === 0) {
@@ -121,10 +138,25 @@ export async function GET(request) {
         await logAgent('agent_6', 'Agent 6: Gatekeeper', 'Quality Assurance Pass', 'success', `Native Amazon API payload verified & Price Match confirmed: ${dealToPost.title}`);
 
         try {
-            const copywriterPrompt = `Act as an everyday resident of Hemet / Inland Empire chatting casually on a community Facebook group. Write a 2-sentence organic post about stumbling upon a great find. 
-Rules: NEVER use promotional words like "Deal Alert", "Sale", "Savings", "Discount", or "Buy Now". NEVER sound like an influencer. Sound like you are genuinely asking neighbors for their opinion. 
-Format: [1 Casual Hook sentence] + [1 Question asking for input to drive comments]. DO NOT include the exact link placeholder.
-Example: "Okay has anyone in Hemet actually tried this [product]? Found it on Amazon for way less than Target but I need real reviews before I checkout!"`;
+            const systemStateHeader = `
+SYSTEM STATE:
+- Deal ID: ${dealToPost.id}
+- Current Step: Facebook Promo Generation
+- Completed Steps: Discovery, QA Normalize, Admin Approved
+- Next Step: Post to Facebook Page
+
+RULES:
+- Do NOT repeat completed steps
+- Do ONLY next step
+
+TASK:
+            `;
+
+            const copywriterPrompt = `${systemStateHeader}
+Act as an everyday resident of Hemet / Inland Empire chatting casually on a community Facebook group. Write a 2-sentence organic post about stumbling upon a great find. 
+Product: ${dealToPost.title} (Brand: ${dealToPost.brand})
+Original Price: ${dealToPost.original_price}, Discount Price: ${dealToPost.discount_price}
+DO NOT include the exact link placeholder. Keep it extremely casual and slightly gossip-like (e.g., "Wait, did you guys know..."). Use exactly 1 emoji.`;
             
             let facebookDirectLink = dealToPost.url;
             const fallbackTag = process.env.AMAZON_AFFILIATE_TAG || 'smartshop0c33-20';

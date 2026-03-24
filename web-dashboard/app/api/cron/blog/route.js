@@ -73,7 +73,21 @@ export async function GET(request) {
             }
         });
 
-        const prompt = `[CRITICAL ROLE ASSUMPTION: You are an elite SEO Copywriter and Master Blogger specializing in highly viral, deeply engaging product reviews tailored strictly for local Californian demographics (Inland Empire, Hemet).]
+        const systemStateHeader = `
+SYSTEM STATE:
+- Deal ID: ${deal.id}
+- Current Step: SEO Blog Writer
+- Completed Steps: Discovery, QA Approve
+- Next Step: Write Comprehensive Article
+
+RULES:
+- Do NOT repeat completed steps
+- Do ONLY next step
+
+TASK:
+`;
+
+        const prompt = `${systemStateHeader}[CRITICAL ROLE ASSUMPTION: You are an elite SEO Copywriter and Master Blogger specializing in highly viral, deeply engaging product reviews tailored strictly for local Californian demographics (Inland Empire, Hemet).]
 
 Task: Write a highly engaging SEO blog post specifically targeting residents of the Inland Empire and Hemet, California. 
 The core objective of this article is to seamlessly REVIEW and RECOMMEND a specific high-profit Amazon product.
@@ -123,7 +137,11 @@ Formatting & Technical SEO Rules:
             [slug, blogData.title, blogData.content_html, generatedImageUrl, deal.id]
         );
 
+        // UPDATE STATE MACHINE (Single Source of Truth)
+        await connection.execute("UPDATE normalized_deals SET is_blog_posted = TRUE WHERE id = ?", [deal.id]);
+
         // 4. Publish exactly as requested: Image + Caption first, Link in Comment
+        let fbPostId = 'none';
         try {
             const blogUrl = `https://nadaniadigitalllc.com/blog/${slug}`;
             const fbCaption = `Hey IE neighbors! 🌴 We just dropped a massive deep dive review on the ${deal.title}.\n\nIf you're on the fence about getting one, check out our honest thoughts before you checkout! 👇`;
@@ -136,6 +154,7 @@ Formatting & Technical SEO Rules:
             const fbResult = await fbResponse.json();
 
             if (fbResult.id) {
+                fbPostId = fbResult.id;
                 // Drop the link safely in the comments
                 await fetch(`https://graph.facebook.com/v19.0/${fbResult.id}/comments?access_token=${process.env.FB_PAGE_ACCESS_TOKEN}`, {
                     method: 'POST',
@@ -147,7 +166,14 @@ Formatting & Technical SEO Rules:
             console.error("Failed to blast blog to Facebook:", e);
         }
 
-        return NextResponse.json({ success: true, blog_id: insertResult.insertId, slug: slug, source_deal_id: deal.id });
+        const strictLogMessage = `[STEP] Blog SEO Agent
+[INPUT] deal_id=${deal.id}
+[ACTION] write 1000 word blog + generic fb blast
+[OUTPUT] blog_id=${insertResult.insertId} fb_sync_id=${fbPostId}
+[STATUS] success
+[TIME] ${new Date().toISOString()}`;
+
+        return NextResponse.json({ success: true, blog_id: insertResult.insertId, slug: slug, source_deal_id: deal.id, log: strictLogMessage });
         
     } catch (error) {
         console.error("Cron Blog Error:", error);
