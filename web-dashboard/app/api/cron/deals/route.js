@@ -105,9 +105,9 @@ export async function GET(request) {
         await logAgent('agent_1', 'Agent 1: Database Broker', 'Waking up to fetch Native Amazon Deals', 'running', `Vercel Cron Triggered. Scanning: normalized_deals`);
         
         // Fetch top highest-scoring Amazon API deals that have NOT been posted to Facebook yet.
-        // Ensure strict Step Lock: ONLY pick deals that have NOT been posted to Facebook yet!
+        // Ensure strict Step Lock: ONLY pick deals that are 'idle' or previously 'failed'!
         const [deals] = await connection.execute(
-            `SELECT * FROM normalized_deals WHERE status = 'approved' AND is_fb_posted = FALSE AND (url LIKE '%amazon.com%' OR url LIKE '%amzn.to%') ORDER BY created_at DESC LIMIT 20`
+            `SELECT * FROM normalized_deals WHERE status = 'approved' AND fb_status IN ('idle', 'failed') AND (url LIKE '%amazon.com%' OR url LIKE '%amzn.to%') ORDER BY created_at DESC LIMIT 20`
         );
 
         if (deals.length === 0) {
@@ -123,7 +123,7 @@ export async function GET(request) {
              if (verify.success && verify.priceMatch) {
                  // 🎯 OPTIMISTIC LOCK: Reserve this deal immediately before AI processing!
                  const [updateRes] = await connection.execute(
-                     "UPDATE normalized_deals SET is_fb_posted = TRUE, locked_at = NOW() WHERE id = ? AND is_fb_posted = FALSE",
+                     "UPDATE normalized_deals SET fb_status = 'processing', locked_at = NOW() WHERE id = ? AND fb_status IN ('idle', 'failed')",
                      [deal.id]
                  );
                  
@@ -251,15 +251,15 @@ DO NOT include the exact link placeholder. Keep it extremely casual and slightly
             const postId = await executeGraphAPI('photos', { url: finalImageUrl, caption: caption }, 'Facebook Publication', `Successfully deployed native Amazon API deal post.`);
             if (postId) {
                 await executeGraphComment(postId, `🔗 Here is the link to the item I mentioned: ${trackingLink}`);
-                await connection.execute("UPDATE normalized_deals SET status = 'published', image_url = ? WHERE id = ?", [finalImageUrl, dealToPost.id]);
+                await connection.execute("UPDATE normalized_deals SET status = 'published', fb_status = 'published', image_url = ?, locked_at = NULL WHERE id = ?", [finalImageUrl, dealToPost.id]);
                 await logAgent('agent_8', 'Agent 8: Comment Closer', 'Listener Deployed', 'running', `Standing by for inbound Facebook audience interactions.`);
             } else {
-                await connection.execute("UPDATE normalized_deals SET status = 'rejected' WHERE id = ?", [dealToPost.id]);
+                await connection.execute("UPDATE normalized_deals SET status = 'rejected', fb_status = 'failed', locked_at = NULL WHERE id = ?", [dealToPost.id]);
             }
         } catch (err) {
              console.error("Facebook Posting Fault:", err);
-             // 🔄 REVERT LOCK: If the AI or FB failed entirely, release the lock so it can be retried later.
-             await connection.execute("UPDATE normalized_deals SET is_fb_posted = FALSE, locked_at = NULL WHERE id = ?", [dealToPost.id]);
+             // 🔄 FAILURE REVERT: Release the lock to 'failed' state so it can be retried or debugged.
+             await connection.execute("UPDATE normalized_deals SET fb_status = 'failed', locked_at = NULL WHERE id = ?", [dealToPost.id]);
              await logAgent('agent_3', 'Agent 3: Copywriter', 'Critical Exception', 'failed', err.message);
              await sendTelegramAlert(`🚨 <b>[Deal Engine Error]</b>\nFacebook Post failed to deploy!\nLock Reverted.\n\n<code>${err.message}</code>`);
         }

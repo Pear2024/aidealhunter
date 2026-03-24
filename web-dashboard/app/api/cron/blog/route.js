@@ -25,7 +25,7 @@ export async function GET(request) {
         // 1. Fetch Top High-Profit AND Top-Rated (Merchandiser Score) Amazon Deals
         // CRITICAL DE-DUPLICATION: Exclude any deal that has already been posted to the \`ai_blog_posts\` table!
         const [deals] = await connection.execute(
-            `SELECT * FROM normalized_deals WHERE status = 'approved' AND id NOT IN (SELECT source_deal_id FROM ai_blog_posts WHERE source_deal_id IS NOT NULL) AND (url LIKE '%amazon.com%' OR url LIKE '%amzn.to%') AND (discount_price > 0 OR original_price > discount_price) ORDER BY profit_score DESC, merchandiser_score DESC LIMIT 20`
+            `SELECT * FROM normalized_deals WHERE status = 'approved' AND blog_status IN ('idle', 'failed') AND id NOT IN (SELECT source_deal_id FROM ai_blog_posts WHERE source_deal_id IS NOT NULL) AND (url LIKE '%amazon.com%' OR url LIKE '%amzn.to%') AND (discount_price > 0 OR original_price > discount_price) ORDER BY profit_score DESC, merchandiser_score DESC LIMIT 20`
         );
         
         if (deals.length === 0) {
@@ -39,7 +39,7 @@ export async function GET(request) {
              if (verify.success && verify.priceMatch) {
                  // 🎯 OPTIMISTIC LOCK: Reserve this deal immediately!
                  const [updateRes] = await connection.execute(
-                     "UPDATE normalized_deals SET is_blog_posted = TRUE, locked_at = NOW() WHERE id = ? AND is_blog_posted = FALSE",
+                     "UPDATE normalized_deals SET blog_status = 'processing', locked_at = NOW() WHERE id = ? AND blog_status IN ('idle', 'failed')",
                      [candidate.id]
                  );
                  if (updateRes.affectedRows === 0) {
@@ -147,7 +147,9 @@ Formatting & Technical SEO Rules:
         );
 
         // State Machine was already locked optimistically in the discovery phase.
-        
+        // Mark as successful upon DB insertion
+        await connection.execute("UPDATE normalized_deals SET blog_status = 'published', locked_at = NULL WHERE id = ?", [deal.id]);
+
         // 4. Publish exactly as requested: Image + Caption first, Link in Comment
         let fbPostId = 'none';
         try {
@@ -186,9 +188,9 @@ Formatting & Technical SEO Rules:
     } catch (error) {
         console.error("Cron Blog Error:", error);
         
-        // 🔄 REVERT LOCK: If the AI failed, release the lock so it can be picked up by the next cron.
+        // 🔄 FAILURE REVERT: If the AI failed, mark as 'failed' so it releases the lock and can be tracked.
         if (deal) {
-            await connection.execute("UPDATE normalized_deals SET is_blog_posted = FALSE, locked_at = NULL WHERE id = ?", [deal.id]);
+            await connection.execute("UPDATE normalized_deals SET blog_status = 'failed', locked_at = NULL WHERE id = ?", [deal.id]);
         }
         
         await sendTelegramAlert(`🚨 <b>[Blog Engine Error]</b>\nFailed to generate SEO deep dive!\nLock Reverted.\n\n<code>${error.message}</code>`);

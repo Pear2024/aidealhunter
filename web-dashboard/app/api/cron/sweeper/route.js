@@ -25,13 +25,15 @@ export async function GET(request) {
         connection = await getConnection();
 
         // 🚨 1. STALE LOCK REAPER (Crash Recovery & Retry Strategy) 🚨
-        // Target: Deals successfully locked by a worker (is_fb_posted or is_blog_posted) but whose process 
-        // crashed (OOM / Timeout > 60s) before reaching the finish line (status still 'approved').
+        // Target: Deals successfully locked by a worker (processing) but whose process 
+        // crashed (OOM / Timeout > 60s) before reaching the finish line.
         const [reaperResult] = await connection.execute(
              `UPDATE normalized_deals 
-              SET is_fb_posted = FALSE, is_blog_posted = FALSE, locked_at = NULL 
-              WHERE status = 'approved' AND locked_at < NOW() - INTERVAL 10 MINUTE 
-              AND (is_fb_posted = TRUE OR is_blog_posted = TRUE)`
+              SET fb_status = IF(fb_status = 'processing', 'failed', fb_status), 
+                  blog_status = IF(blog_status = 'processing', 'failed', blog_status), 
+                  locked_at = NULL 
+              WHERE locked_at < NOW() - INTERVAL 10 MINUTE 
+              AND (fb_status = 'processing' OR blog_status = 'processing')`
         );
         
         if (reaperResult.affectedRows > 0) {

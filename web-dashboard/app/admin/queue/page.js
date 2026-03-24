@@ -134,11 +134,11 @@ export default function QueueBoard() {
                                     <div style={{ fontWeight: 'bold', fontSize: '1rem', lineHeight: '1.4', color: '#fff' }}>{item.title}</div>
                                     
                                     <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                                         <div style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '0.8rem', background: item.is_fb_posted ? 'rgba(0,208,132,0.1)' : 'rgba(255,255,255,0.05)', color: item.is_fb_posted ? '#00D084' : '#666', border: `1px solid ${item.is_fb_posted ? '#00D08455' : '#444'}` }}>
-                                              {item.is_fb_posted ? '✅ FB Posted' : '⏳ Wait FB'}
+                                         <div style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '0.8rem', background: item.fb_status === 'published' ? 'rgba(0,208,132,0.1)' : item.fb_status === 'processing' ? 'rgba(255,204,128,0.1)' : item.fb_status === 'failed' ? 'rgba(255,59,48,0.1)' : 'rgba(255,255,255,0.05)', color: item.fb_status === 'published' ? '#00D084' : item.fb_status === 'processing' ? '#ffcc80' : item.fb_status === 'failed' ? '#ff3b30' : '#666', border: `1px solid ${item.fb_status === 'published' ? '#00D08455' : item.fb_status === 'processing' ? '#ffcc8055' : item.fb_status === 'failed' ? '#ff3b3055' : '#444'}` }}>
+                                              {item.fb_status === 'published' ? '✅ FB Posted' : item.fb_status === 'processing' ? '⚙️ FB Processing' : item.fb_status === 'failed' ? '❌ FB Failed' : '⏳ Wait FB'}
                                          </div>
-                                         <div style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '0.8rem', background: item.is_blog_posted ? 'rgba(0,208,132,0.1)' : 'rgba(255,255,255,0.05)', color: item.is_blog_posted ? '#00D084' : '#666', border: `1px solid ${item.is_blog_posted ? '#00D08455' : '#444'}` }}>
-                                              {item.is_blog_posted ? '✅ Blog Done' : '⏳ Wait Blog'}
+                                         <div style={{ padding: '4px 8px', borderRadius: '6px', fontSize: '0.8rem', background: item.blog_status === 'published' ? 'rgba(0,208,132,0.1)' : item.blog_status === 'processing' ? 'rgba(255,204,128,0.1)' : item.blog_status === 'failed' ? 'rgba(255,59,48,0.1)' : 'rgba(255,255,255,0.05)', color: item.blog_status === 'published' ? '#00D084' : item.blog_status === 'processing' ? '#ffcc80' : item.blog_status === 'failed' ? '#ff3b30' : '#666', border: `1px solid ${item.blog_status === 'published' ? '#00D08455' : item.blog_status === 'processing' ? '#ffcc8055' : item.blog_status === 'failed' ? '#ff3b3055' : '#444'}` }}>
+                                              {item.blog_status === 'published' ? '✅ Blog Done' : item.blog_status === 'processing' ? '⚙️ Blog Processing' : item.blog_status === 'failed' ? '❌ Blog Failed' : '⏳ Wait Blog'}
                                          </div>
                                     </div>
 
