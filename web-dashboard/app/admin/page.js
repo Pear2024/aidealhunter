@@ -161,7 +161,9 @@ function DealCard({ deal, onAction }) {
       <div className="card-content">
         <a href={deal.url} target="_blank" rel="noopener noreferrer" className="original-link">View Original Source ↗</a>
         
-        <div className="form-group">
+        <VerificationModule dealUrl={deal.url} originalImage={deal.image_url} originalPrice={deal.discount_price} />
+        
+        <div className="form-group" style={{marginTop: '15px'}}>
           <label>Product Title</label>
           <input value={title} onChange={(e) => setTitle(e.target.value)} />
         </div>
@@ -249,5 +251,53 @@ function SearchModule({ onSearchComplete }) {
         {isSearching ? '🤖 Hunting...' : '🤖 Hunt Deals!'}
       </button>
     </div>
+  );
+}
+
+function VerificationModule({ dealUrl, originalImage, originalPrice }) {
+  const [status, setStatus] = useState('idle'); // idle, loading, success, error
+  const [liveData, setLiveData] = useState(null);
+
+  const verifyDeal = async () => {
+    setStatus('loading');
+    try {
+      const res = await fetch('/api/admin/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: dealUrl, expectedPrice: originalPrice })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setLiveData(data);
+        setStatus('success');
+      } else {
+        alert(data.error || 'Failed to verify');
+        setStatus('error');
+      }
+    } catch(e) {
+      alert('Verification network error');
+      setStatus('error');
+    }
+  };
+
+  if (status === 'success' && liveData) {
+    return (
+        <div style={{ background: 'rgba(0, 255, 0, 0.1)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(0, 255, 0, 0.3)', marginBottom: '15px', color: '#ccc', fontSize: '0.85rem' }}>
+          <div style={{color: '#00D084', fontWeight: 'bold', marginBottom: '5px'}}>✅ Verified Amazon Integrity</div>
+          <div><strong style={{color: 'white'}}>Live Price: </strong> ${liveData.livePrice} {liveData.priceMatch ? '✅' : '❌ (Mismatch)'}</div>
+          <div style={{ marginTop: '5px' }}><strong style={{color: 'white'}}>Live Image: </strong> {liveData.liveImage !== 'Not Found' ? <a href={liveData.liveImage} target="_blank" style={{color: '#58A6FF'}}>Extracted Target Image ↗</a> : '❌ Check Page'}</div>
+        </div>
+    );
+  }
+
+  return (
+      <button 
+        onClick={verifyDeal}
+        disabled={status === 'loading'}
+        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', background: 'transparent', border: '1px solid #444', color: '#aaa', padding: '8px', borderRadius: '8px', cursor: 'pointer', marginBottom: '15px' }}
+      >
+        <Search size={16} /> 
+        {status === 'loading' ? 'Checking Live Amazon Link...' : 'Verify Deal Integrity (Price/Image)'}
+      </button>
   );
 }
