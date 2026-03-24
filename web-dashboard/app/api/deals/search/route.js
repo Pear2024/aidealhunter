@@ -4,6 +4,7 @@ import Parser from 'rss-parser';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 export async function POST(request) {
   let connection;
@@ -27,7 +28,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Failed to fetch RSS deals for that keyword.' }, { status: 500 });
     }
 
-    const deals = feed.items.slice(0, 5); // Limit to 5 per search to avoid hitting Gemini Free Tier Rate Limits too fast
+    const deals = feed.items.slice(0, 20); // Limit increased to 20 per run since user has a paid Google Gemini API tier.
     if (deals.length === 0) {
       return NextResponse.json({ message: 'No deals found for that keyword.', added: 0 });
     }
