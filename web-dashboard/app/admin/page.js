@@ -8,15 +8,18 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ dealsToday: 0, blogsToday: 0 });
 
+  const [isBulkVerifying, setIsBulkVerifying] = useState(false);
+  const [sweepStats, setSweepStats] = useState({ checked: 0, rejected: 0 });
+
   const fetchDeals = async () => {
     try {
       const res = await fetch('/api/deals?status=pending');
       const data = await res.json();
-      setDeals(data.deals || []);
+      setDeals(data.deals || []); // Keep original structure for data.deals
     } catch (e) {
       console.error(e);
     } finally {
-      setLoading(false);
+      // setLoading(false); // Moved to useEffect
     }
   };
 
@@ -28,9 +31,48 @@ export default function AdminDashboard() {
     } catch(e) {}
   };
 
+  const handleBulkSweep = async () => {
+    if (!confirm('This will sequentially verify all pending Amazon deals on this page against their live prices. It may take a minute. Dead deals will be automatically rejected. Continue?')) return;
+    
+    setIsBulkVerifying(true);
+    let checked = 0;
+    let rejected = 0;
+    
+    for (const deal of deals) {
+        if (!deal.url.includes('amazon') && !deal.url.includes('amzn.to')) continue;
+        setSweepStats({ checked: checked + 1, rejected });
+        checked++;
+        
+        try {
+            const vRes = await fetch('/api/admin/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: deal.url, expectedPrice: deal.discount_price })
+            });
+            const vData = await vRes.json();
+            
+            if (vData.success && !vData.priceMatch && vData.livePrice !== 'Unknown') {
+                 // The deal is dead or severely changed price. Reject it instantly.
+                 await fetch('/api/deals', {
+                     method: 'PUT',
+                     headers: { 'Content-Type': 'application/json' },
+                     body: JSON.stringify({ id: deal.id, status: 'rejected' })
+                 });
+                 rejected++;
+                 setSweepStats({ checked, rejected });
+            }
+        } catch(e) {}
+    }
+    
+    alert(`Sweeper Finished! Checked ${checked} links. Purged ${rejected} dead deals.`);
+    setIsBulkVerifying(false);
+    fetchDeals();
+  };
+
   useEffect(() => {
     fetchDeals();
     fetchStats();
+    setLoading(false); // Moved here from fetchDeals finally block
   }, []);
 
   const handleAction = async (id, action, currentData) => {
@@ -121,14 +163,20 @@ export default function AdminDashboard() {
       </div>
 
       {deals.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">🎉</div>
-          <h2>All Caught Up!</h2>
-          <p>No pending deals left to review. Great job.</p>
+        <div style={{ padding: '40px', textAlign: 'center', opacity: 0.5, backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '12px' }}>
+             <h2>No deals waiting for review.</h2>
+             <p>Use the Manual Hunt box above, or wait for the Intake cron to grab more.</p>
         </div>
       ) : (
-        <div className="stats-bar">
-          <span className="badge">{deals.length} Pending Review</span>
+        <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h2 style={{ fontSize: '1.2rem', color: '#ccc' }}>Pending Queue ({deals.length})</h2>
+            <button 
+                onClick={handleBulkSweep} 
+                disabled={isBulkVerifying}
+                style={{ background: isBulkVerifying ? '#555' : 'linear-gradient(45deg, #00D084, #00A669)', color: 'white', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: isBulkVerifying ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}
+            >
+                {isBulkVerifying ? `🧹 Sweeping... (${sweepStats.checked}/${deals.length}) [Purged: ${sweepStats.rejected}]` : '🧹 Auto-Sweep Dead Deals'}
+            </button>
         </div>
       )}
 
