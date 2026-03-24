@@ -59,6 +59,12 @@ export default function AnalyticsDashboard() {
         <h1>📈 Performance Analytics</h1>
         <p className="subtitle">Track Clicks & Revenue for your Approved Deals</p>
         <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginTop: '15px' }}>
+          <a href="https://vercel.com/pears-projects-8757467a/aidealhunter/analytics?environment=all" target="_blank" rel="noopener noreferrer" style={{ background: '#000', border: '1px solid #333', color: '#fff', padding: '10px 20px', borderRadius: '8px', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold' }}>
+            <svg width="20" height="20" viewBox="0 0 76 65" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M37.5274 0L75.0548 65H0L37.5274 0Z" fill="#ffffff"/></svg>
+            Live Server Web Traffic
+          </a>
+        </div>
+        <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginTop: '15px' }}>
           <Link href="/admin" style={{ color: 'var(--accent)', textDecoration: 'none' }}>← Back to Review Deals</Link>
           <Link href="/" style={{ color: 'var(--accent)', textDecoration: 'none' }}>Go to Storefront ↗</Link>
         </div>
