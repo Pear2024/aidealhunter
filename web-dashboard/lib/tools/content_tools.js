@@ -162,8 +162,8 @@ export const publishFacebookPostTool = tool(
         
         if (image_url) {
             // Post as a Photo! This makes a massive full-bleed image on the timeline.
-            // The link_url must be included in the caption_text so users can click it.
-            const fullMessage = `${caption_text}\n\n👉 Click here: ${link_url}`;
+            // Notice: We NO LONGER append the link directly to the body to prevent algorithmic reach penalties.
+            const fullMessage = `${caption_text}\n\n👇 Check the first comment for the link! `;
             const fbPayload = {
                 message: fullMessage,
                 url: image_url, // Uploads the image from the ImgBB/DALL-E URL directly
@@ -190,6 +190,21 @@ export const publishFacebookPostTool = tool(
 
         const fbResult = await fbResponse.json();
         if (fbResult.error) return `FB API Error: ${fbResult.error.message}`;
+        
+        // --- NEW ALGORITHMIC OPTIMIZATION ---
+        // Drop the link securely in the first comment of the post to protect edge organic reach
+        if (fbResult.id) {
+            try {
+                await fetch(`https://graph.facebook.com/v19.0/${fbResult.id}/comments?access_token=${process.env.FB_PAGE_ACCESS_TOKEN}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: `🔗 Here is the link to grab this deal on Amazon: ${link_url}` })
+                });
+            } catch (commentErr) {
+                console.error("Failed to inject comment for Langchain Tool:", commentErr);
+            }
+        }
+        
         return `SUCCESS: Posted to Facebook with ID ${fbResult.id}`;
     } catch (e) { return `Error posting to FB: ${e.message}`; }
   },
