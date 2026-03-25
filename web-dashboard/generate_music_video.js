@@ -27,13 +27,15 @@ async function main() {
         });
 
         // ROI Protection: Only generate expensive AI Music Videos for High-Ticket items (Price >= $200)
-        // This ensures the Affiliate Commission ($10 - $100) covers the OpenAI / AIMLAPI generation costs!
+        // AND Must be deeply discounted (Absolute highest dollar savings).
         const [rows] = await conn.execute(`
             SELECT * FROM normalized_deals 
             WHERE image_url IS NOT NULL 
               AND status = 'approved' 
+              AND (url LIKE '%amazon.com%' OR url LIKE '%amzn.to%')
               AND discount_price >= 200 
-            ORDER BY profit_score DESC, RAND() LIMIT 1
+              AND original_price > discount_price
+            ORDER BY (original_price - discount_price) DESC, profit_score DESC LIMIT 1
         `);
         if (rows.length === 0) return console.error("❌ No active deals found.");
         const deal = rows[0];
