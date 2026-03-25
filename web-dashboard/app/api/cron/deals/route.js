@@ -277,7 +277,7 @@ DO NOT include the exact link placeholder. Keep it extremely casual and slightly
         const topNews = feed.items[0]; // Get the #1 most recent news
         await logAgent('agent_12', 'Agent 12: News Analyst', 'Syndicating Headlines', 'running', `Intercepted Breaking News: ${topNews.title}`);
         
-        const copywriterPrompt = `Act as an elite $1000/day social media copywriter and tech journalist. Summarize this news article in 3 short, punchy paragraphs.\nRules: MUST BE IN ENGLISH. Target audience: Residents of Hemet, California and the Inland Empire. Keep it engaging, witty, and easy to understand for everyday people. Use emojis. Add a conversational question at the end to drive comments.\nTitle: ${topNews.title}\nContent Snippet: ${topNews.contentSnippet}`;
+        const copywriterPrompt = `Act as an elite $1000/day social media copywriter and tech journalist. Summarize this news article in 3 short, punchy paragraphs.\nRules: MUST BE IN ENGLISH. Target audience: Residents of Hemet, California and the Inland Empire. Keep it engaging, witty, and easy to understand for everyday people. Use emojis. Add a conversational question at the end to drive comments.\nCRITICAL: If the article is about Artificial Intelligence (OpenAI, ChatGPT, AI models, etc.), you MUST append this exact sentence at the very bottom of your summary: "⚡ P.S. Want to build your own AI apps or make AI music? Grab API access here: https://aimlapi.com/?via=sunoapi "\nTitle: ${topNews.title}\nContent Snippet: ${topNews.contentSnippet}`;
         
         let caption = `📰 Quick Tech Update!\n\n${topNews.title}\n\nWhat do you think about this?`;
         try {
@@ -297,7 +297,7 @@ DO NOT include the exact link placeholder. Keep it extremely casual and slightly
     // ==============================================================
     else if (cycleIndex === 4) {
         console.log("💡 Executing Route: TIPS ENGINE");
-        const tipPrompt = `Act as an elite $1000/day copywriter. Write a brilliant 'Life Hack' or 'Shopping Tip' for everyday home life or tech usage.\nRules: MUST BE IN FULL ENGLISH. Target audience: Locals living in Hemet, California and the Inland Empire. Make it extremely valuable, relatable, and highly shareable. Keep it under 4 paragraphs. Sound friendly and clever. Use emojis. Do not use hashtags.`;
+        const tipPrompt = `Act as an elite $1000/day copywriter. Write a brilliant 'Life Hack' or 'Shopping Tip' for everyday home life, saving money online, or using AI tools to work smarter/make art.\nRules: MUST BE IN FULL ENGLISH. Target audience: Locals living in Hemet, California and the Inland Empire. Make it extremely valuable, relatable, and highly shareable. Keep it under 4 paragraphs. Sound friendly and clever. Use emojis.\nCRITICAL: If your tip mentions Artificial Intelligence, ChatGPT, making music, or generating images, you MUST include this exact line at the end of the post: "🤖 Want to build your own AI apps? Get developer API access here: https://aimlapi.com/?via=sunoapi "`;
         
         let tipText = `💡 IE Local Tip: Always check for digital coupons before checking out! You can save hundreds every month.`;
         try {
