@@ -72,26 +72,50 @@ export default async function BlogArchive({ searchParams }) {
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '4rem', gap: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '4rem', gap: '15px' }}>
+                    {/* First Page Button */}
                     {page > 1 ? (
-                        <Link href={`/blog?page=${page - 1}`} style={{ padding: '10px 25px', borderRadius: '10px', background: 'rgba(255,51,102,0.1)', color: '#ff3366', textDecoration: 'none', fontWeight: 'bold', border: '1px solid rgba(255,51,102,0.2)' }}>
-                            &larr; Previous
+                        <Link href={`/blog?page=1`} style={{ padding: '10px 15px', borderRadius: '8px', background: 'rgba(255,51,102,0.1)', color: '#ff3366', textDecoration: 'none', fontWeight: 'bold', border: '1px solid rgba(255,51,102,0.2)' }}>
+                            &laquo; First
                         </Link>
                     ) : (
-                        <div style={{ padding: '10px 25px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: '#555', fontWeight: 'bold', border: '1px solid rgba(255,255,255,0.05)', cursor: 'not-allowed' }}>
-                            &larr; Previous
+                        <div style={{ padding: '10px 15px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: '#555', fontWeight: 'bold', border: '1px solid rgba(255,255,255,0.05)', cursor: 'not-allowed' }}>
+                            &laquo; First
+                        </div>
+                    )}
+
+                    {/* Previous Page Button */}
+                    {page > 1 ? (
+                        <Link href={`/blog?page=${page - 1}`} style={{ padding: '10px 20px', borderRadius: '8px', background: 'rgba(255,51,102,0.1)', color: '#ff3366', textDecoration: 'none', fontWeight: 'bold', border: '1px solid rgba(255,51,102,0.2)' }}>
+                            &larr; Prev
+                        </Link>
+                    ) : (
+                        <div style={{ padding: '10px 20px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: '#555', fontWeight: 'bold', border: '1px solid rgba(255,255,255,0.05)', cursor: 'not-allowed' }}>
+                            &larr; Prev
                         </div>
                     )}
                     
-                    <span style={{ color: '#aaa', fontWeight: 'bold' }}>Page {page} of {totalPages}</span>
+                    <span style={{ color: '#aaa', fontWeight: 'bold', margin: '0 10px' }}>Page {page} of {totalPages}</span>
 
+                    {/* Next Page Button */}
                     {page < totalPages ? (
-                        <Link href={`/blog?page=${page + 1}`} style={{ padding: '10px 25px', borderRadius: '10px', background: 'rgba(255,51,102,0.1)', color: '#ff3366', textDecoration: 'none', fontWeight: 'bold', border: '1px solid rgba(255,51,102,0.2)' }}>
+                        <Link href={`/blog?page=${page + 1}`} style={{ padding: '10px 20px', borderRadius: '8px', background: 'rgba(255,51,102,0.1)', color: '#ff3366', textDecoration: 'none', fontWeight: 'bold', border: '1px solid rgba(255,51,102,0.2)' }}>
                             Next &rarr;
                         </Link>
                     ) : (
-                        <div style={{ padding: '10px 25px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: '#555', fontWeight: 'bold', border: '1px solid rgba(255,255,255,0.05)', cursor: 'not-allowed' }}>
+                        <div style={{ padding: '10px 20px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: '#555', fontWeight: 'bold', border: '1px solid rgba(255,255,255,0.05)', cursor: 'not-allowed' }}>
                             Next &rarr;
+                        </div>
+                    )}
+
+                    {/* Last Page Button */}
+                    {page < totalPages ? (
+                        <Link href={`/blog?page=${totalPages}`} style={{ padding: '10px 15px', borderRadius: '8px', background: 'rgba(255,51,102,0.1)', color: '#ff3366', textDecoration: 'none', fontWeight: 'bold', border: '1px solid rgba(255,51,102,0.2)' }}>
+                            Last &raquo;
+                        </Link>
+                    ) : (
+                        <div style={{ padding: '10px 15px', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', color: '#555', fontWeight: 'bold', border: '1px solid rgba(255,255,255,0.05)', cursor: 'not-allowed' }}>
+                            Last &raquo;
                         </div>
                     )}
                 </div>
