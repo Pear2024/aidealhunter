@@ -61,15 +61,15 @@ async function main() {
         const schema = {
             type: SchemaType.OBJECT,
             properties: {
-                lyrics: { type: SchemaType.STRING, description: "Catchy, 4-line pop song lyrics about buying this specific product on a massive discount. Include [Verse] and [Chorus] markers." },
-                music_style: { type: SchemaType.STRING, description: "A genre prompt for the AI music generator (e.g., 'Upbeat K-Pop', 'Chill Lo-Fi', 'Viral TikTok Rap')" },
-                sora_prompt: { type: SchemaType.STRING, description: "A photorealistic, highly detailed OpenAI Sora video prompt showing a beautiful cinematic scene that perfectly matches the vibe of the song and the product. Describe the camera movement, lighting, and a human interacting with the product. Max 1 sentence." }
+                lyrics: { type: SchemaType.STRING, description: "Catchy, 4-line storytelling song lyrics. Structure it as a mini-story: [Verse 1] Struggle/Problem, [Chorus] Discovering the incredible [Product] that changes everything. Include emotion." },
+                music_style: { type: SchemaType.STRING, description: "A genre prompt for the AI music generator (e.g., 'Emotional Pop Anthem', 'Upbeat K-Pop', 'Cinematic Lo-Fi Rap')" },
+                sora_prompt: { type: SchemaType.STRING, description: "A photorealistic, highly detailed OpenAI Sora video prompt showing a continuous cinematic narrative. The scene must seamlessly transition from a relatable struggle to a triumphant moment using the product. Use sweeping camera movements and vivid lighting to tell the story visually in one long shot." }
             },
             required: ["lyrics", "music_style", "sora_prompt"]
         };
         
         const textModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash", generationConfig: { responseMimeType: "application/json", responseSchema: schema }});
-        const prompt = `Product: ${deal.title}\nBrand: ${deal.brand}\nDiscount: $${deal.discount_price}\nWrite 15 seconds worth of lyrics and a video prompt!`;
+        const prompt = `Product: ${deal.title}\nBrand: ${deal.brand}\nDiscount: $${deal.discount_price}\nWrite a 15-second emotional/fun story-driven song and a matching single-take cinematic Sora video prompt!`;
         const result = await textModel.generateContent(prompt);
         const aiResponse = JSON.parse(result.response.text());
         
