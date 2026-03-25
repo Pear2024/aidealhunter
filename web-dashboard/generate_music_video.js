@@ -35,7 +35,20 @@ async function main() {
               AND (url LIKE '%amazon.com%' OR url LIKE '%amzn.to%')
               AND discount_price >= 200 
               AND original_price > discount_price
-            ORDER BY (original_price - discount_price) DESC, profit_score DESC LIMIT 1
+            ORDER BY 
+              CASE 
+                WHEN title LIKE '%Apple%' OR brand LIKE '%Apple%' THEN 1
+                WHEN title LIKE '%Dyson%' OR brand LIKE '%Dyson%' THEN 1
+                WHEN title LIKE '%Sony%' OR brand LIKE '%Sony%' THEN 1
+                WHEN title LIKE '%Samsung%' OR brand LIKE '%Samsung%' THEN 1
+                WHEN title LIKE '%Bose%' OR brand LIKE '%Bose%' THEN 1
+                WHEN title LIKE '%LG%' OR title LIKE '%OLED%' OR title LIKE '%QLED%' THEN 1
+                WHEN title LIKE '%Designer%' OR title LIKE '%Luxury%' OR title LIKE '%Diamond%' THEN 1
+                ELSE 0 
+              END DESC,
+              (original_price - discount_price) DESC, 
+              profit_score DESC 
+            LIMIT 1
         `);
         if (rows.length === 0) return console.error("❌ No active deals found.");
         const deal = rows[0];
