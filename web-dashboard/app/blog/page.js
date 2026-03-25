@@ -3,12 +3,27 @@ import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
-export default async function BlogArchive() {
+export default async function BlogArchive({ searchParams }) {
     let connection;
     let posts = [];
+    let totalPages = 1;
+    
+    // Support Next.js versions where searchParams might be a Promise or an Object
+    const unwrappedParams = await searchParams;
+    const page = parseInt(unwrappedParams?.page || '1', 10);
+    const limit = 12;
+    const offset = (page - 1) * limit;
+
     try {
         connection = await getConnection();
-        const [rows] = await connection.execute('SELECT id, slug, title, image_url, created_at FROM ai_blog_posts ORDER BY created_at DESC');
+        
+        // Fetch Total Count
+        const [countRes] = await connection.execute('SELECT COUNT(*) as total FROM ai_blog_posts');
+        const totalPosts = countRes[0].total;
+        totalPages = Math.ceil(totalPosts / limit);
+
+        // Fetch Paginated Results
+        const [rows] = await connection.execute(`SELECT id, slug, title, image_url, created_at FROM ai_blog_posts ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`);
         posts = rows;
     } catch(e) {
         console.error("Blog Fetch Error", e);
@@ -54,6 +69,33 @@ export default async function BlogArchive() {
                     </Link>
                 ))}
             </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '4rem', gap: '20px' }}>
+                    {page > 1 ? (
+                        <Link href={`/blog?page=${page - 1}`} style={{ padding: '10px 25px', borderRadius: '10px', background: 'rgba(255,51,102,0.1)', color: '#ff3366', textDecoration: 'none', fontWeight: 'bold', border: '1px solid rgba(255,51,102,0.2)' }}>
+                            &larr; Previous
+                        </Link>
+                    ) : (
+                        <div style={{ padding: '10px 25px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: '#555', fontWeight: 'bold', border: '1px solid rgba(255,255,255,0.05)', cursor: 'not-allowed' }}>
+                            &larr; Previous
+                        </div>
+                    )}
+                    
+                    <span style={{ color: '#aaa', fontWeight: 'bold' }}>Page {page} of {totalPages}</span>
+
+                    {page < totalPages ? (
+                        <Link href={`/blog?page=${page + 1}`} style={{ padding: '10px 25px', borderRadius: '10px', background: 'rgba(255,51,102,0.1)', color: '#ff3366', textDecoration: 'none', fontWeight: 'bold', border: '1px solid rgba(255,51,102,0.2)' }}>
+                            Next &rarr;
+                        </Link>
+                    ) : (
+                        <div style={{ padding: '10px 25px', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: '#555', fontWeight: 'bold', border: '1px solid rgba(255,255,255,0.05)', cursor: 'not-allowed' }}>
+                            Next &rarr;
+                        </div>
+                    )}
+                </div>
+            )}
         </main>
     );
 }
