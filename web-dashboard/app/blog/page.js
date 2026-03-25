@@ -95,7 +95,20 @@ export default async function BlogArchive({ searchParams }) {
                         </div>
                     )}
                     
-                    <span style={{ color: '#aaa', fontWeight: 'bold', margin: '0 10px' }}>Page {page} of {totalPages}</span>
+                    {/* Jump to Page Form */}
+                    <form action="/blog" method="GET" style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: '0 10px' }}>
+                        <span style={{ color: '#aaa', fontWeight: 'bold' }}>Page</span>
+                        <input 
+                            type="number" 
+                            name="page" 
+                            defaultValue={page} 
+                            min="1" 
+                            max={totalPages} 
+                            style={{ width: '60px', padding: '6px', borderRadius: '6px', border: '1px solid #444', background: '#111', color: 'white', textAlign: 'center', fontSize: '1rem' }} 
+                        />
+                        <span style={{ color: '#aaa', fontWeight: 'bold' }}>of {totalPages}</span>
+                        <button type="submit" style={{ padding: '6px 12px', borderRadius: '6px', background: 'var(--accent-gradient)', color: 'white', border: 'none', cursor: 'pointer', fontWeight: 'bold' }}>Go</button>
+                    </form>
 
                     {/* Next Page Button */}
                     {page < totalPages ? (
