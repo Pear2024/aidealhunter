@@ -71,31 +71,47 @@ export async function GET(request) {
     const executeGraphComment = async (postId, message) => {
         try {
             if (postId) {
-                await fetch(`https://graph.facebook.com/v19.0/${postId}/comments?access_token=${process.env.FB_PAGE_ACCESS_TOKEN}`, {
+                // Ensure FB node is fully propagated before commenting
+                console.log(`⏱️ Waiting 3 seconds for FB Post ${postId} to propagate before commenting...`);
+                await new Promise(r => setTimeout(r, 3000));
+                
+                const commentRes = await fetch(`https://graph.facebook.com/v19.0/${postId}/comments?access_token=${process.env.FB_PAGE_ACCESS_TOKEN}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: `🔗 Here is the link to the item I mentioned: ${trackingLink}` })
+                    body: JSON.stringify({ message: message })
                 });
+
+                const fbResult = await commentRes.json();
+                
+                if (fbResult.error) {
+                    console.error("❌ Facebook Comment API Rejected:", fbResult.error.message);
+                    await sendTelegramAlert(`🚨 <b>[Comment Error]</b>\nFacebook blocked the comment!\n\n<code>${fbResult.error.message}</code>`);
+                    return false;
+                }
 
                 // UPDATE STATE MACHINE (Single Source of Truth)
                 await connection.execute(
-                    "UPDATE normalized_deals SET is_fb_posted = TRUE, fb_post_id = ? WHERE id = ?",
-                    [postId, dealToPost.id]
+                    "UPDATE normalized_deals SET is_fb_posted = TRUE, fb_post_id = ? WHERE fb_post_id = ?",
+                    [postId, postId] 
                 );
 
-                const strictLogMessage = `[STEP] Facebook Post Agent
-[INPUT] deal_id=${dealToPost.id}
-[ACTION] generate image + caption + bitly tracking
-[OUTPUT] post_id=${postId}
+                const strictLogMessage = `[STEP] Facebook Comment Agent
+[INPUT] post_id=${postId}
+[ACTION] injected affiliate link comment
+[OUTPUT] comment_id=${fbResult.id}
 [STATUS] success
 [TIME] ${new Date().toISOString()}`;
 
                 await logAgent('agent_1', 'Facebook Pipeline', 'Publish Success', 'success', strictLogMessage);
-                return NextResponse.json({ success: true, deal_id: dealToPost.id, fb_post_id: postId });
+                return true;
             } else {
                 console.error("❌ Failed to inject comment: Post ID was null or undefined.");
+                return false;
             }
-        } catch(e) { console.error("Comment inject failed:", e); }
+        } catch(e) { 
+            console.error("Comment inject failed explicitly:", e); 
+            return false;
+        }
     }    // ==============================================================
     // ROUTE 0, 1, 3, 5: THE DEAL ENGINE (Product Sales)
     // ==============================================================
