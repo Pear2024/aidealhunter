@@ -1,9 +1,9 @@
 name: 🤖 AI Content Agent Cron
 
 on:
-  schedule:
-    # Runs every 1 hour
-    - cron: '0 * * * *'
+  # schedule:
+  #   # [PAUSED] Runs every 1 hour
+  #   - cron: '0 * * * *'
   # Allows you to trigger this workflow manually from the Actions tab
   workflow_dispatch:
 
