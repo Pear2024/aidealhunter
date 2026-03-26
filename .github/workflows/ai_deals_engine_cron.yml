@@ -2,8 +2,8 @@ name: 📱 AI Facebook Deals Engine (Publisher Squad)
 
 on:
   schedule:
-    # Runs at minute 30 past every hour (Offset from the Blog Content Agent)
-    - cron: '30 * * * *'
+    # Runs at minute 30 past every 3rd hour to prevent Facebook spam penalties
+    - cron: '30 */3 * * *'
   # Allows triggering manually from the Actions tab
   workflow_dispatch:
 

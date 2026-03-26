@@ -212,26 +212,58 @@ DO NOT include the exact link placeholder. Keep it extremely casual and slightly
             let finalImageUrl = dealToPost.image_url;
 
             try {
-                // RUN GEMINI & DALL-E IN PARALLEL FOR SPEED
-                const [copyResult, dalleResult] = await Promise.allSettled([
+                // RUN GEMINI & IMAGE GEN IN PARALLEL FOR SPEED
+                const [copyResult, imageResult] = await Promise.allSettled([
                     withRetry(() => textModel.generateContent(copywriterPrompt), 1, 1000),
                     (async () => {
                          if (!process.env.OPENAI_API_KEY) return null;
-                         
-                         const aesthetics = [
-                             `A bright, aesthetic, high-end commercial lifestyle photograph of a beautiful celebrity or highly attractive model happily interacting with / holding this product: ${dealToPost.title}. The lighting is bright, sunny, and inviting. Ultra-realistic, expressive, sharp focus. NO TEXT. NO WORDS.`,
-                             `A cozy, warm, inviting home setting. A relatable, highly attractive person enjoying a quiet morning coffee while using this product: ${dealToPost.title}. Realism, cinematic lighting, 8k resolution, highly detailed, expressive. NO TEXT. NO WORDS.`,
-                             `An energetic, fitness-focused bright sunny day outdoors. A fit, gorgeous model holding or wearing this product: ${dealToPost.title}. High-end activewear commercial photography, beautiful bokeh, vibrant colors, ultra-realistic. NO TEXT. NO WORDS.`,
-                             `A sleek, luxurious modern minimalist luxury apartment. A sophisticated, attractive person utilizing this product: ${dealToPost.title}. Evening moody but beautiful lighting, high fashion, elegant, highly detailed. NO TEXT. NO WORDS.`,
-                             `A fun, colorful, pop-art inspired lifestyle shot. A young stunning influencer taking a selfie or showing off this product: ${dealToPost.title}. Pastel colors, bright studio lighting, viral social media aesthetic, hyper-realistic. NO TEXT. NO WORDS.`
-                         ];
-                         const selectedAesthetic = aesthetics[Math.floor(Math.random() * aesthetics.length)];
 
+                         let finalDallePrompt = "";
+                         const attemptVisionRecreation = (cycleIndex === 1 || cycleIndex === 5);
+                         
+                         // 1. Alternating Strategy: "Let DALL-E Do It"
+                         // Use Gemini Vision to deeply analyze the real product image and instruct DALL-E to recreate it in a new background!
+                         if (attemptVisionRecreation && dealToPost.image_url) {
+                             console.log("👁️ Agent Vision: Analyzing real product image to instruct DALL-E...");
+                             try {
+                                 const imgRes = await fetch(dealToPost.image_url);
+                                 if (imgRes.ok) {
+                                     const arrayBuffer = await imgRes.arrayBuffer();
+                                     const base64Image = Buffer.from(arrayBuffer).toString('base64');
+                                     const mimeType = imgRes.headers.get("content-type") || "image/jpeg";
+                                     
+                                     const visionPrompt = `Analyze this exact product. Describe its precise physical appearance, shape, material, colors, and branding details in a dense paragraph. Then append exactly this to the end: ", resting naturally on a visually stunning, warm aesthetic high-end lifestyle setting (like a modern kitchen counter or elegant marble table). Ultra-realistic photography, 8k resolution, cinematic lighting. NO TEXT, NO WORDS."`;
+                                     
+                                     const visionResult = await textModel.generateContent([
+                                         visionPrompt,
+                                         { inlineData: { data: base64Image, mimeType: mimeType } }
+                                     ]);
+                                     finalDallePrompt = visionResult.response.text().trim();
+                                     console.log("✅ DALL-E 3 Prompt Engineered via Vision:", finalDallePrompt);
+                                 }
+                             } catch(e) {
+                                 console.warn("⚠️ Vision API extraction failed. Falling back to default generation.", e.message);
+                             }
+                         }
+
+                         // 2. Default/Fallback Strategy if Vision wasn't used or failed
+                         if (!finalDallePrompt) {
+                             const aesthetics = [
+                                 `A bright, aesthetic, high-end commercial lifestyle photograph of a beautiful celebrity or highly attractive model happily interacting with / holding this product: ${dealToPost.title}. The lighting is bright, sunny, and inviting. Ultra-realistic, expressive, sharp focus. NO TEXT. NO WORDS.`,
+                                 `A cozy, warm, inviting home setting. A relatable, highly attractive person enjoying a quiet morning coffee while using this product: ${dealToPost.title}. Realism, cinematic lighting, 8k resolution, highly detailed, expressive. NO TEXT. NO WORDS.`,
+                                 `An energetic, fitness-focused bright sunny day outdoors. A fit, gorgeous model holding or wearing this product: ${dealToPost.title}. High-end activewear commercial photography, beautiful bokeh, vibrant colors, ultra-realistic. NO TEXT. NO WORDS.`,
+                                 `A sleek, luxurious modern minimalist luxury apartment. A sophisticated, attractive person utilizing this product: ${dealToPost.title}. Evening moody but beautiful lighting, high fashion, elegant, highly detailed. NO TEXT. NO WORDS.`,
+                                 `A fun, colorful, pop-art inspired lifestyle shot. A young stunning influencer taking a selfie or showing off this product: ${dealToPost.title}. Pastel colors, bright studio lighting, viral social media aesthetic, hyper-realistic. NO TEXT. NO WORDS.`
+                             ];
+                             finalDallePrompt = aesthetics[Math.floor(Math.random() * aesthetics.length)];
+                         }
+
+                         console.log("🎨 Synthesizing DALL-E 3 Image...");
                          const aiRes = await fetch("https://api.openai.com/v1/images/generations", {
                              method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.OPENAI_API_KEY}` },
                              body: JSON.stringify({
                                  model: "dall-e-3",
-                                 prompt: selectedAesthetic,
+                                 prompt: finalDallePrompt,
                                  n: 1, size: "1024x1024", response_format: "url"
                              })
                          });
@@ -243,10 +275,13 @@ DO NOT include the exact link placeholder. Keep it extremely casual and slightly
                                  imgFormData.append("image", remoteUrl);
                                  const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=${process.env.IMGBB_API_KEY}`, { method: "POST", body: imgFormData });
                                  const imgbbData = await imgbbRes.json();
-                                 if (imgbbData.success) return imgbbData.data.url;
+                                 if (imgbbData.success) {
+                                     return { url: imgbbData.data.url, type: attemptVisionRecreation ? 'dalle_vision_recreation' : 'dalle' };
+                                 }
                              }
-                             return remoteUrl;
+                             return { url: remoteUrl, type: attemptVisionRecreation ? 'dalle_vision_recreation' : 'dalle' };
                          }
+                         
                          return null;
                     })()
                 ]);
@@ -256,10 +291,12 @@ DO NOT include the exact link placeholder. Keep it extremely casual and slightly
                     if (generatedText) caption = generatedText;
                 }
                 
-                if (dalleResult.status === 'fulfilled' && dalleResult.value) {
-                    finalImageUrl = dalleResult.value;
-                    console.log("✅ DALL-E 3 Lifestyle Image successfully synthesized:", finalImageUrl);
-                    await logAgent('agent_3', 'Agent 3: Designer', 'DALL-E 3 Image Synthesized', 'success', `Generated premium aesthetic lifestyle image for product.`);
+                if (imageResult.status === 'fulfilled' && imageResult.value) {
+                    finalImageUrl = imageResult.value.url;
+                    console.log(`✅ Image AI successfully generated via ${imageResult.value.type}:`, finalImageUrl);
+                    const logAction = imageResult.value.type === 'dalle_vision_recreation' ? 'Vision-To-DALL-E Background Generation' : 'DALL-E 3 Image Synthesized';
+                    const logDesc = imageResult.value.type === 'dalle_vision_recreation' ? `Recreated precise product on a new aesthetic background using Vision AI + DALL-E 3.` : `Generated premium aesthetic lifestyle image for product.`;
+                    await logAgent('agent_3', 'Agent 3: Designer', logAction, 'success', logDesc);
                 }
             } catch(e) { console.error("Generation Error:", e); }
             
@@ -290,7 +327,24 @@ DO NOT include the exact link placeholder. Keep it extremely casual and slightly
         try { feed = await parser.parseURL('https://news.google.com/rss/search?q=technology+OR+AI+OR+Amazon&hl=en-US&gl=US&ceid=US:en'); }
         catch(e) { return NextResponse.json({ error: 'News fetch failed' }, { status: 500 }); }
         
-        const topNews = feed.items[0]; // Get the #1 most recent news
+        let topNews = null;
+        for (const item of feed.items.slice(0, 5)) {
+            const safeTitle = item.title.substring(0, 50); // Check first 50 chars to avoid exact match issues
+            const [duplicateCheck] = await connection.execute(
+                `SELECT id FROM agent_logs WHERE action IN ('Facebook News', 'Syndicating Headlines') AND description LIKE ? LIMIT 1`,
+                [`%${safeTitle}%`]
+            );
+            if (duplicateCheck.length === 0) {
+                topNews = item;
+                break;
+            }
+        }
+
+        if (!topNews) {
+            console.log("⚠️ All top news articles from RSS have already been syndicated recently. Skipping cycle to avoid spam.");
+            return NextResponse.json({ success: true, message: "No fresh breaking news available." });
+        }
+
         await logAgent('agent_12', 'Agent 12: News Analyst', 'Syndicating Headlines', 'running', `Intercepted Breaking News: ${topNews.title}`);
         
         const copywriterPrompt = `Act as an elite $1000/day social media copywriter and tech journalist. Summarize this news article in 3 short, punchy paragraphs.\nRules: MUST BE IN ENGLISH. Target audience: Residents of Hemet, California and the Inland Empire. Keep it engaging, witty, and easy to understand for everyday people. Use emojis. Add a conversational question at the end to drive comments.\nCRITICAL: If the article is about Artificial Intelligence (OpenAI, ChatGPT, AI models, etc.), you MUST append this exact sentence at the very bottom of your summary: "⚡ P.S. Want to build your own AI apps or make AI music? Grab API access here: https://aimlapi.com/?via=sunoapi "\nTitle: ${topNews.title}\nContent Snippet: ${topNews.contentSnippet}`;
