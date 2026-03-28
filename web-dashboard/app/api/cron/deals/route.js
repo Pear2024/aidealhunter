@@ -331,7 +331,7 @@ DO NOT include the exact link placeholder. Keep it extremely casual and slightly
         for (const item of feed.items.slice(0, 5)) {
             const safeTitle = item.title.substring(0, 50); // Check first 50 chars to avoid exact match issues
             const [duplicateCheck] = await connection.execute(
-                `SELECT id FROM agent_logs WHERE action IN ('Facebook News', 'Syndicating Headlines') AND description LIKE ? LIMIT 1`,
+                `SELECT id FROM agent_logs WHERE action IN ('Facebook News', 'Syndicating Headlines') AND details LIKE ? LIMIT 1`,
                 [`%${safeTitle}%`]
             );
             if (duplicateCheck.length === 0) {
