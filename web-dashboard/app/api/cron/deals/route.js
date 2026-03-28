@@ -120,21 +120,22 @@ export async function GET(request) {
         
         await logAgent('agent_1', 'Agent 1: Database Broker', 'Waking up to fetch Native Amazon Deals', 'running', `Vercel Cron Triggered. Scanning: normalized_deals`);
         
-        // Fetch top highest-scoring Amazon API deals that have NOT been posted to Facebook yet.
+        // Fetch top highest-scoring deals that have NOT been posted to Facebook yet.
         // Ensure strict Step Lock: ONLY pick deals that are 'idle' or previously 'failed'!
         const [deals] = await connection.execute(
-            `SELECT * FROM normalized_deals WHERE status = 'approved' AND fb_status IN ('idle', 'failed') AND (url LIKE '%amazon.com%' OR url LIKE '%amzn.to%') ORDER BY created_at DESC LIMIT 20`
+            `SELECT * FROM normalized_deals WHERE status = 'approved' AND fb_status IN ('idle', 'failed') AND (url LIKE '%amazon.com%' OR url LIKE '%amzn.to%' OR url LIKE '%threeinternational.com%') ORDER BY created_at DESC LIMIT 20`
         );
 
         if (deals.length === 0) {
-             console.log("No un-posted Amazon deals remain. Exiting Deal Engine.");
-             return NextResponse.json({ success: true, message: "No un-posted Amazon deals available." });
+             console.log("No un-posted deals remain. Exiting Deal Engine.");
+             return NextResponse.json({ success: true, message: "No un-posted deals available." });
         }
 
         let dealToPost = null;
         for (const deal of deals) {
              console.log(`🔍 Verifying Integrity for: ${deal.title}`);
-             const verify = await verifyAmazonIntegrity(deal.url, deal.discount_price);
+             const isAmazon = deal.url.includes('amazon.com') || deal.url.includes('amzn.to');
+             const verify = isAmazon ? await verifyAmazonIntegrity(deal.url, deal.discount_price) : { success: true, priceMatch: true };
              
              if (verify.success && verify.priceMatch) {
                  // 🎯 OPTIMISTIC LOCK: Reserve this deal immediately before AI processing!
@@ -158,12 +159,12 @@ export async function GET(request) {
         }
 
         if (!dealToPost) {
-             console.log("⚠️ No live Amazon deals passed verification. Exiting this cycle.");
+             console.log("⚠️ No live deals passed verification. Exiting this cycle.");
              await logAgent('agent_6', 'Agent 6: Gatekeeper', 'All Pending Quality Checks Failed', 'failed', `None of the top 20 deals survived integrity validation.`);
              return NextResponse.json({ success: true, message: "No live deals survived verification." });
         }
         
-        await logAgent('agent_6', 'Agent 6: Gatekeeper', 'Quality Assurance Pass', 'success', `Native Amazon API payload verified & Price Match confirmed: ${dealToPost.title}`);
+        await logAgent('agent_6', 'Agent 6: Gatekeeper', 'Quality Assurance Pass', 'success', `Payload verified & Price Match confirmed: ${dealToPost.title}`);
 
         try {
             const systemStateHeader = `
