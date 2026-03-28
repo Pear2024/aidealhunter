@@ -364,20 +364,23 @@ DO NOT include the exact link placeholder. Keep it extremely casual and slightly
         }
     }
     // ==============================================================
-    // ROUTE 4: ADVANCED HEALTH NEWS ENGINE (Agent 11)
+    // ROUTE 4: MEDICAL AI & HEALTH NEWS ENGINE (Agent 11) - 70% Quota
     // ==============================================================
     else if (cycleIndex === 4) {
-        console.log("💡 Executing Route: ADVANCED HEALTH NEWS ENGINE");
+        console.log("💡 Executing Route: MEDICAL AI NEWS ENGINE");
         const parser = new Parser();
         let feed;
-        try { feed = await parser.parseURL('https://news.google.com/rss/search?q=health+breakthrough+OR+anti-aging+OR+longevity+OR+wellness+science&hl=en-US&gl=US&ceid=US:en'); }
-        catch(e) { return NextResponse.json({ error: 'Health News fetch failed' }, { status: 500 }); }
+        try { 
+            // Targeting specific Medical AI companies requested in flowchart
+            feed = await parser.parseURL('https://news.google.com/rss/search?q="Aidoc"+OR+"PathAI"+OR+"Tempus"+OR+"K Health"+OR+"Hippocratic AI"+OR+"Google Health"+OR+"IQVIA AI"+OR+"Notable Health"&hl=en-US&gl=US&ceid=US:en'); 
+        }
+        catch(e) { return NextResponse.json({ error: 'Medical AI News fetch failed' }, { status: 500 }); }
 
         let topHealthNews = null;
         for (const item of feed.items.slice(0, 5)) {
             const safeTitle = item.title.substring(0, 50); // Check first 50 chars to avoid exact match issues
             const [duplicateCheck] = await connection.execute(
-                `SELECT id FROM agent_logs WHERE action IN ('Facebook Tip', 'Syndicating Health News') AND details LIKE ? LIMIT 1`,
+                `SELECT id FROM agent_logs WHERE action IN ('Facebook Tip', 'Syndicating Medical AI News') AND details LIKE ? LIMIT 1`,
                 [`%${safeTitle}%`]
             );
             if (duplicateCheck.length === 0) {
@@ -387,21 +390,42 @@ DO NOT include the exact link placeholder. Keep it extremely casual and slightly
         }
 
         if (!topHealthNews) {
-            console.log("⚠️ All recent health news articles have already been syndicated. Skipping cycle to avoid spam.");
+            console.log("⚠️ All recent Medical AI news articles have already been syndicated. Skipping cycle to avoid spam.");
             return NextResponse.json({ success: true, message: "No fresh health news available." });
         }
 
-        await logAgent('agent_11', 'Agent 11: Health Analyst', 'Syndicating Health News', 'running', `Intercepted Health Breakthrough: ${topHealthNews.title}`);
+        await logAgent('agent_11', 'Agent 11: Medical Analyst', 'Syndicating Medical AI News', 'running', `Intercepted Health Breakthrough: ${topHealthNews.title}`);
         
-        const healthPrompt = `Act as an elite $1000/day copywriter and cutting-edge wellness expert. Summarize this groundbreaking health/science news article in 3 short, easy-to-understand paragraphs.\nRules: MUST BE IN ENGLISH. Target audience: Everyday people in Hemet, California and the Inland Empire who care about taking control of their health and aging gracefully. Make it sound like an exciting, life-changing discovery. Use emojis. Add a conversational question at the end to drive comments.\nTitle: ${topHealthNews.title}\nContent Snippet: ${topHealthNews.contentSnippet || topHealthNews.content || ''}`;
+        const healthPrompt = `Act as an elite $1000/day copywriter and cutting-edge wellness expert. Summarize this groundbreaking medical AI news article in 3 short, easy-to-understand paragraphs.\nRules: MUST BE IN ENGLISH. Target audience: Everyday people in the US (especially Hemet, CA) who care about taking control of their health through technology. Make it sound like an exciting, life-changing discovery. Use emojis. Add a conversational question at the end to drive comments.\nCRITICAL: You MUST include the source link at the bottom of the post: "Read full source: ${topHealthNews.link}"\nTitle: ${topHealthNews.title}\nContent Snippet: ${topHealthNews.contentSnippet || topHealthNews.content || ''}`;
         
-        let tipText = `🧬 Cutting-Edge Health Update!\n\n${topHealthNews.title}\n\nWhat are your thoughts on this? 👇`;
+        let tipText = `🧬 Cutting-Edge Medical AI Update!\n\n${topHealthNews.title}\n\nWhat are your thoughts on this? 👇\nSource: ${topHealthNews.link}`;
         try {
             const tipResult = await withRetry(() => textModel.generateContent(healthPrompt), 1, 1000);
             if (tipResult.response.text().trim()) tipText = tipResult.response.text().trim();
         } catch(e) {}
         
-        await executeGraphAPI('feed', { message: tipText, link: topHealthNews.link }, 'Facebook Tip', `Successfully deployed advanced health news.`);
+        // --- DALL-E 3 Image Synthesis for Health Post ---
+        let imageUrl = null;
+        try {
+            const dallePromptResult = await textModel.generateContent(`Create a clean, hyper-realistic, highly aesthetic DALL-E 3 image prompt that represents this medical AI technology breakthrough without using text. Concept: ${topHealthNews.title}`);
+            const dallePrompt = dallePromptResult.response.text().substring(0, 900);
+            
+            const dalleRes = await fetch("https://api.openai.com/v1/images/generations", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.OPENAI_API_KEY}` },
+                body: JSON.stringify({ model: "dall-e-3", prompt: dallePrompt, n: 1, size: "1024x1024" })
+            });
+            const dalleData = await dalleRes.json();
+            if (dalleData.data && dalleData.data[0]) {
+                imageUrl = dalleData.data[0].url;
+            }
+        } catch(imgErr) { console.error("DALL-E 3 Medical Vision failed: ", imgErr); }
+
+        if (imageUrl) {
+            await executeGraphAPI('photos', { url: imageUrl, caption: tipText }, 'Facebook Tip', `Successfully deployed Medical AI news with DALL-E 3 image.`);
+        } else {
+            await executeGraphAPI('feed', { message: tipText, link: topHealthNews.link }, 'Facebook Tip', `Successfully deployed advanced health news without custom image.`);
+        }
     }
     // ==============================================================
     // ROUTE 6: THE POLL/MEME ENGINE (Agent 8)
