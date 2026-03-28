@@ -16,14 +16,13 @@ export async function GET(request) {
         }
 
         const trendingNiches = [
-            "Stanley 40oz Tumbler",
-            "Apple AirPods Pro",
-            "Ninja Creami Ice Cream Maker",
-            "CeraVe Moisturizing Cream",
-            "Anker Portable Charger",
-            "Dyson V8 Vacuum",
-            "Echo Dot Smart Speaker",
-            "Laneige Lip Sleeping Mask"
+            "Three International Supplements",
+            "Three International Vitalite",
+            "Three International Imune",
+            "Three International Eternel",
+            "Three International Revive",
+            "Three International Purifi",
+            "Three International Collagene"
         ];
         
         // Randomly select an e-commerce proven keyword if none is passed
