@@ -91,16 +91,60 @@ async function generateVideo(prompt) {
     }
 }
 
-async function mixContent(audioPath, visualPath) {
-    console.log("🎞️ Mixing AI Content via FFmpeg...");
+async function generateMusic(prompt) {
+    console.log("🎵 Generating Ambient Background Music via AIMLAPI (Suno)...");
+    try {
+        const res = await axios.post('https://api.aimlapi.com/v2/generate/audio/suno-api/custom', {
+            title: "Medical Ambient",
+            tags: "ambient electronica background soft instrumental",
+            prompt: "[Instrumental] Soft futuristic ambient synth chords, very subtle and calm."
+        }, { headers: { 'Authorization': `Bearer ${AIMLAPI_KEY}` } });
+        
+        // Polling loop for Suno API completion
+        const generationId = res.data.id || res.data[0]?.id;
+        if (!generationId) throw new Error("No Suno Generation ID returned.");
+        
+        for (let i = 0; i < 30; i++) {
+            await delay(10000); // 10s intervals
+            const pollRes = await axios.get(`https://api.aimlapi.com/v2/generate/audio/suno-api/tasks/${generationId}`, {
+                headers: { 'Authorization': `Bearer ${AIMLAPI_KEY}` }
+            });
+            const firstResult = pollRes.data[0] || pollRes.data.data?.[0];
+            if (firstResult && firstResult.status === 'completed' && firstResult.audio_url) {
+                console.log("Downloading background music...");
+                const musicBuffer = await axios.get(firstResult.audio_url, { responseType: 'arraybuffer' });
+                const outPath = path.join(__dirname, 'temp_music.mp3');
+                fs.writeFileSync(outPath, musicBuffer.data);
+                return outPath;
+            }
+            if (firstResult && (firstResult.status === 'error' || firstResult.status === 'failed')) break;
+        }
+        throw new Error("Suno Music Generation timed out or failed.");
+    } catch(e) {
+        console.error("Music Gen Failed: ", e.message);
+        return null; // Fallback to no music
+    }
+}
+
+async function mixContent(audioPath, visualPath, musicPath) {
+    console.log("🎞️ Mixing AI Content (Video/Image + Voice + Music) via FFmpeg...");
     const outputPath = path.join(__dirname, 'final_medical_news.mp4');
     if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
 
-    // If visual is an image, we loop it and add a zoom effect. If it's a video, we loop it.
-    if (visualPath.endsWith('.jpg')) {
-        execSync(`ffmpeg -loop 1 -i ${visualPath} -i ${audioPath} -c:v libx264 -tune stillimage -c:a aac -b:a 192k -pix_fmt yuv420p -shortest -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0015,1.5)':d=700:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'" -y ${outputPath}`);
+    // If music exists, we use amix to blend voice and music (-20dB for music)
+    let audioFilter = "";
+    let inputs = `-i ${visualPath} -i ${audioPath}`;
+    if (musicPath) {
+        inputs += ` -i ${musicPath}`;
+        audioFilter = `-filter_complex "[2:a]volume=0.2[bgm];[1:a]volume=1.0[voice];[voice][bgm]amix=inputs=2:duration=first:dropout_transition=2[aout]" -map "[aout]"`;
     } else {
-        execSync(`ffmpeg -stream_loop -1 -i ${visualPath} -i ${audioPath} -c:v libx264 -c:a aac -shortest -map 0:v:0 -map 1:a:0 -y ${outputPath}`);
+        audioFilter = `-map 1:a:0 -c:a aac`;
+    }
+
+    if (visualPath.endsWith('.jpg') || visualPath.endsWith('.png')) {
+        execSync(`ffmpeg -loop 1 ${inputs} -c:v libx264 -tune stillimage -b:a 192k -pix_fmt yuv420p -shortest -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0015,1.5)':d=700:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'" ${audioFilter} -y ${outputPath}`);
+    } else {
+        execSync(`ffmpeg -stream_loop -1 ${inputs} -c:v libx264 ${audioFilter} -shortest -map 0:v:0 -y ${outputPath}`);
     }
     return outputPath;
 }
@@ -140,9 +184,10 @@ async function main() {
         // 3. Generate Assets via AIMLAPI
         const audioFile = await generateTTS(script);
         const visualFile = await generateVideo(visualPrompt);
+        const musicFile = await generateMusic();
         
         // 4. Mix using ffmpeg
-        const finalVideo = await mixContent(audioFile, visualFile);
+        const finalVideo = await mixContent(audioFile, visualFile, musicFile);
         
         // 5. Publish
         const caption = `🧬 1-Minute Medical Tech Update!\n\n${script}\n\nRead more at the source: ${news.link}\n\n#MedicalAI #HealthTech #NadaniaWellness #ThreeInternational`;
