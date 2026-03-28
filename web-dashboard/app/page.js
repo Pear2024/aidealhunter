@@ -143,14 +143,11 @@ export default function Storefront() {
   }
 
   const getRetailerInfo = (url) => {
-    if (!url) return { name: 'Unknown', color: '#666' };
+    if (!url) return { name: 'Brand', color: '#666' };
     const lowerUrl = url.toLowerCase();
-    if (lowerUrl.includes('amazon')) return { name: 'Amazon', color: '#FF9900' };
-    if (lowerUrl.includes('walmart')) return { name: 'Walmart', color: '#0071CE' };
-    if (lowerUrl.includes('target')) return { name: 'Target', color: '#CC0000' };
-    if (lowerUrl.includes('costco')) return { name: 'Costco', color: '#005DAA' };
-    if (lowerUrl.includes('bestbuy') || lowerUrl.includes('best buy')) return { name: 'Best Buy', color: '#0046BE' };
-    return { name: 'Retailer', color: '#666' };
+    if (lowerUrl.includes('threeinternational')) return { name: 'Three', color: '#1B4D3E' };
+    if (lowerUrl.includes('youtube')) return { name: 'YouTube', color: '#FF0000' };
+    return { name: 'Wellness', color: '#00D084' };
   };
 
   const renderDeal = (deal) => {
@@ -218,7 +215,7 @@ export default function Storefront() {
             {isExpired ? (
                 <button className="premium-buy-btn" disabled>Ended ⏳</button>
             ) : (
-                <button className="premium-buy-btn" onClick={(e) => { e.stopPropagation(); window.open('/r/' + deal.id, '_blank'); }}>Get Deal 🛒</button>
+                <button className="premium-buy-btn" onClick={(e) => { e.stopPropagation(); window.open('/r/' + deal.id, '_blank'); }}>Explore 🌿</button>
             )}
           </div>
         </div>
@@ -235,13 +232,13 @@ export default function Storefront() {
       }}>
         <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div style={{ fontWeight: '800', fontSize: '1.4rem', letterSpacing: '-0.5px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '1.8rem' }}>💎</span> 
-            <span style={{ background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>DealHunter Pro</span>
+            <span style={{ fontSize: '1.8rem' }}>🌿</span> 
+            <span style={{ background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Nadania Wellness</span>
           </div>
           
           <div style={{ display: 'none', '@media (minWidth: 768px)': { display: 'flex' }, gap: '24px', alignItems: 'center', margin: '0 2rem' }} className="desktop-nav">
-              <Link href="/" style={{ color: 'white', textDecoration: 'none', fontWeight: 'bold' }}>🛍️ Shop Deals</Link>
-              <Link href="/blog" style={{ color: '#aaa', textDecoration: 'none', fontWeight: 'bold', transition: 'color 0.2s' }} onMouseOver={e => e.target.style.color='white'} onMouseOut={e => e.target.style.color='#aaa'}>📝 AI Reviews & Guides</Link>
+              <Link href="/" style={{ color: 'white', textDecoration: 'none', fontWeight: 'bold' }}>🌱 Top Products</Link>
+              <Link href="/blog" style={{ color: '#aaa', textDecoration: 'none', fontWeight: 'bold', transition: 'color 0.2s' }} onMouseOver={e => e.target.style.color='white'} onMouseOut={e => e.target.style.color='#aaa'}>📝 Health News & Guides</Link>
           </div>
           
           <div>
@@ -269,25 +266,20 @@ export default function Storefront() {
           <div style={{ position: 'absolute', bottom: '-50%', right: '-10%', width: '300px', height: '300px', background: '#FF9933', filter: 'blur(100px)', opacity: 0.15, borderRadius: '50%' }}></div>
           
           <div style={{ display: 'inline-block', marginBottom: '1.5rem', border: '1px solid rgba(255,51,102,0.3)', padding: '6px 16px', borderRadius: '20px', background: 'rgba(255,51,102,0.1)', color: '#ff99a8', fontSize: '0.9rem', fontWeight: 'bold', letterSpacing: '1px' }}>
-             🚀 UP TO 90% OFF PREMIUM BRANDS 
+             🚀 YOUR ULTIMATE HEALTH & NUTRITION HUB
           </div>
           <h1 style={{ fontSize: '3.5rem', fontWeight: '800', marginBottom: '1rem', letterSpacing: '-1px', lineHeight: '1.2' }}>
-            Discover Unbeatable <br/>
-            <span style={{ background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Exclusive Deals</span>
+            Discover Cutting-Edge <br/>
+            <span style={{ background: 'var(--accent-gradient)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Health & Wellness</span>
           </h1>
           <p style={{ color: 'var(--text-secondary)', fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto', lineHeight: '1.6' }}>
-            Premium, hand-picked discounts powered by AI. Save big on top brands with our real-time deal engine.
+            Empowering your life with the latest in preventive medicine, fitness science, and premium holistic products.
           </p>
         </section>
-
-      {/* PHASE 16: FTC Affiliate Disclosure Banner */}
-      <div style={{ background: 'rgba(255, 255, 255, 0.05)', padding: '12px 20px', textAlign: 'center', fontSize: '0.9rem', color: '#ccc', marginBottom: '2rem', borderRadius: '8px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-        <strong>Affiliate Disclosure:</strong> As an Amazon Associate, I earn from qualifying purchases. We may earn a small commission if you buy through our links, at no extra cost to you.
-      </div>
       
       {/* PHASE 32: Categorical Navigation Tabs */}
       <div style={{ display: 'flex', justifyContent: 'center', gap: '15px', marginBottom: '3rem', flexWrap: 'wrap' }} className="fade-in">
-        {['all', 'digital', 'tech', 'food', 'household', 'travel'].map(tab => (
+        {['all', 'health', 'fitness', 'nutrition', 'anti-aging', 'supplements'].map(tab => (
            <button 
              key={tab} 
              onClick={() => setActiveTab(tab)}
@@ -312,8 +304,8 @@ export default function Storefront() {
       {(latestDeals.length === 0 && recommendedDeals.length === 0) ? (
         <div className="empty-state">
           <div className="empty-icon">⏳</div>
-          <h2>Hunting for new deals...</h2>
-          <p>Check back soon for the latest massive discounts.</p>
+          <h2>Curating the latest wellness research...</h2>
+          <p>Check back soon for inspiring news and products.</p>
         </div>
       ) : (
         <>
@@ -379,17 +371,17 @@ export default function Storefront() {
                       className="btn-outline" 
                       style={{ padding: '12px 30px', fontSize: '1.1rem', background: loadingMore ? 'rgba(255,255,255,0.05)' : 'transparent', cursor: loadingMore ? 'wait' : 'pointer' }}
                   >
-                      {loadingMore ? 'Loading hidden gems... 💎' : 'Load More Deals 👇'}
+                      {loadingMore ? 'Loading knowledge... 🧠' : 'Load More Spotlights 👇'}
                   </button>
               </div>
           )}
         </>
       )}
 
-      {/* PHASE 16: Amazon Price Disclaimer Footer */}
+      {/* Health Disclaimer Footer */}
       <footer style={{ marginTop: '4rem', padding: '2rem 0', borderTop: '1px solid rgba(255, 255, 255, 0.1)', textAlign: 'center', color: '#888', fontSize: '0.85rem', lineHeight: '1.5' }}>
-        <p>Product prices and availability are accurate as of the date/time indicated and are subject to change. Any price and availability information displayed on the merchant&apos;s site (e.g., Amazon) at the time of purchase will apply to the purchase of this product.</p>
-        <p style={{ marginTop: '10px' }}>&copy; {new Date().getFullYear()} DealHunter Pro. All rights reserved.</p>
+        <p>Disclaimer: The information provided on this site is for educational purposes only and is not intended as medical advice. Always consult a healthcare professional before starting any new diet, supplement, or exercise routine.</p>
+        <p style={{ marginTop: '10px' }}>&copy; {new Date().getFullYear()} Nadania Wellness. All rights reserved.</p>
       </footer>
     </main>
     </>

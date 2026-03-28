@@ -15,8 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "AI Deal Hunter - Dashboard",
-  description: "Admin panel to review AI-generated deals",
+  title: "Nadania Wellness - Health & Nutrition Hub",
+  description: "Curated insights on health, holistic wellness, and premium nutrition.",
 };
 
 export default function RootLayout({ children }) {
