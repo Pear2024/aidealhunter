@@ -19,11 +19,8 @@ export const searchDealsRssTool = tool(
             let imageUrl = $('img').first().attr('src') || null;
             $('a').each((i, el) => {
                 const href = $(el).attr('href');
-                if (href && (href.includes('amazon.com') || href.includes('amzn.to'))) {
-                   // Ensure it's a deep link, not just the homepage
-                   if (href.length > 28 || href.includes('/dp/') || href.includes('/gp/')) {
-                       if (!externalLink) externalLink = href; // Take the FIRST valid link
-                   }
+                if (href && href.startsWith('http') && !href.includes('slickdeals.net')) {
+                   if (!externalLink) externalLink = href; // Take the FIRST external link
                 }
             });
             deals.push({
@@ -39,7 +36,7 @@ export const searchDealsRssTool = tool(
   },
   {
       name: "search_deals_rss",
-      description: "Searches popular active deals via RSS for a keyword (e.g., 'ssd', 'apple'). Returns a JSON string of deals with title, link, and external vendor link.",
+      description: "Searches popular active trends via RSS for a keyword. Returns a JSON string of results with title, link, and external link.",
       schema: z.object({ keyword: z.string().describe("The search keyword") })
   }
 );
@@ -55,7 +52,7 @@ export const scrapeDealUrlTool = tool(
             const href = $(el).attr('href'); 
             if (href && href.includes('u2=')) { 
                 const decoded = decodeURIComponent(href.split('u2=')[1]);
-                if (decoded.includes('amazon.com') || decoded.includes('amzn.to')) {
+                if (decoded.startsWith('http') && !decoded.includes('slickdeals.net')) {
                     rawVendorUrl = decoded;
                 }
             } 
@@ -65,7 +62,7 @@ export const scrapeDealUrlTool = tool(
   },
   {
       name: "scrape_slickdeal_url",
-      description: "Scrapes a specific SlickDeals URL to find the underlying external vendor link (like Amazon) if it wasn't already present.",
+      description: "Scrapes a specific URL to find the underlying external link if it wasn't already present.",
       schema: z.object({ url: z.string().describe("The SlickDeals URL to scrape") })
   }
 );
@@ -93,13 +90,13 @@ export const savePendingDealTool = tool(
   },
   {
       name: "save_pending_deal",
-      description: "Saves a hot deal into the database AS PENDING so it enters the Trending Product Pool. NEVER save duplicate urls. Url must be the Vendor link.",
+      description: "Saves an external link into the database AS PENDING so it enters the pipeline. NEVER save duplicate urls. Url must be the Vendor/Source link.",
       schema: z.object({
           title: z.string().describe("Cleaned Product Title"),
           brand: z.string().describe("The Brand name (if known, else 'Unknown')"),
           original_price: z.number().nullable().describe("The original MSRP price before discount. If unknown, pass null."),
           discount_price: z.number().describe("The current discounted price"),
-          url: z.string().describe("The EXTERNAL vendor URL (e.g., Amazon link), NOT the Slickdeals link"),
+          url: z.string().describe("The EXTERNAL source/vendor URL, NOT the intermediary link"),
           image_url: z.string().optional().describe("The thumbnail image URL for the product, extracted from the RSS feed.")
       })
   }
