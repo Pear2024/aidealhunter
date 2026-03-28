@@ -319,14 +319,14 @@ DO NOT include the exact link placeholder. Keep it extremely casual and slightly
         }
     }
     // ==============================================================
-    // ROUTE 2: THE NEWS ENGINE (Agent 12)
+    // ROUTE 2: THE NEWS ENGINE (Agent 12) - SPARK GLOBAL YOUTUBE
     // ==============================================================
     else if (cycleIndex === 2) {
-        console.log("📰 Executing Route: NEWS ENGINE");
+        console.log("📰 Executing Route: SPARK GLOBAL YOUTUBE ENGINE");
         const parser = new Parser();
         let feed;
-        try { feed = await parser.parseURL('https://news.google.com/rss/search?q=technology+OR+AI+OR+Amazon&hl=en-US&gl=US&ceid=US:en'); }
-        catch(e) { return NextResponse.json({ error: 'News fetch failed' }, { status: 500 }); }
+        try { feed = await parser.parseURL('https://www.youtube.com/feeds/videos.xml?channel_id=UCvX4uMeGrGYbWk1DmRNijsw'); }
+        catch(e) { return NextResponse.json({ error: 'YouTube fetch failed' }, { status: 500 }); }
         
         let topNews = null;
         for (const item of feed.items.slice(0, 5)) {
@@ -342,15 +342,15 @@ DO NOT include the exact link placeholder. Keep it extremely casual and slightly
         }
 
         if (!topNews) {
-            console.log("⚠️ All top news articles from RSS have already been syndicated recently. Skipping cycle to avoid spam.");
-            return NextResponse.json({ success: true, message: "No fresh breaking news available." });
+            console.log("⚠️ All recent YouTube videos have already been syndicated. Skipping cycle to avoid spam.");
+            return NextResponse.json({ success: true, message: "No fresh YouTube videos available." });
         }
 
-        await logAgent('agent_12', 'Agent 12: News Analyst', 'Syndicating Headlines', 'running', `Intercepted Breaking News: ${topNews.title}`);
+        await logAgent('agent_12', 'Agent 12: Media Analyst', 'Syndicating Headlines', 'running', `Intercepted New Video: ${topNews.title}`);
         
-        const copywriterPrompt = `Act as an elite $1000/day social media copywriter and tech journalist. Summarize this news article in 3 short, punchy paragraphs.\nRules: MUST BE IN ENGLISH. Target audience: Residents of Hemet, California and the Inland Empire. Keep it engaging, witty, and easy to understand for everyday people. Use emojis. Add a conversational question at the end to drive comments.\nCRITICAL: If the article is about Artificial Intelligence (OpenAI, ChatGPT, AI models, etc.), you MUST append this exact sentence at the very bottom of your summary: "⚡ P.S. Want to build your own AI apps or make AI music? Grab API access here: https://aimlapi.com/?via=sunoapi "\nTitle: ${topNews.title}\nContent Snippet: ${topNews.contentSnippet}`;
+        const copywriterPrompt = `Act as an elite $1000/day social media copywriter and inspiring community leader. Summarize the core message of this new YouTube video from SparkGlobal in 2-3 short, punchy paragraphs.\nRules: MUST BE IN ENGLISH. Target audience: Residents of Hemet, California and the Inland Empire. Keep it engaging, uplifting, and insightful. Make them want to watch the video! Use emojis. Add a conversational question at the end to drive comments.\nTitle: ${topNews.title}\nVideo Snippet: ${topNews.contentSnippet || topNews.content || ''}`;
         
-        let caption = `📰 Quick Tech Update!\n\n${topNews.title}\n\nWhat do you think about this?`;
+        let caption = `🎥 New Insight from SparkGlobal!\n\n${topNews.title}\n\nWhat are your thoughts? 👇`;
         try {
             const copyResult = await withRetry(() => textModel.generateContent(copywriterPrompt), 1, 1000);
             if (copyResult.response.text().trim()) caption = copyResult.response.text().trim();
@@ -364,28 +364,44 @@ DO NOT include the exact link placeholder. Keep it extremely casual and slightly
         }
     }
     // ==============================================================
-    // ROUTE 4: THE TIPS ENGINE (Agent 11)
+    // ROUTE 4: ADVANCED HEALTH NEWS ENGINE (Agent 11)
     // ==============================================================
     else if (cycleIndex === 4) {
-        console.log("💡 Executing Route: TIPS ENGINE");
-        const tipPrompt = `Act as an elite $1000/day copywriter. Write a brilliant 'Life Hack' or 'Shopping Tip' for everyday home life, saving money online, or using AI tools to work smarter/make art.\nRules: MUST BE IN FULL ENGLISH. Target audience: Locals living in Hemet, California and the Inland Empire. Make it extremely valuable, relatable, and highly shareable. Keep it under 4 paragraphs. Sound friendly and clever. Use emojis.\nCRITICAL: If your tip mentions Artificial Intelligence, ChatGPT, making music, or generating images, you MUST include this exact line at the end of the post: "🤖 Want to build your own AI apps? Get developer API access here: https://aimlapi.com/?via=sunoapi "`;
+        console.log("💡 Executing Route: ADVANCED HEALTH NEWS ENGINE");
+        const parser = new Parser();
+        let feed;
+        try { feed = await parser.parseURL('https://news.google.com/rss/search?q=health+breakthrough+OR+anti-aging+OR+longevity+OR+wellness+science&hl=en-US&gl=US&ceid=US:en'); }
+        catch(e) { return NextResponse.json({ error: 'Health News fetch failed' }, { status: 500 }); }
+
+        let topHealthNews = null;
+        for (const item of feed.items.slice(0, 5)) {
+            const safeTitle = item.title.substring(0, 50); // Check first 50 chars to avoid exact match issues
+            const [duplicateCheck] = await connection.execute(
+                `SELECT id FROM agent_logs WHERE action IN ('Facebook Tip', 'Syndicating Health News') AND details LIKE ? LIMIT 1`,
+                [`%${safeTitle}%`]
+            );
+            if (duplicateCheck.length === 0) {
+                topHealthNews = item;
+                break;
+            }
+        }
+
+        if (!topHealthNews) {
+            console.log("⚠️ All recent health news articles have already been syndicated. Skipping cycle to avoid spam.");
+            return NextResponse.json({ success: true, message: "No fresh health news available." });
+        }
+
+        await logAgent('agent_11', 'Agent 11: Health Analyst', 'Syndicating Health News', 'running', `Intercepted Health Breakthrough: ${topHealthNews.title}`);
         
-        let tipText = `💡 IE Local Tip: Always check for digital coupons before checking out! You can save hundreds every month.`;
+        const healthPrompt = `Act as an elite $1000/day copywriter and cutting-edge wellness expert. Summarize this groundbreaking health/science news article in 3 short, easy-to-understand paragraphs.\nRules: MUST BE IN ENGLISH. Target audience: Everyday people in Hemet, California and the Inland Empire who care about taking control of their health and aging gracefully. Make it sound like an exciting, life-changing discovery. Use emojis. Add a conversational question at the end to drive comments.\nTitle: ${topHealthNews.title}\nContent Snippet: ${topHealthNews.contentSnippet || topHealthNews.content || ''}`;
+        
+        let tipText = `🧬 Cutting-Edge Health Update!\n\n${topHealthNews.title}\n\nWhat are your thoughts on this? 👇`;
         try {
-            const tipResult = await withRetry(() => textModel.generateContent(tipPrompt), 1, 1000);
+            const tipResult = await withRetry(() => textModel.generateContent(healthPrompt), 1, 1000);
             if (tipResult.response.text().trim()) tipText = tipResult.response.text().trim();
         } catch(e) {}
         
-        const aestheticBackgrounds = [
-            'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5', // Desk/Tech
-            'https://images.unsplash.com/photo-1516321497487-e288fb19713f', // Workspace
-            'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d', // Mac/Coffee
-            'https://images.unsplash.com/photo-1434494878577-86c23bcb06b9'  // Minimal Apple
-        ];
-        const randomBg = aestheticBackgrounds[Math.floor(Math.random() * aestheticBackgrounds.length)] + '?auto=format&fit=crop&w=1200&q=80';
-        
-        await logAgent('agent_11', 'Agent 11: Tip Generator', 'Drafting Hack', 'running', `Generated aesthetic lifestyle tip for audience.`);
-        await executeGraphAPI('photos', { url: randomBg, caption: tipText }, 'Facebook Tip', `Successfully deployed lifestyle tip with image.`);
+        await executeGraphAPI('feed', { message: tipText, link: topHealthNews.link }, 'Facebook Tip', `Successfully deployed advanced health news.`);
     }
     // ==============================================================
     // ROUTE 6: THE POLL/MEME ENGINE (Agent 8)
