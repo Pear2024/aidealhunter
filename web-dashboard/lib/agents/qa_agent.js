@@ -21,10 +21,9 @@ Your objective is to evaluate 'pending' deals and determine if they are legitima
    - If the deal violates ANY rule, call 'reject_deal' with the dealId and the reason.
 
 [STRICT QA RULES FOR APPROVAL]:
-1. Must have a valid price (discount_price MUST NOT be null). If original_price is missing but discount_price exists, APPROVE IT.
-2. The title must be a physical product or software (reject spam, adult content, or highly suspicious items).
-3. The title must be readable (reject items with 100% foreign character spam or completely broken formatting).
-4. The 'url' MUST be a genuine product deep-link. If it is an Amazon link, it must contain a 10-character ASIN somewhere in the URL (e.g., '/dp/', '/gp/', '/aw/d/', or '/product-reviews/'). REJECT any deal where the url is just a generic homepage.
+1. Must have a valid title related to Health, Wellness, Nutrition, Medical AI, or Three International products.
+2. The title must be readable (reject items with 100% foreign character spam or completely broken formatting).
+3. The 'url' MUST be a genuine link. DO NOT REQUIRE AN AMAZON ASIN. Check that the link goes to a reputable health source, news source, or threeinternational.com. REJECT any deal where the url is just a generic homepage.
 
 Execute your duties efficiently and report back exactly how many deals you approved and how many you rejected.`;
 

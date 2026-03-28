@@ -32,16 +32,11 @@ export const fetchApprovedDealTool = tool(
             }
         }
         
-        const affiliateTag = process.env.AMAZON_AFFILIATE_TAG || 'smartshop0c33-20';
         let affiliateUrl = targetDeal.url;
         
-        // Only append Amazon Affiliate specifics if it's an actual Amazon marketplace link
-        if (affiliateUrl.includes('amazon.com') || affiliateUrl.includes('amzn.to')) {
-            if (affiliateUrl.includes('?')) {
-                affiliateUrl += `&tag=${affiliateTag}`;
-            } else {
-                affiliateUrl += `?tag=${affiliateTag}`;
-            }
+        // Ensure Nipa3 Tracking for Three International Links
+        if (affiliateUrl.includes('threeinternational.com') && !affiliateUrl.includes('Nipa3')) {
+            affiliateUrl = affiliateUrl.replace(/threeinternational\.com/, 'Nipa3.threeinternational.com');
         }
 
         return JSON.stringify({
@@ -198,7 +193,7 @@ export const publishFacebookPostTool = tool(
                 await fetch(`https://graph.facebook.com/v19.0/${fbResult.id}/comments?access_token=${process.env.FB_PAGE_ACCESS_TOKEN}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: `🔗 Here is the link to grab this deal on Amazon: ${link_url}` })
+                    body: JSON.stringify({ message: `🔗 Discover the details here: ${link_url}` })
                 });
             } catch (commentErr) {
                 console.error("Failed to inject comment for Langchain Tool:", commentErr);
