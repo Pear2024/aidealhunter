@@ -50,28 +50,27 @@ async function main() {
         const result = await textModel.generateContent(`Title: ${selectedTopic}. Write a viral 15-second educational Reels script based on this.`);
         const aiResponse = JSON.parse(result.response.text());
         
-        let cleanScript = aiResponse.script.slice(0, 350);
+        let cleanScript = aiResponse.script.slice(0, 190);
         console.log(`📜 Script: "${cleanScript}"`);
 
-        // OpenAI TTS
-        console.log("🗣️ Synthesizing Medical AI Voice via OpenAI...");
+        // Google Free TTS
+        console.log("🗣️ Synthesizing Medical Voice via Google TTS...");
+        const googleTTS = require('google-tts-api');
         const tempDir = os.tmpdir();
         const audioPath = path.join(tempDir, 'health_reel_audio.mp3');
-        const openAIResponse = await axios.post('https://api.openai.com/v1/audio/speech', {
-            model: "tts-1", voice: "onyx", input: cleanScript
-        }, { headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' }, responseType: 'arraybuffer' });
-        fs.writeFileSync(audioPath, openAIResponse.data);
+        const audioBase64 = await googleTTS.getAudioBase64(cleanScript, { lang: 'en', slow: false, host: 'https://translate.google.com' });
+        fs.writeFileSync(audioPath, Buffer.from(audioBase64, 'base64'));
 
         // Background Image Generation (Using DALL-E 3 as placeholder for Sora/Luma depending on API limit)
-        console.log("🎨 Generating Cinematic AI Biology Background...");
+        console.log("🎨 Generating Cinematic AI Biology Background via AIMLAPI...");
         const imgPath = path.join(tempDir, 'health_bg.png');
         try {
-            const bgRes = await axios.post('https://api.openai.com/v1/images/generations', {
+            const bgRes = await axios.post('https://api.aimlapi.com/v1/images/generations', {
                 model: "dall-e-3",
                 prompt: `Beautiful, glowing, cinematic macrophotography of a single glowing biological liposome cell in a bloodstream, soft teal and emerald lighting, highly detailed, 4k, hyperrealistic, medical technology concept. Vertical 9:16 aspect ratio.`,
                 n: 1,
                 size: "1024x1792"
-            }, { headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` } });
+            }, { headers: { 'Authorization': `Bearer ${process.env.AIMLAPI_KEY}`, 'Content-Type': 'application/json' } });
             
             const imgData = await axios.get(bgRes.data.data[0].url, { responseType: 'arraybuffer' });
             fs.writeFileSync(imgPath, imgData.data);
@@ -92,19 +91,16 @@ async function main() {
             const end = (i + 1) * chunkTime;
             const cleanText = text.replace(/[^a-zA-Z0-9 \$\!\?\%\.\,]/g, "").replace(/:/g, '\\\\:').trim();
             // Cinematic white text on teal/emerald background
-            return `drawtext=fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:text='${cleanText}':fontcolor=white:fontsize=75:borderw=4:bordercolor=black:shadowcolor=black:shadowx=3:shadowy=3:x='(w-tw)/2':y='(h/2)+400':enable='between(t,${start},${end})'`;
+            return `drawtext=fontfile=/Library/Fonts/Arial.ttf:text='${cleanText}':fontcolor=white:fontsize=75:borderw=4:bordercolor=black:shadowcolor=black:shadowx=3:shadowy=3:x='(w-tw)/2':y='(h/2)+400':enable='between(t,${start},${end})'`;
         }).join(',');
 
         ffmpeg()
             .input(imgPath)
             .loop(audioDurationEstimate + 2)
             .input(audioPath)
-            .complexFilter([
-                '[0:v]scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920[bg]',
-                `[bg]${drawtextFilters}[final]`
-            ])
             .outputOptions([
-                '-map [final]', '-map 1:a',
+                '-map 0:v', '-map 1:a',
+                '-vf scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920',
                 '-c:v libx264', '-preset fast', '-pix_fmt yuv420p',
                 '-c:a aac', '-b:a 192k',
                 '-shortest'
