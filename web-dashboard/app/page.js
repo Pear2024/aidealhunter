@@ -119,8 +119,57 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Cellular Nutrition Section */}
+      <section className="py-24 bg-white" id="nutrition">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col lg:flex-row items-center gap-16">
+            <div className="lg:w-1/2">
+              <div className="relative rounded-3xl overflow-hidden shadow-2xl">
+                <img 
+                  src="https://images.unsplash.com/photo-1615486511484-92e172fccaee?q=80&w=2000&auto=format&fit=crop" 
+                  alt="Cellular Nutrition" 
+                  className="w-full h-[500px] object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-tr from-emerald-900/40 to-transparent"></div>
+              </div>
+            </div>
+            
+            <div className="lg:w-1/2">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-blue-700 font-semibold text-sm mb-6">
+                <Zap size={16} /> Maximum Bioavailability
+              </div>
+              <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 leading-tight">
+                Nutrition that actually <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">enters your cells.</span>
+              </h2>
+              <p className="text-lg text-slate-600 mb-8 leading-relaxed">
+                Traditional supplements are destroyed by stomach acid, with less than 20% absorption. We utilize PDR-certified <strong>Liposomal Technology</strong>—wrapping vital nutrients in microscopic protective bubbles that bypass digestion and absorb directly into your cellular walls.
+              </p>
+              
+              <ul className="space-y-4 mb-10">
+                 <li className="flex items-start gap-3">
+                   <div className="mt-1 w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0"><CheckCircle2 size={14} /></div>
+                   <span className="text-slate-700"><strong>90%+ Absorption Rate</strong> compared to standard pills</span>
+                 </li>
+                 <li className="flex items-start gap-3">
+                   <div className="mt-1 w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0"><CheckCircle2 size={14} /></div>
+                   <span className="text-slate-700"><strong>Physician's Desk Reference (PDR)</strong> certified efficacy</span>
+                 </li>
+                 <li className="flex items-start gap-3">
+                   <div className="mt-1 w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0"><CheckCircle2 size={14} /></div>
+                   <span className="text-slate-700"><strong>Holistic purity</strong> backed by clinical science</span>
+                 </li>
+              </ul>
+              
+              <Link href="/wellness" className="inline-flex items-center gap-2 px-8 py-4 bg-slate-900 text-white rounded-full font-bold hover:bg-emerald-600 transition-colors shadow-lg">
+                Find Your Protocol <ArrowRight size={20} />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
-      <section className="py-24 relative overflow-hidden bg-slate-900">
+      <section className="py-24 relative overflow-hidden bg-slate-900" id="ai">
         <div className="absolute inset-0 opacity-10">
            <img src="https://images.unsplash.com/photo-1530213786676-41ce9f481c5d?q=80&w=2070&auto=format&fit=crop" className="w-full h-full object-cover" alt="Cells" />
         </div>
