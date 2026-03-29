@@ -1,16 +1,28 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Activity, Beaker, Leaf, CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
+import { useUser, SignInButton } from "@clerk/nextjs";
 
 export default function WellnessAI() {
+  const { isSignedIn, isLoaded } = useUser();
   const [step, setStep] = useState(1);
   const [symptoms, setSymptoms] = useState('');
   const [duration, setDuration] = useState('');
   const [lifestyle, setLifestyle] = useState('');
   const [loading, setLoading] = useState(false);
   const [diagnosis, setDiagnosis] = useState(null);
+  const [usageCount, setUsageCount] = useState(0);
+
+  useEffect(() => {
+    const usage = parseInt(localStorage.getItem('ai_wellness_usage') || '0', 10);
+    setUsageCount(usage);
+  }, []);
 
   const handleDiagnose = async () => {
+    if (usageCount >= 1 && !isSignedIn) {
+       return; // Shouldn't reach here if button is hidden, but just in case
+    }
+    
     setLoading(true);
     try {
       const res = await fetch('/api/wellness', {
@@ -22,6 +34,9 @@ export default function WellnessAI() {
       if (data.success) {
         setDiagnosis(data.diagnosis);
         setStep(3);
+        const newUsage = usageCount + 1;
+        setUsageCount(newUsage);
+        localStorage.setItem('ai_wellness_usage', newUsage.toString());
       }
     } catch (e) {
       console.error(e);
@@ -98,16 +113,24 @@ export default function WellnessAI() {
               </div>
 
               <div className="pt-6">
-                <button 
-                  onClick={() => {
-                    if (symptoms && duration && lifestyle) {
-                        setStep(2); handleDiagnose();
-                    } else alert("Please fill incomplete medical fields.")
-                  }}
-                  className="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-transform transform active:scale-[0.98] shadow-lg shadow-slate-900/20"
-                >
-                  <Beaker size={20} /> Run Clinical Analysis <ArrowRight size={20} />
-                </button>
+                 {isLoaded && usageCount >= 1 && !isSignedIn ? (
+                    <SignInButton mode="modal" forceRedirectUrl="/wellness">
+                      <button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-transform transform active:scale-[0.98] shadow-lg shadow-emerald-500/30 animate-pulse">
+                        ⭐ Create Free Account to Run Another Analysis ⭐
+                      </button>
+                    </SignInButton>
+                 ) : (
+                    <button 
+                      onClick={() => {
+                        if (symptoms && duration && lifestyle) {
+                            setStep(2); handleDiagnose();
+                        } else alert("Please fill incomplete medical fields.")
+                      }}
+                      className="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-4 px-6 rounded-xl flex items-center justify-center gap-2 transition-transform transform active:scale-[0.98] shadow-lg shadow-slate-900/20"
+                    >
+                      <Beaker size={20} /> Run Clinical Analysis <ArrowRight size={20} />
+                    </button>
+                 )}
               </div>
             </div>
           </div>
