@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const puppeteer = require('puppeteer');
-const pdfParse = require('pdf-parse-fork');
+const pdfParse = require('pdf-parse');
 const pdfImgConvert = require('pdf-img-convert');
 const axios = require('axios');
 require('dotenv').config({ path: path.join(__dirname, '.env.local') });
