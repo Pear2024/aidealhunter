@@ -1,27 +1,33 @@
-const mysql = require('mysql2/promise');
+const { getConnection } = require('./lib/db');
 require('dotenv').config({ path: '.env.local' });
 
-async function clearDB() {
-  const connection = await mysql.createConnection({
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    database: process.env.MYSQL_DATABASE,
-    port: process.env.MYSQL_PORT || 25060,
-  });
-
-  try {
-    console.log("Wiping database...");
-    await connection.execute(`DELETE FROM votes`);
-    await connection.execute(`DELETE FROM normalized_deals`);
-    await connection.execute(`DELETE FROM raw_deals`);
-    await connection.execute(`DELETE FROM agent_logs`);
-    console.log("✅ Database cleared successfully!");
-  } catch (err) {
-    console.error("❌ Error:", err.message);
-  } finally {
-    await connection.end();
-  }
+async function clearDb() {
+    try {
+        const connection = await getConnection();
+        
+        console.log("Disabling FK checks...");
+        await connection.query('SET FOREIGN_KEY_CHECKS = 0;');
+        
+        console.log("Emptying 'deals' table...");
+        await connection.query('DELETE FROM deals').catch(e => console.log(e.message));
+        
+        console.log("Emptying 'votes' table...");
+        await connection.query('DELETE FROM votes').catch(e => console.log(e.message));
+        
+        console.log("Emptying 'normalized_deals' table...");
+        await connection.query('DELETE FROM normalized_deals').catch(e => console.log(e.message));
+        
+        console.log("Emptying 'agent_logs' table...");
+        await connection.query('DELETE FROM agent_logs').catch(e => console.log(e.message));
+        
+        console.log("Re-enabling FK checks...");
+        await connection.query('SET FOREIGN_KEY_CHECKS = 1;');
+        
+        console.log("✅ Database wiped successfully for new Health content!");
+        connection.end();
+        process.exit(0);
+    } catch(e) {
+        console.error("Error wiping db:", e);
+    }
 }
-
-clearDB();
+clearDb();

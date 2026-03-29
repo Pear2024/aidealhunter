@@ -37,11 +37,14 @@ async function scrapePDFLinks() {
     
     log("Submitting Login...");
     await page.keyboard.press('Enter');
-    await page.waitForNavigation({ waitUntil: 'networkidle2' });
+    await new Promise(r => setTimeout(r, 8000)); // Wait 8s for AJAX login to complete or redirect
     
     log("Navigating to Resources...");
     await page.goto("https://office.threeinternational.com/resources/resourcelist", { waitUntil: 'networkidle2', timeout: 30000 }).catch(e=>log("Nav timeout but continuing..."));
     
+    log("Waiting for React components to load PDFs into DOM...");
+    await new Promise(r => setTimeout(r, 15000)); // Give it 15 solid seconds to load all library assets
+
     // Scrape all PDF anchors
     const pdfUrls = await page.evaluate(() => {
         const links = Array.from(document.querySelectorAll('a'));
@@ -78,7 +81,7 @@ async function summarizeWithAIML(text, filename) {
     TASK: Read this document and write an engaging, easy-to-understand Facebook post in **NATIVE US ENGLISH**. 
     Highlight the incredible wellness benefits, key science, or product info. Use emojis.
     Make it sound extremely premium, health-focused, and inviting for American consumers.
-    End with a call to action to message the page for more info, or link to https://Nipa3.threeinternational.com`;
+    End with a clear, soft-sell Call-To-Action inviting them to try the Free AI Health Diagnosis App to see what their body needs: "🩺 Curious about your own cellular health? Try our Free AI Medical Assessment today: https://nadaniadigitalllc.com/wellness". DO NOT include any sales or affiliate links.`;
 
     const res = await axios.post('https://api.aimlapi.com/v1/chat/completions', {
         model: "gpt-4o",
@@ -90,9 +93,8 @@ async function summarizeWithAIML(text, filename) {
 
 async function postToFacebook(imageUrl, caption) {
     log("Publishing to Facebook Page as a Photo Post...");
-    const fullMessage = `${caption}\n\n👇 ศึกษารายละเอียดเพิ่มเติมได้ที่นี่!`;
     const fbPayload = {
-        message: fullMessage,
+        message: caption,
         url: imageUrl, 
         access_token: FB_ACCESS_TOKEN
     };

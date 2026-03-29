@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { verifyAmazonIntegrity } from '@/lib/verifier';
+import { verifyLinkIntegrity } from '@/lib/verifier';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request) {
     try {
         const { url, expectedPrice } = await request.json();
-        const verification = await verifyAmazonIntegrity(url, expectedPrice);
+        const verification = await verifyLinkIntegrity(url, expectedPrice);
         
         if (!verification.success) {
             return NextResponse.json({ error: verification.reason || 'Verification failed' }, { status: 400 });

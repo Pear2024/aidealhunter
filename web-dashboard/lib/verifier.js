@@ -1,6 +1,6 @@
 import * as cheerio from 'cheerio';
 
-export async function verifyAmazonIntegrity(url, expectedPrice) {
+export async function verifyLinkIntegrity(url, expectedPrice) {
     try {
         if (!url) {
             return { success: false, reason: 'Invalid URL' };

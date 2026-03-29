@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getConnection } from '@/lib/db';
-import { verifyAmazonIntegrity } from '@/lib/verifier';
+import { verifyLinkIntegrity } from '@/lib/verifier';
 import { logAgent } from '@/lib/agent_logger';
 
 export const dynamic = 'force-dynamic';
@@ -58,7 +58,7 @@ export async function GET(request) {
         for (const deal of deals) {
             checkedCount++;
             try {
-                 const verify = await verifyAmazonIntegrity(deal.url, deal.discount_price);
+                 const verify = await verifyLinkIntegrity(deal.url, deal.discount_price);
                  
                  // If the scrape succeeded but the price clearly mismatches or product is dead
                  if (verify.success && verify.livePrice !== 'Unknown' && !verify.priceMatch) {

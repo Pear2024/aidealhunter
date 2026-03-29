@@ -5,7 +5,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as cheerio from 'cheerio';
 import { logAgent } from '@/lib/agent_logger';
 import { sendTelegramAlert } from '@/lib/telegram';
-import { verifyAmazonIntegrity } from '@/lib/verifier';
+import { verifyLinkIntegrity } from '@/lib/verifier';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; 
@@ -135,7 +135,7 @@ export async function GET(request) {
         for (const deal of deals) {
              console.log(`🔍 Verifying Integrity for: ${deal.title}`);
              const isAmazon = deal.url.includes('amazon.com') || deal.url.includes('amzn.to');
-             const verify = isAmazon ? await verifyAmazonIntegrity(deal.url, deal.discount_price) : { success: true, priceMatch: true };
+             const verify = await verifyLinkIntegrity(deal.url, deal.discount_price);
              
              if (verify.success && verify.priceMatch) {
                  // 🎯 OPTIMISTIC LOCK: Reserve this deal immediately before AI processing!
@@ -396,7 +396,7 @@ DO NOT include the exact link placeholder. Keep it extremely casual and slightly
 
         await logAgent('agent_11', 'Agent 11: Medical Analyst', 'Syndicating Medical AI News', 'running', `Intercepted Health Breakthrough: ${topHealthNews.title}`);
         
-        const healthPrompt = `Act as an elite $1000/day copywriter and cutting-edge wellness expert. Summarize this groundbreaking medical AI news article in 3 short, easy-to-understand paragraphs.\nRules: MUST BE IN ENGLISH. Target audience: Everyday people in the US (especially Hemet, CA) who care about taking control of their health through technology. Make it sound like an exciting, life-changing discovery. Use emojis. Add a conversational question at the end to drive comments.\nCRITICAL: You MUST include the source link at the bottom of the post: "Read full source: ${topHealthNews.link}"\nTitle: ${topHealthNews.title}\nContent Snippet: ${topHealthNews.contentSnippet || topHealthNews.content || ''}`;
+        const healthPrompt = `Act as an elite $1000/day copywriter and cutting-edge wellness expert. Summarize this groundbreaking medical AI news article in 3 short, easy-to-understand paragraphs.\nRules: MUST BE IN FULL US ENGLISH. Target audience: Everyday people in America who care about taking control of their health through technology. Make it sound like an exciting, life-changing discovery. Use emojis. End with a clear Call-To-Action soft-pitching the Free AI Health Assessment: "🩺 Want a personalized medical breakdown? Take our Free AI Health Assessment today: https://nadaniadigitalllc.com/wellness"\nCRITICAL: You MUST include the source link at the bottom of the post: "Read full source: ${topHealthNews.link}"\nTitle: ${topHealthNews.title}\nContent Snippet: ${topHealthNews.contentSnippet || topHealthNews.content || ''}`;
         
         let tipText = `🧬 Cutting-Edge Medical AI Update!\n\n${topHealthNews.title}\n\nWhat are your thoughts on this? 👇\nSource: ${topHealthNews.link}`;
         try {
@@ -404,22 +404,22 @@ DO NOT include the exact link placeholder. Keep it extremely casual and slightly
             if (tipResult.response.text().trim()) tipText = tipResult.response.text().trim();
         } catch(e) {}
         
-        // --- DALL-E 3 Image Synthesis for Health Post ---
+        // --- DALL-E 3 Image Synthesis for Health Post (via AIMLAPI) ---
         let imageUrl = null;
         try {
             const dallePromptResult = await textModel.generateContent(`Create a clean, hyper-realistic, highly aesthetic DALL-E 3 image prompt that represents this medical AI technology breakthrough without using text. Concept: ${topHealthNews.title}`);
             const dallePrompt = dallePromptResult.response.text().substring(0, 900);
             
-            const dalleRes = await fetch("https://api.openai.com/v1/images/generations", {
+            const dalleRes = await fetch("https://api.aimlapi.com/v1/images/generations", {
                 method: "POST",
-                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.OPENAI_API_KEY}` },
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${process.env.AIMLAPI_KEY}` },
                 body: JSON.stringify({ model: "dall-e-3", prompt: dallePrompt, n: 1, size: "1024x1024" })
             });
             const dalleData = await dalleRes.json();
             if (dalleData.data && dalleData.data[0]) {
                 imageUrl = dalleData.data[0].url;
             }
-        } catch(imgErr) { console.error("DALL-E 3 Medical Vision failed: ", imgErr); }
+        } catch(imgErr) { console.error("AIMLAPI DALL-E 3 Medical Vision failed: ", imgErr); }
 
         if (imageUrl) {
             await executeGraphAPI('photos', { url: imageUrl, caption: tipText }, 'Facebook Tip', `Successfully deployed Medical AI news with DALL-E 3 image.`);

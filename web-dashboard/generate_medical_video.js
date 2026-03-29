@@ -35,21 +35,22 @@ async function requestText(prompt) {
 }
 
 async function generateTTS(script) {
-    console.log("🎙️ Generating Voiceover via AIMLAPI...");
+    console.log("🎙️ Generating Voiceover via ElevenLabs (Sarah Model)...");
     try {
-        const res = await axios.post('https://api.aimlapi.com/v1/audio/speech', {
-            model: "tts-1",
-            input: script,
-            voice: "alloy"
-        }, { 
-            headers: { 'Authorization': `Bearer ${AIMLAPI_KEY}` },
+        const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY; // Using active key
+        const VOICE_ID = "EXAVITQu4vr4xnSDxMaL"; // Sarah (Professional American)
+        const res = await axios.post(`https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`, {
+            text: script,
+            model_id: "eleven_multilingual_v2"
+        }, {
+            headers: { 'xi-api-key': ELEVENLABS_API_KEY, 'Content-Type': 'application/json' },
             responseType: 'arraybuffer'
         });
         const outPath = path.join(__dirname, 'temp_voice.mp3');
         fs.writeFileSync(outPath, res.data);
         return outPath;
     } catch(e) {
-        throw new Error("TTS Failed: " + (e.response?.data?.error?.message || e.message));
+        throw new Error("TTS Failed: " + (e.response?.data?.detail?.status || e.message));
     }
 }
 

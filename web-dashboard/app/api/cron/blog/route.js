@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getConnection } from '@/lib/db';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import { sendTelegramAlert } from '@/lib/telegram';
-import { verifyAmazonIntegrity } from '@/lib/verifier';
+import { verifyLinkIntegrity } from '@/lib/verifier';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; 
@@ -35,7 +35,7 @@ export async function GET(request) {
         // Automated Pre-flight Validation
         let deal = null;
         for (const candidate of deals) {
-             const verify = await verifyAmazonIntegrity(candidate.url, candidate.discount_price);
+             const verify = await verifyLinkIntegrity(candidate.url, candidate.discount_price);
              if (verify.success && verify.priceMatch) {
                  // 🎯 OPTIMISTIC LOCK: Reserve this deal immediately!
                  const [updateRes] = await connection.execute(
