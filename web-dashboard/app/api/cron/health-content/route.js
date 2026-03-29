@@ -58,7 +58,19 @@ export async function GET(request) {
 
         // Generate Post with Gemini Flash
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        
+        const schema = {
+             type: "object",
+             properties: {
+                 post_text: { type: "string" },
+                 image_prompt: { type: "string" }
+             },
+             required: ["post_text", "image_prompt"]
+        };
+        const model = genAI.getGenerativeModel({ 
+             model: "gemini-2.5-flash",
+             generationConfig: { responseMimeType: "application/json", responseSchema: schema }
+        });
         
         const systemPrompt = `You are a world-class Medical & Tech journalist writing an engaging, highly-educational social media post for an American audience.
         
@@ -67,18 +79,34 @@ export async function GET(request) {
 
         [CRITICAL GUIDELINES]:
         1. Summarize the core breakthrough in a simple, easy-to-understand way.
-        2. TONE: Pure value and educational. Do not sound like a salesman. Show that AI and clinical science are advancing rapidly!
-        3. Break up the text with emojis and short paragraphs.
-        4. Do NOT mention any products or brands directly.
-        5. At the very end of the post, you MUST include this exact CTA Trap verbatim:
+        2. TONE: Pure value and educational. Break up text with emojis.
+        3. Do NOT mention products or brands directly.
+        4. End the post with this exact CTA Trap verbatim:
            "🩺 Want to know how your body's cells are functioning? Try our clinical-grade Medical AI assessment for free today at: https://nadaniadigitalllc.com/wellness"
-        `;
+           
+        [IMAGE PROMPT INSTRUCTION]:
+        You must also provide an 'image_prompt' for an AI image generator.
+        Make it HYPER-REALISTIC photography. EXTREMELY DIVERSE.
+        DO NOT use sci-fi, glowing holograms, or repetitive teal/cyan rooms. 
+        Vary the style: use real doctors in warm sunny clinics, close-up macro nature/biology, realistic healthy people living vibrant lives, etc. Make it cinematic and photorealistic.`;
 
         const result = await model.generateContent(systemPrompt);
-        let content = result.response.text().trim();
+        const aiData = JSON.parse(result.response.text());
+        
+        let content = aiData.post_text.trim();
         content += `\n\nFull details: ${unreadItem.link}\n#HealthTech #MedicalAI #CellularNutrition #NadaniaWellness`;
 
-        // Generate DALL-E Image using AIMLAPI
+        // Randomly pick a top-tier Image AI model from AIMLAPI!
+        const aiModels = [
+            "dall-e-3",
+            "flux/schnell",
+            "stabilityai/stable-diffusion-3-medium",
+            "runwayml/stable-diffusion-v1-5"
+        ];
+        const selectedModel = aiModels[Math.floor(Math.random() * aiModels.length)];
+        console.log("Generating with AI Model:", selectedModel);
+
+        // Generate DALL-E/Flux Image using AIMLAPI
         let imageUrl = "https://images.unsplash.com/photo-1579685412975-f86a643194bc?q=80&w=1080&auto=format&fit=crop"; // Fallback
         try {
             const aiImgRes = await fetch("https://api.aimlapi.com/v1/images/generations", {
@@ -88,8 +116,8 @@ export async function GET(request) {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    model: "dall-e-3",
-                    prompt: `Cinematic, hyper-realistic, high-tech medical photography inspired by this topic: '${unreadItem.title}'. Soft turquoise and emerald lighting, futuristic clinical feel, very pristine and professional.`,
+                    model: selectedModel,
+                    prompt: aiData.image_prompt,
                     n: 1,
                     size: "1024x1024"
                 })
@@ -97,9 +125,11 @@ export async function GET(request) {
             const imgData = await aiImgRes.json();
             if (imgData && imgData.data && imgData.data[0].url) {
                 imageUrl = imgData.data[0].url;
+            } else {
+                console.error("Image generation payload error:", imgData);
             }
         } catch (imgErr) {
-            console.error("DALL-E Generation Warning:", imgErr.message);
+            console.error("AI Image Generation Warning:", imgErr.message);
         }
 
         // 1. Post Photo to Facebook Page

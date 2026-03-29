@@ -37,14 +37,15 @@ async function main() {
         const schema = {
             type: SchemaType.OBJECT,
             properties: {
-                script: { type: SchemaType.STRING, description: "The spoken voiceover script. Must sound like a professional, intelligent doctor sharing a 'mind-blowing' cell science fact or AI health tech news. Keep it very punchy and fascinating. Max 20 seconds. Do not sound salesy." },
+                script: { type: SchemaType.STRING, description: "The spoken voiceover script. Must sound like a professional, intelligent doctor sharing a 'mind-blowing' cell science fact or AI health tech news. Max 20 seconds." },
                 subtitles: { 
                     type: SchemaType.ARRAY, 
                     items: { type: SchemaType.STRING },
                     description: "Script broken down into 4-6 short punchy chunks with emojis matching the audio exactly." 
-                }
+                },
+                image_prompt: { type: SchemaType.STRING, description: "A highly diverse, hyper-realistic DALL-E 3 image prompt matching the topic. EXTREMELY DIVERSE. Do NOT use sci-fi, glowing holograms, or teal/cyan medical rooms. Use varied aesthetics: sunny bright clinics, diverse human patients, beautiful nature scenes, highly realistic macro biology." }
             },
-            required: ["script", "subtitles"]
+            required: ["script", "subtitles", "image_prompt"]
         };
         const textModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash", generationConfig: { responseMimeType: "application/json", responseSchema: schema } });
         const result = await textModel.generateContent(`Title: ${selectedTopic}. Write a viral 15-second educational Reels script based on this.`);
@@ -61,13 +62,22 @@ async function main() {
         const audioBase64 = await googleTTS.getAudioBase64(cleanScript, { lang: 'en', slow: false, host: 'https://translate.google.com' });
         fs.writeFileSync(audioPath, Buffer.from(audioBase64, 'base64'));
 
-        // Background Image Generation (Using DALL-E 3 as placeholder for Sora/Luma depending on API limit)
-        console.log("🎨 Generating Cinematic AI Biology Background via AIMLAPI...");
+        // Background Image Generation 
+        console.log("🎨 Generating Cinematic AI Background via AIMLAPI...");
+        const imgModels = [
+            "dall-e-3",
+            "flux/schnell",
+            "stabilityai/stable-diffusion-3-medium",
+            "runwayml/stable-diffusion-v1-5"
+        ];
+        const selectedImageModel = imgModels[Math.floor(Math.random() * imgModels.length)];
+        console.log("Using Image Engine:", selectedImageModel);
+
         const imgPath = path.join(tempDir, 'health_bg.png');
         try {
             const bgRes = await axios.post('https://api.aimlapi.com/v1/images/generations', {
-                model: "dall-e-3",
-                prompt: `Beautiful, glowing, cinematic macrophotography of a single glowing biological liposome cell in a bloodstream, soft teal and emerald lighting, highly detailed, 4k, hyperrealistic, medical technology concept. Vertical 9:16 aspect ratio.`,
+                model: selectedImageModel,
+                prompt: aiResponse.image_prompt,
                 n: 1,
                 size: "1024x1792"
             }, { headers: { 'Authorization': `Bearer ${process.env.AIMLAPI_KEY}`, 'Content-Type': 'application/json' } });
@@ -81,7 +91,7 @@ async function main() {
         }
 
         // FFMPEG Assembly
-        console.log("⚙️ Assembling Reel via FFmpeg...");
+        console.log("⚙️ Assembling Reel via FFmpeg (Applying Ken Burns Zoom & Subtitles)...");
         const outPath = path.join(tempDir, 'auto_health_reel.mp4');
         const audioDurationEstimate = Math.max(8, cleanScript.split(' ').length * 0.4); 
         const chunkTime = audioDurationEstimate / Math.max(1, aiResponse.subtitles.length);
@@ -90,9 +100,11 @@ async function main() {
             const start = i * chunkTime;
             const end = (i + 1) * chunkTime;
             const cleanText = text.replace(/[^a-zA-Z0-9 \$\!\?\%\.\,]/g, "").replace(/:/g, '\\\\:').trim();
-            // Cinematic white text on teal/emerald background
             return `drawtext=fontfile=/Library/Fonts/Arial.ttf:text='${cleanText}':fontcolor=white:fontsize=75:borderw=4:bordercolor=black:shadowcolor=black:shadowx=3:shadowy=3:x='(w-tw)/2':y='(h/2)+400':enable='between(t,${start},${end})'`;
         }).join(',');
+
+        const totalFrames = Math.ceil((audioDurationEstimate + 2) * 25);
+        const videoFilter = `scale=1080:-1,zoompan=z='min(zoom+0.0015,1.5)':d=${totalFrames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)',scale=1080:1920,crop=1080:1920${drawtextFilters ? ',' + drawtextFilters : ''}`;
 
         ffmpeg()
             .input(imgPath)
@@ -100,7 +112,7 @@ async function main() {
             .input(audioPath)
             .outputOptions([
                 '-map 0:v', '-map 1:a',
-                '-vf scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920',
+                `-vf`, videoFilter,
                 '-c:v libx264', '-preset fast', '-pix_fmt yuv420p',
                 '-c:a aac', '-b:a 192k',
                 '-shortest'
