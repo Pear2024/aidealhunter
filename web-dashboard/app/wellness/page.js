@@ -104,10 +104,14 @@ export default function WellnessAI() {
                     onChange={e => setLifestyle(e.target.value)}
                   >
                     <option value="">Select factor...</option>
-                    <option value="High Stress Work">High Stress Work</option>
+                    <option value="High Stress Work">High Stress Work / Burnout</option>
+                    <option value="Sedentary / Office Worker">Sedentary / Office Worker</option>
                     <option value="Poor Sleep Quality">Poor Sleep Quality</option>
-                    <option value="Irregular Diet / Processed Foods">Poor Diet</option>
-                    <option value="Highly Active / Athlete">Athlete Recovery</option>
+                    <option value="Irregular Diet / Processed Foods">Poor Diet / Cravings</option>
+                    <option value="Exposure to Toxins / Pollution">Environmental Toxins / Pollution</option>
+                    <option value="Frequent Traveler">Frequent Traveler (Immune Stress)</option>
+                    <option value="Looking for Anti-Aging & Skin Health">Anti-Aging & Skin Care focus</option>
+                    <option value="Highly Active / Athlete">Highly Active / Athlete Recovery</option>
                   </select>
                 </div>
               </div>
