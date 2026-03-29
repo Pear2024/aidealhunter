@@ -1,0 +1,18 @@
+name: 🩺 Medical AI Health Content Cron
+
+on:
+  schedule:
+    # Runs every 2 hours (offset slightly by 15 mins to avoid clashing with other tasks)
+    - cron: '15 */2 * * *'
+  # Allows manual triggering
+  workflow_dispatch:
+
+jobs:
+  dispatch-health-content:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 🚀 Invoking Medical AI Content Generator
+        run: |
+          echo "Triggering DALL-E 3 image generation and Facebook photo post..."
+          curl -f -v -m 120 "https://aidealhunter.vercel.app/api/cron/health-content?key=super_secret_ai_cron_password_123"
+          echo -e "\n\n✅ Mission complete. The Health Tech news is live on Facebook and the native website."
