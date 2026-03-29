@@ -24,8 +24,9 @@ export async function POST(request) {
              * Purífi (Full Body Detox & Cleanse)
              * Collagène (Marine Collagen for Skin, Hair, Nails)
              * Sleep (Natural Sleep & Brain Recovery)
-        5. Structure the output clearly using HTML formatting for easy rendering. Use <h2>, <h3>, <strong>, <ul>, and <p> tags.
-        6. End with a button link in HTML: <a href="https://Nipa3.threeinternational.com" target="_blank" style="display:inline-block; padding:12px 24px; background-color:#10b981; color:white; border-radius:8px; text-decoration:none; font-weight:bold; margin-top:20px;">Explore the Holistic Alternative</a>`;
+        5. Free Volunteer Nurse Support: Emphasize that they do not have to go through this health journey alone. Offer a free consultation by instructing them to "Call or Text our Free Volunteer Nurse at 951-249-1521 for personalized support and medical guidance." Format this prominently using an HTML call-out box or bold text (e.g. <div style="background:#f0fdf4; border-left:4px solid #10b981; padding:12px; margin: 15px 0;"><strong>📞 Free Volunteer Nurse Consultation:</strong> 951-249-1521</div>).
+        6. Structure the output clearly using HTML formatting for easy rendering. Use <h2>, <h3>, <strong>, <ul>, and <p> tags.
+        7. End with a button link in HTML: <a href="https://Nipa3.threeinternational.com" target="_blank" style="display:inline-block; padding:12px 24px; background-color:#10b981; color:white; border-radius:8px; text-decoration:none; font-weight:bold; margin-top:20px;">Explore the Holistic Alternative</a>`;
 
         // Using Gemini Flash as default since it's fast and available in the ecosystem
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
