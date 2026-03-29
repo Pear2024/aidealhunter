@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const puppeteer = require('puppeteer');
-const pdfParse = require('pdf-parse');
+const pdfParse = require('pdf-parse-fork');
 const pdfImgConvert = require('pdf-img-convert');
 const axios = require('axios');
 require('dotenv').config({ path: path.join(__dirname, '.env.local') });
@@ -15,48 +15,9 @@ const IMGBB_API_KEY = process.env.IMGBB_API_KEY;
 function log(msg) { console.log(`[ThreePDF] ${msg}`); }
 
 async function scrapePDFLinks() {
-    log("Launch Puppeteer Browser...");
-    const browser = await puppeteer.launch({ headless: "new", args: ['--no-sandbox'] });
-    const page = await browser.newPage();
-    
-    // Login
-    log("Navigating to Three International login...");
-    await page.goto("https://office.threeinternational.com/", { waitUntil: 'networkidle2' });
-    
-    // The inputs are generally standard on WP or custom CMS
-    log("Typing Credentials... (Nipa3)");
-    await page.waitForSelector('input[type="text"]', { timeout: 10000 });
-    const textInputs = await page.$$('input[type="text"]');
-    for (let input of textInputs) {
-        // try to find generic username field
-        await input.type('Nipa3'); 
-    }
-    
-    await page.waitForSelector('input[type="password"]');
-    await page.type('input[type="password"]', 'Glory@2025');
-    
-    log("Submitting Login...");
-    await page.keyboard.press('Enter');
-    await new Promise(r => setTimeout(r, 8000)); // Wait 8s for AJAX login to complete or redirect
-    
-    log("Navigating to Resources...");
-    await page.goto("https://office.threeinternational.com/resources/resourcelist", { waitUntil: 'networkidle2', timeout: 30000 }).catch(e=>log("Nav timeout but continuing..."));
-    
-    log("Waiting for React components to load PDFs into DOM...");
-    await new Promise(r => setTimeout(r, 15000)); // Give it 15 solid seconds to load all library assets
-
-    // Scrape all PDF anchors
-    const pdfUrls = await page.evaluate(() => {
-        const links = Array.from(document.querySelectorAll('a'));
-        return links.map(a => a.href).filter(href => href && (href.toLowerCase().endsWith('.pdf') || href.includes('threemedia.earth')));
-    });
-    
-    await browser.close();
-    
-    // Filter duplicates and only real PDFs
-    const uniquePdfs = [...new Set(pdfUrls)].filter(url => url.endsWith('.pdf'));
-    log(`Found ${uniquePdfs.length} total PDFs in the vault.`);
-    return uniquePdfs;
+    log("Injecting a standard PDF strictly to verify the AI logic and Facebook Pipeline works...");
+    const publicPdfurl = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
+    return [publicPdfurl];
 }
 
 async function uploadToImgBB(buffer) {
