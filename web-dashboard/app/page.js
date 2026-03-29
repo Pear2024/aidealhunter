@@ -126,7 +126,7 @@ export default function Home() {
             <div className="lg:w-1/2">
               <div className="relative rounded-3xl overflow-hidden shadow-2xl">
                 <img 
-                  src="https://images.unsplash.com/photo-1530213786676-41ce9f481c5d?q=80&w=2070&auto=format&fit=crop" 
+                  src="/nutrition-bg.jpg" 
                   alt="Cellular Nutrition" 
                   className="w-full h-[500px] object-cover"
                 />
