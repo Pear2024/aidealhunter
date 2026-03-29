@@ -371,8 +371,8 @@ DO NOT include the exact link placeholder. Keep it extremely casual and slightly
         const parser = new Parser();
         let feed;
         try { 
-            // Targeting specific Medical AI companies requested in flowchart
-            feed = await parser.parseURL('https://news.google.com/rss/search?q="Aidoc"+OR+"PathAI"+OR+"Tempus"+OR+"K Health"+OR+"Hippocratic AI"+OR+"Google Health"+OR+"IQVIA AI"+OR+"Notable Health"&hl=en-US&gl=US&ceid=US:en'); 
+            // Switched to MedicalXpress AI directly to avoid broken Google News encrypted URLs
+            feed = await parser.parseURL('https://medicalxpress.com/rss-feed/tags/artificial+intelligence/'); 
         }
         catch(e) { return NextResponse.json({ error: 'Medical AI News fetch failed' }, { status: 500 }); }
 
