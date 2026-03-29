@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/health-content?key=super_secret_ai_cron_password_123",
-      "schedule": "0 */2 * * *"
-    }
-  ]
-}
