@@ -42,6 +42,7 @@ export default function RootLayout({ children }) {
               src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9052384752598699"
               crossOrigin="anonymous"
           ></script>
+          <script src="https://cdn.tailwindcss.com"></script>
         </head>
         <body className={`${geistSans.variable} ${geistMono.variable}`} style={{ backgroundColor: '#050505', color: '#ffffff', minHeight: '100vh', margin: 0 }}>
           {/* Google Tag Manager (noscript) */}
