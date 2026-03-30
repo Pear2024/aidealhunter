@@ -43,7 +43,7 @@ async function main() {
                     items: { type: SchemaType.STRING },
                     description: "Script broken down into very short punchy chunks. ABSOLUTELY MAX 3-4 WORDS PER CHUNK so it fits on screen horizontally." 
                 },
-                image_prompt: { type: SchemaType.STRING, description: "A highly diverse, hyper-realistic DALL-E 3 image prompt matching the topic. EXTREMELY DIVERSE. Do NOT use sci-fi, glowing holograms, or teal/cyan medical rooms. Use varied aesthetics: sunny bright clinics, diverse human patients, beautiful nature scenes, highly realistic macro biology." }
+                image_prompt: { type: SchemaType.STRING, description: "A highly safe, generic video prompt. Extremely important: NO needles, NO blood, NO raw biology, NO medical gore! Just safe things like a doctor smiling, healthy family eating, or abstract bright glowing particles flowing." }
             },
             required: ["script", "subtitles", "image_prompt"]
         };
@@ -62,13 +62,12 @@ async function main() {
         const audioBase64 = await googleTTS.getAudioBase64(cleanScript, { lang: 'en', slow: false, host: 'https://translate.google.com' });
         fs.writeFileSync(audioPath, Buffer.from(audioBase64, 'base64'));
 
-        // Background Image Generation
+        // Background Image Generation 
         console.log("🎨 Generating Cinematic AI Background via AIMLAPI...");
         const imgModels = [
             "dall-e-3",
             "flux/schnell",
-            "stabilityai/stable-diffusion-3-medium",
-            "runwayml/stable-diffusion-v1-5"
+            "stabilityai/stable-diffusion-3-medium"
         ];
         const selectedImageModel = imgModels[Math.floor(Math.random() * imgModels.length)];
         console.log("Using Image Engine:", selectedImageModel);
@@ -91,18 +90,13 @@ async function main() {
         }
 
         // FFMPEG Assembly
-        console.log("⚙️ Assembling Reel via FFmpeg (Applying Ken Burns Zoom Motion)...");
+        console.log("⚙️ Assembling Reel via FFmpeg (Applying Ken Burns Smooth Zoom Motion)...");
         const outPath = path.join(tempDir, 'auto_health_reel.mp4');
         const audioDurationEstimate = Math.max(8, cleanScript.split(' ').length * 0.4); 
-        const chunkTime = audioDurationEstimate / Math.max(1, aiResponse.subtitles.length);
-        
         const totalFrames = Math.ceil((audioDurationEstimate + 2) * 25);
-        // Zoompan applies true cinematic movement (Ken Burns effect) to make it a video!
-        const videoFilter = `scale=1080:-1,zoompan=z='min(zoom+0.0015,1.5)':d=${totalFrames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)',scale=1080:1920,crop=1080:1920`;
         
-        console.log("\n--- FFMPEG FULL FILTER DEFINITION ---");
-        console.log(videoFilter);
-        console.log("---------------------------------------\n");
+        // Critical Fix: Sub-pixel interpolation (s=1080x1920:fps=25) inside zoompan drastically removes Image Shaking (Jitter)
+        const videoFilter = `scale=1080:-1,zoompan=z='min(zoom+0.0008,1.2)':d=${totalFrames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=25,crop=1080:1920`;
 
         ffmpeg()
             .input(imgPath)
