@@ -62,49 +62,72 @@ async function main() {
         const audioBase64 = await googleTTS.getAudioBase64(cleanScript, { lang: 'en', slow: false, host: 'https://translate.google.com' });
         fs.writeFileSync(audioPath, Buffer.from(audioBase64, 'base64'));
 
-        // Background Image Generation 
-        console.log("🎨 Generating Cinematic AI Background via AIMLAPI...");
-        const imgModels = [
-            "dall-e-3",
-            "flux/schnell",
-            "stabilityai/stable-diffusion-3-medium"
-        ];
-        const selectedImageModel = imgModels[Math.floor(Math.random() * imgModels.length)];
-        console.log("Using Image Engine:", selectedImageModel);
-
-        const imgPath = path.join(tempDir, 'health_bg.png');
+        // TRUE AI VIDEO Generation via Kling Master
+        console.log("🎬 Initiating TRUE AI Video Generation via Kling AI...");
+        const videoPath = path.join(tempDir, 'health_bg.mp4');
+        let rawVideoUrl = null;
         try {
-            const bgRes = await axios.post('https://api.aimlapi.com/v1/images/generations', {
-                model: selectedImageModel,
-                prompt: aiResponse.image_prompt,
-                n: 1,
-                size: "1024x1024"
-            }, { headers: { 'Authorization': `Bearer ${process.env.AIMLAPI_KEY}`, 'Content-Type': 'application/json' } });
+            const videoPayload = {
+                model: "klingai/v2.1-master-text-to-video",
+                prompt: aiResponse.image_prompt + " cinematic 4k, hyper-detailed, slow beautiful motion, professional documentary style",
+            };
             
-            const imgData = await axios.get(bgRes.data.data[0].url, { responseType: 'arraybuffer' });
-            fs.writeFileSync(imgPath, imgData.data);
-            console.log("🎞️ Background Image Generated Successfully!");
-        } catch (imgErr) {
-            console.error("\n❌ Image Gen Failed:", imgErr.response ? JSON.stringify(imgErr.response.data) : imgErr.message);
-            require('child_process').execSync(`ffmpeg -y -f lavfi -i color=c=0x10b981:s=1080x1920:d=10 -frames:v 1 ${imgPath}`);
+            const submitRes = await axios.post('https://api.aimlapi.com/v2/video/generations', videoPayload, { 
+                headers: { 'Authorization': `Bearer ${process.env.AIMLAPI_KEY}`, 'Content-Type': 'application/json' } 
+            });
+            
+            const genId = submitRes.data.id;
+            console.log(`⏳ Video Task submitted: ${genId}. Waiting for Kling rendering (approx 1-3 mins)...`);
+            
+            // Poll for completion (up to 5 minutes)
+            let attempts = 0;
+            while (attempts < 30 && !rawVideoUrl) {
+                await new Promise(r => setTimeout(r, 10000)); // wait 10s
+                const pollRes = await axios.get(`https://api.aimlapi.com/v2/video/generations/${genId}`, {
+                    headers: { 'Authorization': `Bearer ${process.env.AIMLAPI_KEY}` }
+                });
+                const status = pollRes.data.status;
+                process.stdout.write(` [${status}] `);
+                if (status === 'completed') {
+                    rawVideoUrl = pollRes.data.video?.url || pollRes.data.url;
+                    console.log("\n✅ True Moving Video Rendering Complete!");
+                    break;
+                } else if (status === 'failed') {
+                    throw new Error("Video generation failed on server. AIMLAPI Balance may be empty!");
+                }
+                attempts++;
+            }
+
+            if (!rawVideoUrl) throw new Error("Video polling timed out.");
+
+            // Download the raw Video (.mp4)
+            console.log("⬇️ Downloading RAW Kling AI Video...");
+            const vData = await axios.get(rawVideoUrl, { responseType: 'arraybuffer' });
+            fs.writeFileSync(videoPath, vData.data);
+            console.log("🎞️ True AI Video Downloaded!");
+
+        } catch (vidErr) {
+            const errDetail = vidErr.response?.data?.error?.data?.detail || vidErr.message;
+            console.error("\n❌ Kling Video Failed:", errDetail);
+            if (errDetail.toLowerCase().includes("insufficient credits")) {
+                console.error("⚠️ ALERT: YOU MUST TOP UP YOUR AIMLAPI ACCOUNT CREDIT BALANCE TO RENDER VIDEOS! ⚠️");
+            }
+            // Fallback purely generative synthetic video using FFmpeg if API dies
+            require('child_process').execSync(`ffmpeg -y -f lavfi -i testsrc=duration=5:size=1080x1920:rate=25 -f lavfi -i color=c=0x10b981:s=1080x1920:d=5 -filter_complex "[0:v][1:v]blend=all_mode='overlay'[v]" -map "[v]" ${videoPath}`);
         }
 
         // FFMPEG Assembly
-        console.log("⚙️ Assembling Reel via FFmpeg (Applying Ken Burns Smooth Zoom Motion)...");
+        console.log("⚙️ Assembling Reel via FFmpeg (Looping AI Video + Syncing TTS)...");
         const outPath = path.join(tempDir, 'auto_health_reel.mp4');
         const audioDurationEstimate = Math.max(8, cleanScript.split(' ').length * 0.4); 
-        const totalFrames = Math.ceil((audioDurationEstimate + 2) * 25);
         
-        // Critical Fix: Sub-pixel interpolation (s=1080x1920:fps=25) inside zoompan drastically removes Image Shaking (Jitter)
-        const videoFilter = `scale=1080:-1,zoompan=z='min(zoom+0.0008,1.2)':d=${totalFrames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920:fps=25,crop=1080:1920`;
-
         ffmpeg()
-            .input(imgPath)
-            .loop(audioDurationEstimate + 2)
+            .input(videoPath)
+            .inputOptions(['-stream_loop', '-1'])
             .input(audioPath)
             .outputOptions([
                 '-map 0:v', '-map 1:a',
-                `-vf`, videoFilter,
+                '-vf', 'scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920',
                 '-c:v libx264', '-preset fast', '-pix_fmt yuv420p',
                 '-c:a aac', '-b:a 192k',
                 '-shortest'
