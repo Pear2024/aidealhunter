@@ -41,7 +41,7 @@ async function main() {
                 subtitles: { 
                     type: SchemaType.ARRAY, 
                     items: { type: SchemaType.STRING },
-                    description: "Script broken down into 4-6 short punchy chunks with emojis matching the audio exactly." 
+                    description: "Script broken down into very short punchy chunks. ABSOLUTELY MAX 3-4 WORDS PER CHUNK so it fits on screen horizontally." 
                 },
                 image_prompt: { type: SchemaType.STRING, description: "A highly diverse, hyper-realistic DALL-E 3 image prompt matching the topic. EXTREMELY DIVERSE. Do NOT use sci-fi, glowing holograms, or teal/cyan medical rooms. Use varied aesthetics: sunny bright clinics, diverse human patients, beautiful nature scenes, highly realistic macro biology." }
             },
@@ -79,7 +79,7 @@ async function main() {
                 model: selectedImageModel,
                 prompt: aiResponse.image_prompt,
                 n: 1,
-                size: "1024x1792"
+                size: "1024x1024"
             }, { headers: { 'Authorization': `Bearer ${process.env.AIMLAPI_KEY}`, 'Content-Type': 'application/json' } });
             
             const imgData = await axios.get(bgRes.data.data[0].url, { responseType: 'arraybuffer' });
@@ -100,7 +100,7 @@ async function main() {
             const start = i * chunkTime;
             const end = (i + 1) * chunkTime;
             const cleanText = text.replace(/[^a-zA-Z0-9 \$\!\?\%\.\,]/g, "").replace(/:/g, '\\\\:').trim();
-            return `drawtext=fontfile=/Library/Fonts/Arial.ttf:text='${cleanText}':fontcolor=white:fontsize=75:borderw=4:bordercolor=black:shadowcolor=black:shadowx=3:shadowy=3:x='(w-tw)/2':y='(h/2)+400':enable='between(t,${start},${end})'`;
+            return `drawtext=fontfile=/Library/Fonts/Arial.ttf:text='${cleanText}':fontcolor=yellow:fontsize=60:borderw=5:bordercolor=black:shadowcolor=black:shadowx=4:shadowy=4:x='(w-tw)/2':y='(h/2)+400':enable='between(t,${start},${end})'`;
         }).join(',');
 
         const totalFrames = Math.ceil((audioDurationEstimate + 2) * 25);
