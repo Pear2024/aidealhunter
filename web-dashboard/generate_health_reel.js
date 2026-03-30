@@ -62,77 +62,51 @@ async function main() {
         const audioBase64 = await googleTTS.getAudioBase64(cleanScript, { lang: 'en', slow: false, host: 'https://translate.google.com' });
         fs.writeFileSync(audioPath, Buffer.from(audioBase64, 'base64'));
 
-        // TRUE AI VIDEO Generation via Magic / Minimax
-        console.log("🎬 Initiating TRUE AI Video Generation via Magic/Minimax...");
-        const videoPath = path.join(tempDir, 'health_bg.mp4');
-        let rawVideoUrl = null;
+        // Background Image Generation
+        console.log("🎨 Generating Cinematic AI Background via AIMLAPI...");
+        const imgModels = [
+            "dall-e-3",
+            "flux/schnell",
+            "stabilityai/stable-diffusion-3-medium",
+            "runwayml/stable-diffusion-v1-5"
+        ];
+        const selectedImageModel = imgModels[Math.floor(Math.random() * imgModels.length)];
+        console.log("Using Image Engine:", selectedImageModel);
+
+        const imgPath = path.join(tempDir, 'health_bg.png');
         try {
-            const videoPayload = {
-                model: "magic/text-to-video",
+            const bgRes = await axios.post('https://api.aimlapi.com/v1/images/generations', {
+                model: selectedImageModel,
                 prompt: aiResponse.image_prompt,
-            };
+                n: 1,
+                size: "1024x1024"
+            }, { headers: { 'Authorization': `Bearer ${process.env.AIMLAPI_KEY}`, 'Content-Type': 'application/json' } });
             
-            const submitRes = await axios.post('https://api.aimlapi.com/v2/video/generations', videoPayload, { 
-                headers: { 'Authorization': `Bearer ${process.env.AIMLAPI_KEY}`, 'Content-Type': 'application/json' } 
-            });
-            
-            const genId = submitRes.data.id;
-            console.log(`⏳ Video Task submitted: ${genId}. Waiting for Magic rendering (approx 1-3 mins)...`);
-            
-            // Poll for completion (up to 5 minutes)
-            let attempts = 0;
-            while (attempts < 30 && !rawVideoUrl) {
-                await new Promise(r => setTimeout(r, 10000)); // wait 10s
-                const pollRes = await axios.get(`https://api.aimlapi.com/v2/video/generations/${genId}`, {
-                    headers: { 'Authorization': `Bearer ${process.env.AIMLAPI_KEY}` }
-                });
-                const status = pollRes.data.status;
-                process.stdout.write(` [${status}] `);
-                if (status === 'completed') {
-                    rawVideoUrl = pollRes.data.video?.url || pollRes.data.url;
-                    console.log("\n✅ Video Rendering Complete!");
-                    break;
-                } else if (status === 'failed') {
-                    throw new Error("Video generation failed on server");
-                }
-                attempts++;
-            }
-
-            if (!rawVideoUrl) throw new Error("Video polling timed out.");
-
-            // Download the raw Magic Video (.mp4)
-            console.log("⬇️ Downloading RAW AI Video...");
-            const vData = await axios.get(rawVideoUrl, { responseType: 'arraybuffer' });
-            fs.writeFileSync(videoPath, vData.data);
-            console.log("🎞️ True AI Video Downloaded!");
-
-        } catch (vidErr) {
-            console.error("\n❌ Magic Video Failed:", vidErr.response ? JSON.stringify(vidErr.response.data) : vidErr.message);
-            // Fallback purely generative synthetic video using FFmpeg if API dies
-            require('child_process').execSync(`ffmpeg -y -f lavfi -i testsrc=duration=5:size=1080x1920:rate=25 -f lavfi -i color=c=0x10b981:s=1080x1920:d=5 -filter_complex "[0:v][1:v]blend=all_mode='overlay'[v]" -map "[v]" ${videoPath}`);
+            const imgData = await axios.get(bgRes.data.data[0].url, { responseType: 'arraybuffer' });
+            fs.writeFileSync(imgPath, imgData.data);
+            console.log("🎞️ Background Image Generated Successfully!");
+        } catch (imgErr) {
+            console.error("\n❌ Image Gen Failed:", imgErr.response ? JSON.stringify(imgErr.response.data) : imgErr.message);
+            require('child_process').execSync(`ffmpeg -y -f lavfi -i color=c=0x10b981:s=1080x1920:d=10 -frames:v 1 ${imgPath}`);
         }
 
         // FFMPEG Assembly
-        console.log("⚙️ Assembling Reel via FFmpeg (Looping AI Video + Syncing TTS + Subtitles)...");
+        console.log("⚙️ Assembling Reel via FFmpeg (Applying Ken Burns Zoom Motion)...");
         const outPath = path.join(tempDir, 'auto_health_reel.mp4');
         const audioDurationEstimate = Math.max(8, cleanScript.split(' ').length * 0.4); 
         const chunkTime = audioDurationEstimate / Math.max(1, aiResponse.subtitles.length);
         
-        let drawtextFilters = aiResponse.subtitles.map((text, i) => {
-            const start = i * chunkTime;
-            const end = (i + 1) * chunkTime;
-            const cleanText = text.replace(/[^a-zA-Z0-9 \$\!\?\%\.\,]/g, "").replace(/:/g, '\\\\:').trim();
-            return `drawtext=fontfile=/Library/Fonts/Arial.ttf:text='${cleanText}':fontcolor=yellow:fontsize=60:borderw=5:bordercolor=black:shadowcolor=black:shadowx=4:shadowy=4:x='(w-tw)/2':y='(h/2)+400':enable='between(t,${start},${end})'`;
-        }).join(',');
-
         const totalFrames = Math.ceil((audioDurationEstimate + 2) * 25);
-        // Remove Zoompan since we have actual video now, just scale/crop to vertical formatting
-        const videoFilter = `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920${drawtextFilters ? ',' + drawtextFilters : ''}`;
+        // Zoompan applies true cinematic movement (Ken Burns effect) to make it a video!
+        const videoFilter = `scale=1080:-1,zoompan=z='min(zoom+0.0015,1.5)':d=${totalFrames}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)',scale=1080:1920,crop=1080:1920`;
+        
+        console.log("\n--- FFMPEG FULL FILTER DEFINITION ---");
+        console.log(videoFilter);
+        console.log("---------------------------------------\n");
 
         ffmpeg()
-            // Important: Loop the Magic AI Video (which is usually ~5s) infinitely up to the shortest stream output logic
-            .addInputOption('-stream_loop', '-1')
-            .input(videoPath)
+            .input(imgPath)
+            .loop(audioDurationEstimate + 2)
             .input(audioPath)
             .outputOptions([
                 '-map 0:v', '-map 1:a',
