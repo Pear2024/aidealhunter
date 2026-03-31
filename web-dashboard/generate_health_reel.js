@@ -66,8 +66,7 @@ async function main() {
         console.log("🎨 Generating Cinematic AI Background via AIMLAPI...");
         const imgModels = [
             "dall-e-3",
-            "flux/schnell",
-            "stabilityai/stable-diffusion-3-medium"
+            "flux/schnell"
         ];
         const selectedImageModel = imgModels[Math.floor(Math.random() * imgModels.length)];
         console.log("Using Image Engine:", selectedImageModel);
