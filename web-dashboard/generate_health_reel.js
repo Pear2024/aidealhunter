@@ -88,37 +88,18 @@ async function main() {
             require('child_process').execSync(`ffmpeg -y -f lavfi -i color=c=0x10b981:s=1080x1920:d=10 -frames:v 1 ${imgPath}`);
         }
 
-        // FFMPEG Assembly with Dynamic Subtitles
-        console.log("⚙️ Assembling Reel via FFmpeg (Static Image + Syncing TTS + Subtitles)...");
+        // FFMPEG Assembly (Without Hardcoded Subtitles)
+        console.log("⚙️ Assembling Reel via FFmpeg (Static Image + Syncing TTS)...");
         const outPath = path.join(tempDir, 'auto_health_reel.mp4');
         const audioDurationEstimate = Math.max(8, cleanScript.split(' ').length * 0.4); 
         
-        let subtitleFilters = [];
-        if (aiResponse.subtitles && Array.isArray(aiResponse.subtitles)) {
-            const numChunks = aiResponse.subtitles.length;
-            const timePerChunk = audioDurationEstimate / Math.max(1, numChunks);
-            
-            aiResponse.subtitles.forEach((chunk, idx) => {
-                const startTime = idx * timePerChunk;
-                const endTime = (idx + 1) * timePerChunk;
-                
-                // Extremely safe character escaping for FFmpeg drawtext
-                const safeText = chunk.replace(/'/g, "\u2019").replace(/:/g, '\\:').replace(/,/g, '\\,');
-                
-                subtitleFilters.push(`drawtext=text='${safeText}':fontcolor=white:fontsize=80:x=(w-text_w)/2:y=(h-text_h)/2+300:enable='between(t,${startTime},${endTime})':box=1:boxcolor=black@0.6:boxborderw=20`);
-            });
-        }
-
         const baseVideoFilter = `scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920`;
-        const textOverlayFilter = subtitleFilters.length > 0 ? `,${subtitleFilters.join(',')}` : '';
 
         try {
-            // First attempt: Assemble with subtitles (Works on GitHub Actions, might fail on Mac without Freetype)
-            require('child_process').execSync(`ffmpeg -y -loop 1 -i ${imgPath} -i ${audioPath} -map 0:v -map 1:a -vf "${baseVideoFilter}${textOverlayFilter}" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -t ${audioDurationEstimate + 2} ${outPath}`, { stdio: 'pipe' });
-            console.log("✅ Rendered Custom Subtitles Successfully!");
-        } catch(e) {
-            console.warn("⚠️ Local FFmpeg lacks 'drawtext' support. Rendering fallback WITHOUT subtitles so tests don't crash.");
             require('child_process').execSync(`ffmpeg -y -loop 1 -i ${imgPath} -i ${audioPath} -map 0:v -map 1:a -vf "${baseVideoFilter}" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -t ${audioDurationEstimate + 2} ${outPath}`, { stdio: 'pipe' });
+        } catch(e) {
+            console.error("⚠️ FFmpeg Execution Failed:", e.message);
+            process.exit(1);
         }
 
         console.log(`✅ Professional Health Reel rendered flawlessy: ${outPath}`);
