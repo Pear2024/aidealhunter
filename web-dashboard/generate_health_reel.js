@@ -9,13 +9,23 @@ const { GoogleGenerativeAI, SchemaType } = require('@google/generative-ai');
 const ffmpeg = require('fluent-ffmpeg');
 
 async function fetchHealthNews() {
-    const url = "https://news.google.com/rss/search?q=Medical+AI+OR+Health+Technology+OR+Cellular+Nutrition&hl=en-US&gl=US&ceid=US:en";
+    const topics = [
+        "Medical AI", "Cellular Nutrition", "Anti-aging Science", 
+        "Longevity Research", "Gut-brain axis", "Precision medicine", 
+        "Health Technology breakthroughs", "Epigenetics", "Mitochondrial health",
+        "Biohacking", "Metabolic age", "Digital Health Care"
+    ];
+    const randomQuery = encodeURIComponent(topics[Math.floor(Math.random() * topics.length)]);
+    const url = `https://news.google.com/rss/search?q=${randomQuery}&hl=en-US&gl=US&ceid=US:en`;
+    
     const response = await fetch(url, { cache: 'no-store' });
     const xmlText = await response.text();
     const urlRegex = /<item>([\s\S]*?)<\/item>/g;
     const itemMatches = xmlText.match(urlRegex) || [];
     let items = [];
-    for (let i = 0; i < Math.min(itemMatches.length, 5); i++) {
+    
+    // Expand the pool from top 5 to top 20 entirely to prevent looping repetitions
+    for (let i = 0; i < Math.min(itemMatches.length, 20); i++) {
         const itemXml = itemMatches[i];
         const titleMatch = itemXml.match(/<title>([^<]+)<\/title>/);
         if (titleMatch) items.push(titleMatch[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&'));
@@ -85,7 +95,7 @@ async function main() {
             console.log("🎞️ Background Image Generated Successfully!");
         } catch (imgErr) {
             console.error("\n❌ Image Gen Failed:", imgErr.response ? JSON.stringify(imgErr.response.data) : imgErr.message);
-            require('child_process').execSync(`ffmpeg -y -f lavfi -i color=c=0x10b981:s=1080x1920:d=10 -frames:v 1 ${imgPath}`);
+            throw new Error("Image generation failed on AIMLAPI. Aborting reel creation to prevent blank/green screen uploads.");
         }
 
         // FFMPEG Assembly (Without Hardcoded Subtitles)
