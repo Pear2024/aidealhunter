@@ -160,6 +160,17 @@ export default function AdminDashboard() {
                   <p className="text-gray-400 text-sm">Track discovering deals and AI copywriter on-air scheduling.</p>
               </div>
           </Link>
+          <Link href="/admin/reels-queue" style={{ textDecoration: 'none' }}>
+              <div className="p-6 rounded-2xl bg-[#111] border border-[#222] hover:border-[#58A6FF] transition-all cursor-pointer">
+                  <div className="flex items-center gap-4 mb-4">
+                      <div className="p-3 rounded-full bg-[#58A6FF]/20 text-[#58A6FF]">
+                          <Activity size={24} />
+                      </div>
+                      <h3 className="font-bold text-lg text-white">Medical Reels Queue</h3>
+                  </div>
+                  <p className="text-gray-400 text-sm">Review & manage the AI's upcoming scheduled Facebook Videos.</p>
+              </div>
+          </Link>
       </div>
 
       {deals.length === 0 ? (
