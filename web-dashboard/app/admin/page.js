@@ -108,8 +108,8 @@ export default function AdminDashboard() {
   return (
     <main className="dashboard">
       <header className="header">
-        <h1>🎯 AI Deal Hunter</h1>
-        <p className="subtitle">Admin Review Dashboard (Secret URL)</p>
+        <h1>🩺 Nadania Medical AI Command Center</h1>
+        <p className="subtitle">Automated Content Engine & Operations Dashboard</p>
         <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginTop: '15px' }}>
           <Link href="/" style={{ color: 'var(--accent)', textDecoration: 'none' }}>← Go back to Public Storefront</Link>
           <Link href="/admin/analytics" style={{ color: 'var(--success)', textDecoration: 'none' }}>View Analytics 📈</Link>
