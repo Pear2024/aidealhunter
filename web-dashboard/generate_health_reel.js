@@ -82,7 +82,7 @@ async function main() {
             type: SchemaType.OBJECT,
             properties: {
                 script: { type: SchemaType.STRING, description: "The spoken voiceover script. Must sound like a professional, intelligent doctor sharing a 'mind-blowing' cell science fact or AI health tech news. Max 20 seconds." },
-                caption: { type: SchemaType.STRING, description: "A highly engaging, deeply educational 3-paragraph Facebook post caption that elaborates on the news topic in detail. Explain the science clearly so readers learn something valuable. Write in an inspiring, medical-journalistic tone." },
+                caption: { type: SchemaType.STRING, description: "A highly engaging, deeply educational 3-paragraph Facebook post caption that elaborates on the news topic in detail. MUST INCLUDE 2-3 highly actionable, easy-to-follow daily health/wellness tips at the end (e.g., specific foods to eat, habits to change). Write in an inspiring, medical-journalistic tone." },
                 image_prompt: { type: SchemaType.STRING, description: "A highly safe, generic video prompt. Extremely important: NO needles, NO blood, NO raw biology, NO medical gore! Just safe things like a doctor smiling, healthy family eating, or abstract bright glowing particles flowing." }
             },
             required: ["script", "caption", "image_prompt"]
