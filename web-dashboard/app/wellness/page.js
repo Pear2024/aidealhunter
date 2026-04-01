@@ -66,9 +66,16 @@ export default function WellnessAI() {
             <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-4 leading-tight">
               Personalized Health Analysis. <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-500 to-emerald-500">Powered by AI.</span>
             </h1>
-            <p className="text-lg text-slate-500 mb-8 max-w-xl">
+            <p className="text-lg text-slate-500 mb-6 max-w-xl">
               Describe your current symptoms or health goals, and our core Medical AI will synthesize a pharmaceutical and holistic cellular protocol specifically for you.
             </p>
+            
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-8 flex gap-3 text-amber-800 text-sm leading-relaxed max-w-2xl">
+              <div className="mt-0.5"><Activity size={18} /></div>
+              <div>
+                 <strong>Medical Disclaimer:</strong> This program utilizes advanced AI technology solely to analyze symptoms and recommend preliminary wellness strategies. These AI-generated suggestions are for educational purposes only and do not replace professional diagnosis. <strong>Always consult with a qualified medical doctor and follow their direct advice for your safest course of action.</strong>
+              </div>
+            </div>
 
             <div className="space-y-6">
               <div>
@@ -178,8 +185,8 @@ export default function WellnessAI() {
               >
                 ← Restart Assessment
               </button>
-              <div className="text-xs text-slate-400">
-                Medical Disclaimer: This AI is for informational purposes.
+              <div className="text-[11px] text-slate-400 text-right max-w-sm">
+                <strong>Medical Disclaimer:</strong> This AI program is for preliminary informational analysis only. Always defer to a qualified medical doctor for diagnosis and treatment decisions.
               </div>
             </div>
           </div>
