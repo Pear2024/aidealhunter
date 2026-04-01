@@ -82,17 +82,13 @@ async function main() {
             type: SchemaType.OBJECT,
             properties: {
                 script: { type: SchemaType.STRING, description: "The spoken voiceover script. Must sound like a professional, intelligent doctor sharing a 'mind-blowing' cell science fact or AI health tech news. Max 20 seconds." },
-                subtitles: { 
-                    type: SchemaType.ARRAY, 
-                    items: { type: SchemaType.STRING },
-                    description: "Script broken down into very short punchy chunks. ABSOLUTELY MAX 3-4 WORDS PER CHUNK so it fits on screen horizontally." 
-                },
+                caption: { type: SchemaType.STRING, description: "A highly engaging, deeply educational 3-paragraph Facebook post caption that elaborates on the news topic in detail. Explain the science clearly so readers learn something valuable. Write in an inspiring, medical-journalistic tone." },
                 image_prompt: { type: SchemaType.STRING, description: "A highly safe, generic video prompt. Extremely important: NO needles, NO blood, NO raw biology, NO medical gore! Just safe things like a doctor smiling, healthy family eating, or abstract bright glowing particles flowing." }
             },
-            required: ["script", "subtitles", "image_prompt"]
+            required: ["script", "caption", "image_prompt"]
         };
         const textModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash", generationConfig: { responseMimeType: "application/json", responseSchema: schema } });
-        const result = await textModel.generateContent(`Title: ${selectedTopic}. Write a viral 15-second educational Reels script based on this.`);
+        const result = await textModel.generateContent(`Title: ${selectedTopic}. Write a viral 15-second educational Reels script and an in-depth 3-paragraph social media caption based on this.`);
         const aiResponse = JSON.parse(result.response.text());
         
         let cleanScript = aiResponse.script.slice(0, 190);
@@ -154,11 +150,11 @@ async function main() {
             const token = process.env.FB_PAGE_ACCESS_TOKEN;
             if (!pageId || !token) throw new Error("Missing FB API keys!");
 
-            const caption = `🔬 ${selectedTopic}\n\nOur modern lifestyle is constantly testing our cells. Are you protecting yours?\n\nFollow us for daily Medical AI health updates! #healthtech #medicalai #nadaniawellness`;
+            const fullCaption = `🔬 ${selectedTopic}\n\n${aiResponse.caption}\n\nOur modern lifestyle is constantly testing our cells. Are you protecting yours?\n\nFollow us for daily Medical AI health updates! #HealthTech #MedicalAI #CellularNutrition #NadaniaWellness`;
             
             const form = new FormData();
             form.append('access_token', token);
-            form.append('description', caption);
+            form.append('description', fullCaption);
             form.append('source', fs.createReadStream(outPath));
 
             const response = await axios.post(`https://graph.facebook.com/v19.0/${pageId}/videos`, form, {
