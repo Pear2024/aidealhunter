@@ -37,10 +37,44 @@ async function main() {
     console.log("🎬 Initiating Nadania Medical AI Auto-Reels Engine (3x/Day)...");
     
     try {
-        const newsItems = await fetchHealthNews();
-        if (newsItems.length === 0) throw new Error("No news found.");
-        const selectedTopic = newsItems[Math.floor(Math.random() * newsItems.length)];
-        console.log(`🎯 Selected Topic: ${selectedTopic}`);
+        // DB Queue Integration
+        const conn = await mysql.createConnection({
+            host: process.env.MYSQL_HOST,
+            user: process.env.MYSQL_USER,
+            password: process.env.MYSQL_PASSWORD,
+            database: process.env.MYSQL_DATABASE,
+            port: parseInt(process.env.MYSQL_PORT || '3306'),
+            ssl: { rejectUnauthorized: false }
+        });
+
+        // Ensure we have pending topics in the queue
+        const [pendingRows] = await conn.execute("SELECT id, topic FROM health_reels_queue WHERE status = 'pending' ORDER BY created_at ASC LIMIT 1");
+        
+        let selectedTopic = "";
+        let topicId = null;
+
+        if (pendingRows.length > 0) {
+            selectedTopic = pendingRows[0].topic;
+            topicId = pendingRows[0].id;
+        } else {
+            // Queue is empty! Replenish it with fresh news
+            console.log("📥 Queue is empty. Fetching fresh news to replenish database...");
+            const newsItems = await fetchHealthNews();
+            if (newsItems.length === 0) throw new Error("No news found.");
+            
+            for (const item of newsItems) {
+                await conn.execute("INSERT IGNORE INTO health_reels_queue (topic, status) VALUES (?, 'pending')", [item]);
+            }
+            
+            // Re-fetch the newly inserted oldest item
+            const [newPendingRows] = await conn.execute("SELECT id, topic FROM health_reels_queue WHERE status = 'pending' ORDER BY created_at ASC LIMIT 1");
+            if (newPendingRows.length === 0) throw new Error("Failed to replenish queue.");
+            selectedTopic = newPendingRows[0].topic;
+            topicId = newPendingRows[0].id;
+        }
+
+        console.log(`🎯 Selected Topic from Queue (ID ${topicId}): ${selectedTopic}`);
+        await conn.end();
 
         console.log("✍️ Generating 15s Educational Health Script via Gemini...");
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -139,6 +173,16 @@ async function main() {
                             access_token: token
                         });
                         console.log(`✅ Assessment CTA Comment Injected Successfully!`);
+                        
+                        // Mark queue item as officially posted!
+                        const finalConn = await mysql.createConnection({
+                            host: process.env.MYSQL_HOST, user: process.env.MYSQL_USER, password: process.env.MYSQL_PASSWORD,
+                            database: process.env.MYSQL_DATABASE, port: parseInt(process.env.MYSQL_PORT || '3306'), ssl: { rejectUnauthorized: false }
+                        });
+                        await finalConn.execute("UPDATE health_reels_queue SET status = 'posted', posted_at = CURRENT_TIMESTAMP WHERE id = ?", [topicId]);
+                        await finalConn.end();
+                        console.log(`✅ Queue item ${topicId} marked as 'posted'.`);
+
                     } catch(err) {
                         console.error('Comment Proxy Error:', err.message);
                     }

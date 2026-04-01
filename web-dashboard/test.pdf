@@ -1,0 +1,784 @@
+
+<!DOCTYPE html>
+<!--[if lt IE 7]>     <html class="lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>        <html class="lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>        <html class="lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html>
+<!--<![endif]-->
+<head>
+    
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0,user-scalable=no">
+    <meta name="mobileoptimized" content="0" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="published" content="3/28/2026 2:33:14 PM" />
+    <meta name="description" content="" />
+    <meta property="og:image" content="/Content/images/share-three-new2.png" />
+    <title>Sign in - III International</title>
+    <link rel="app" id="apppath" href="/" />
+    <link rel="app" id="appauthenticated" href="False" />
+    <link rel="app" id="appsessiontimeout" href="20" />
+    <link rel="shortcut icon" href="/Content/images/iiiearthicon.png" type="image/x-icon" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png" />
+    <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png" />
+    <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png" />
+    <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png" />
+    <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png" />
+    <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png" />
+    
+        <link href="/Content/styles/external/font-awesome.min.css" rel="stylesheet" />
+        <link href="/Content/styles/external/bootstrap.min.css" rel="stylesheet" />
+        <link href="/Content/styles/external/toastr.min.css" rel="stylesheet" />
+        <link href="/Content/styles/external/Jcrop.css" rel="stylesheet" />
+        <link href="/Content/styles/external/select2.min.css" rel="stylesheet" />
+
+    <link href="/bundles/styles/vendor?v=IWgN5-ity9i_eXlEhenMia_0bQ00PbbWEDuAtoeepIA1" rel="stylesheet"/>
+
+    <link href="/Content/styles/site.min.css?updated=5258852283375" rel="stylesheet" />
+    <link href="/Content/styles/theme/layouts/vertical/core/main.min.css" rel="stylesheet" />
+    <link href="/Content/styles/theme/layouts/vertical/menu-type/compact.min.css" rel="stylesheet" />
+    <link href="/Content/styles/theme/layouts/vertical/themes/theme-a.min.css" rel="stylesheet" />
+    
+    
+    <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Raleway:300,400,500,700" rel="stylesheet">
+    
+    <script src="/routejs.axd/6003411896b029dfc0fde924e8a467d6b1012dab/router.js"></script>
+    <script src="/app/culture"></script>
+    
+<script>
+    var Resources = {
+        Common: {
+            "Kendo_SortAscending": 'Sort Ascending',
+            "Kendo_SortDescending": 'Sort Descending',
+            "Kendo_Filter": 'Filter',
+            "Kendo_Columns": 'Columns',
+            "Kendo_FilterHeader": 'Filter Header',
+            "Kendo_Clear": 'Clear',
+            "Kendo_IsTrue": 'Is true',
+            "Kendo_IsFalse": 'Is false',
+            "Kendo_And": 'and',
+            "or": 'or',
+            "Kendo_IsEqualTo": 'Is equal to',
+            "Kendo_IsNotEqualTo": 'Is not equal to',
+            "Kendo_StartsWith": 'Starts with',
+            "Kendo_Contains": 'Contains',
+            "Kendo_EndsWith": 'Ends with',
+            "Kendo_IsGreaterThanOrEqualTo": 'Is greater than or equal to',
+            "Kendo_IsGreaterThan": 'Is greater than',
+            "Kendo_IsLessThanOrEqualTo": 'Is less than or equal to',
+            "Kendo_IsLessThan": 'Is less than',
+            "Kendo_IsAfterOrEqualTo": 'Is after or equal to',
+            "Kendo_IsAfter": 'Is after',
+            "Kendo_IsBeforeOrEqualTo": 'Is before or equal to',
+            "Kendo_IsBefore": 'Is before',
+            "CustomerDetails": 'Customer Details',
+            "Kendo_ItemsOf": '{0} - {1} of {2} items',
+            "Kendo_NoItemsToDisplay": 'No items to display',
+            "Kendo_Page": 'Page',
+            "Kendo_All": 'All',
+            "Kendo_Of_Formatted": 'of {0}',
+            "Kendo_ItemsPerPage": 'Items per page',
+            "Kendo_GoToFirstPage": 'Go to the first page',
+            "Kendo_GoToPreviousPage": 'Go to the previous page',
+            "Kendo_GoToNextPage": 'Go to the next page',
+            "Kendo_GoToLastPage": 'Go to the last page',
+            "Kendo_Refresh": 'Refresh'
+        }
+    }
+</script>
+    
+        <script src="/Content/scripts/vendor/require.min.js" data-main="/Content/scripts/main.js"></script>
+    <script src="https://e-commercesite.s3.amazonaws.com/ztm/scriptV1.js" type="text/javascript"></script>
+    <script>
+        require.config({
+            baseUrl: '/Content/scripts',
+            
+            paths: {
+                'addresses': 'modules/addresses',
+                'app': 'modules/app',
+                'ajax': 'modules/ajax',
+                'browser': 'modules/browser',
+                'calendars': 'modules/calendars',
+                'console': 'modules/console',
+                'containers': 'modules/containers',
+                'cookies': 'modules/cookies',
+                'customsort': 'modules/customsort',
+                'debug': 'modules/debug',
+                'encryptions': 'modules/encryptions',
+                'extensions': 'modules/extensions',
+                'forms': 'modules/forms',
+                'guids': 'modules/guids',
+                'idletimeout': 'modules/idletimeout',
+                'kendogrids': 'modules/exigoweb.kendogrids',
+                'jszip': 'vendor/kendo/scripts/jszip',
+                'kendogrids.templates': 'modules/kendogrids.templates',
+                'passwords': 'modules/passwords',
+                'popups': 'modules/popups',
+                'profiles': 'modules/profiles',
+                'pubsub': 'modules/pubsub',
+                'shopping': 'modules/shopping',
+                'tracking': 'modules/tracking',
+                'urls': 'modules/urls',
+                'widgets': 'modules/widgets',
+                'trees': 'modules/trees2',
+                'd3': '//d3js.org/d3.v3.min',
+
+                    
+                    'sweetalert': '/Content/scripts/vendor/sweetalert.min',
+                    'toastr': '/Content/scripts/vendor/toastr.min',
+                    'moment': '/Content/scripts/vendor/moment-with-locales.min',
+                    'jcrop': '/Content/scripts/vendor/Jcrop',
+                    'jquery-ui': '/Content/scripts/vendor/jquery-ui.min.1.12',
+                    'jquery-color': '/Content/scripts/vendor/jquery.color.min',
+                    'jquery-form': '/Content/scripts/vendor/jquery.form.latest.min',
+                    'jquery-knob': '/Content/scripts/vendor/jquery.knob.min',
+                    'jquery-scrollto': '/Content/scripts/vendor/jquery.scrollTo.latest.min',
+                    'enquire': '/Content/scripts/vendor/enquire.min',
+                    'fullcalendar': '/Content/scripts/vendor/fullcalendar.min',
+                    'fullcalendar-lang': '/Content/scripts/vendor/lang-all',
+                    'gcal': '/Content/scripts/vendor/gcal',
+                    'bootstrap': '/Content/scripts/vendor/bootstrap.bundle.min',
+                    'select2': '/Content/scripts/vendor/select2.min',
+                    'amcharts': '/Content/scripts/vendor/amcharts',
+                    'amcharts.pie': '/Content/scripts/vendor/pie',
+                    'amcharts.serial': '/Content/scripts/vendor/serial',
+                    
+                'handlebars': '/bundles/scripts/handlebars?v=X7_RK-FAOAkx1rICvOL0NYNI-85lam6FmCns0oaEHnU1',
+                //'jquery': 'https://code.jquery.com/jquery-1.11.3.min',
+                'jquery': 'vendor/jquery-3.6.3.min',
+                'jquery-validate': 'vendor/jquery.validate.nv.min',
+                'jquery-validate-unobtrusive': 'vendor/jquery.validate.unobtrusive.nv.min',
+                'jquery-validate-unobtrusive-custom': 'vendor/jquery.validate.unobtrusive.custom',
+                'jquery-unobtrusive-ajax': 'vendor/jquery.unobtrusive-ajax.nv',
+                'jquery-sumoselect': 'vendor/jquery.sumoselect.nv.min',
+                'jszip': 'vendor/kendo/scripts/jszip',
+                'kendo': 'vendor/kendo/scripts/kendo.web.min',
+                'kendo-cultures': 'vendor/kendo/scripts/kendo.culture.min',
+                'kendo-timezones': 'vendor/kendo/scripts/kendo.timezones.min',
+                'scrollreveal': 'vendor/scrollReveal',
+                'typeahead': 'vendor/typeahead',
+                'tinymce': '//cdn.tinymce.com/4/tinymce.min'
+            },
+            bundles: {
+                'typeahead-bundle': ['typeahead', 'bloodhound']
+            },
+            shim: {
+                'amcharts.pie': {
+                    deps: ['amcharts'],
+                    exports: 'AmCharts',
+                    init: function () {
+                        AmCharts.isReady = true;
+                    }
+                },
+                'amcharts.serial': {
+                    deps: ['amcharts'],
+                    exports: 'AmCharts',
+                    init: function () {
+                        AmCharts.isReady = true;
+                    }
+                },
+                'bootstrap': {
+                    deps: ["jquery"]
+                },
+                'gcal': {
+                    deps: ["fullcalendar"]
+                },
+                'jcrop': {
+                    deps: ["jquery", "jquery-color"]
+                },
+                'jquery-knob': {
+                    deps: ["jquery"]
+                },
+                'jquery-validate-unobtrusive': {
+                    deps: ['jquery-validate']
+                },
+                'jquery-unobtrusive-ajax': {
+                    deps: ['jquery']
+                },
+                'jquery-sumoselect': {
+                    deps: ['jquery']
+                },
+                'handlebars': {
+                    exports: 'Handlebars'
+                },
+                'kendo': {
+                    deps: ['jquery']
+                },
+                'kendo-timezones': {
+                    deps: ['kendo']
+                },
+                'kendogrids': {
+                    deps: ['kendo', 'kendo-cultures', 'jszip']
+                },
+                'typeahead': {
+                    deps: ['bloodhound']
+                }
+            },
+            deps: ["jquery", "bootstrap", "extensions", "forms"]
+        });
+        require(['tracking']);
+    </script>
+    <script>
+        require(["jquery", "ajax"], function ($, ajax) {
+
+            $(document.body).on('click', 'a', ClickCount);
+
+            function ClickCount(event) {
+                var containsNonWhitespace = /\S/.test(linkText);
+
+                var linkHref = $(this).attr('href');
+                var linkText = $(this).text();
+                var linkTextData = $(this).data('link-text');
+                var widgetName = $(this).closest('[data-widget]').attr('data-widget');
+                var viewName = $(this).closest('[data-viewName]').attr('data-viewName');
+
+                if (linkTextData) {
+                    linkText = linkTextData;
+                }
+                else {
+                    linkText = (linkText && containsNonWhitespace) ? linkText : linkTextData;
+                }
+
+                ajax.json({
+                    url: '/app/clickcounter',
+                    data: {
+                        pageName: viewName,
+                        linkHref: linkHref,
+                        linkText: linkText,
+                        widgetName: widgetName
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            console.log('Click successfully counted', response);
+                        } else {
+                            console.log('Click count failed', response);
+                        }
+                    }
+                });
+            }
+        })
+    </script>
+    <script>
+        (function (c, s, q, u, a, r, e) {
+            c.hj = c.hj || function () { (c.hj.q = c.hj.q || []).push(arguments) };
+            c._hjSettings = { hjid: a };
+            r = s.getElementsByTagName('head')[0];
+            e = s.createElement('script');
+            e.async = true;
+            e.src = q + c._hjSettings.hjid + u;
+            r.appendChild(e);
+        })(window, document, 'https://static.hj.contentsquare.net/c/csq-', '.js', 5292141);
+    </script>
+    <!--[if lt IE 9]>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+      
+    <style>
+        .k-dropdown-wrap {
+            display: none !important;
+        }
+
+        .k-pager-sizes {
+            padding: 0 0 0 1rem !important;
+        }
+
+            .k-pager-sizes select {
+                display: block !important;
+                border: none;
+                padding: 0.3rem 1rem 0.3rem 0.3rem;
+                margin: 0;
+                width: 100%;
+                border-radius: 4px;
+                border-color: #ccc;
+                border-width: 1px;
+                border-style: solid;
+            }
+
+        .field-validation-error {
+            color: red;
+        }
+
+        option:active, option:checked {
+            color: #495057;
+        }
+
+        .k-current-page {
+            display: none;
+        }
+    </style>
+            <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1B9ZT97CXQ"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+
+        gtag('config', 'G-1B9ZT97CXQ');
+    </script>
+</head>
+<body class="compact-menu mobile-topbar-toggle">
+    
+    
+
+    
+
+<main class="container container-expandable" id="site-content">
+    <div class="hidden-print"></div>
+    
+<div class="login-bg">
+    <div id="view-sitelogin">
+        <div class="text-center">
+            <div class="logomain img-fluid"></div>
+            <img class="img-fluid" src="/Content/images/logos/three-logo-black.png" />
+            <h2>Cloud</h2>
+        </div>
+
+<form action="/login?ReturnUrl=%2ferror%2fnotfound%3faspxerrorpath%3d%2fdownloads%2fen%2fProduct-Price-Sheet-EN.pdf&amp;aspxerrorpath=/downloads/en/Product-Price-Sheet-EN.pdf" method="post">            <div class="form-group">
+                <input class="form-control" data-val="true" data-val-required="The LoginName field is required." id="LoginName" name="LoginName" placeholder="Back Office Username" type="text" value="" />
+            </div>
+            <div class="row password no-gutters">
+                <div class="col-10">
+                    <div class="form-group">
+                        <input class="form-control" data-val="true" data-val-required="The Password field is required." id="Password" name="Password" placeholder="Password" type="password" value="" />
+                    </div>
+                </div>
+                <div class="col-2">
+                    <a href="/forgotpassword"><abbr title="Forgot Password"><i class="fa-question-circle"></i></abbr></a>
+                </div>
+            </div>
+            <button type="button" id="loginbutton" class="btn btn-primary" data-loading-text="Loading...">Log in</button>
+            <div class="row no-gutters" id="language-select" style="margin-top: 40px;">
+                <div class="col-2">
+                    <i class="fa-globe"></i>
+                </div>
+                <div class="col-10">
+                    <select id="language" name="Language" class="form-control">
+                            <option value="en-US" selected=&#39;selected&#39;>English</option>
+                            <option value="es-US" >Espa&#241;ol</option>
+                            <option value="fr-US" >Fran&#231;ais</option>
+                            <option value="ja-US" >日本語</option>
+                            <option value="zh-US" >中文简体</option>
+                            <option value="ms-MY" >中文繁体</option>
+                            <option value="th-TH" >ภาษาไทย</option>
+                            <option value="id-US" >Bahasa Indonesia</option>
+                            <option value="vi-US" >Tiếng Việt</option>
+                    </select>
+                </div>
+            </div>
+</form>    </div>
+</div>
+
+
+</main>
+    
+    <script>
+    require(["jquery", "cookies", "bootstrap"], function ($, cookies) {
+
+        // Event Handlers
+        function registerEventHandlers() {
+            $('[data-language]').on("click", function () {
+
+                cookies.set('CompanyBackofficeSelectedLanguage', $(this).data("language"), {
+                    expires: new Date('3/28/2027'),
+                    path: '/'
+                });
+
+                window.location = window.location;
+            });
+
+            $("body").on("keyup, change", "[name$='Quantity']", function (e) {
+                var $this = $(this),
+                    allowZero = $(this).hasClass("allow-zero"),
+                    quantity = $this.val();
+
+
+                if (quantity.indexOf(".") >= 0) {
+                    $this.val(quantity.replace(".", ""));
+                    return;
+                }
+
+                if (quantity < 1 && !allowZero) {
+                    $this.val("1");
+                    return;
+                }
+                if (quantity < 0 && allowZero) {
+                    $this.val("0");
+                    return;
+                }
+            });
+        }
+
+        // Initialization
+        function init() {
+            registerEventHandlers();
+
+            $('[data-toggle="popover"]').popover();
+        }
+
+        init();
+    });
+</script>
+    
+     
+    <style>
+          body {
+            background-color: #262626;
+            }
+
+            #site-content {
+                padding-top: 0 !important;
+            }
+        </style>  
+    <script>
+        require(["jquery", "ajax", "cookies", "urls", "app", "toastr", "forms", "bootstrap"], function ($, ajax, cookies, url, app, toastr) {
+
+            // Settings
+            var context = '#view-sitelogin',
+                $context = $(context),
+                cookiename = 'CompanyLoginName',
+                landingUrl = ('True' == "True") ? '/authentication/continue' : '/',
+                redirectURL = '';
+
+            // Event Handlers
+            function registerEventHandlers() {
+
+                $("#language").on('change', function () {
+                    var lang = $('[name="Language"]').val();
+                    var options = {};
+                    options.expires = new Date('3/28/2027');
+                    options.path = "/";
+                    options.domain = false;
+                    options.secure = false;
+                    cookies.set('CompanyBackofficeSelectedLanguage', lang, options);
+                    window.location = window.location;
+                });
+
+                // Login Form
+                $('#loginbutton', $context).on('click', function (event) {
+                    $("#loginbutton").buttonState("loading");
+                    actions.signin();
+                });
+
+                $('input', $context).on('keypress', function (event) {
+                    if (event.which == 13) {
+                        $("#loginbutton").buttonState("loading");
+                        actions.signin();
+                    }
+                });
+
+                $('.fa-question-circle', $context).on('mouseover', function (event) { });
+            }
+
+            // Actions
+            var actions = {
+                clearCookies: function () {
+                    cookies.clear(cookiename);
+                },
+                loadCookies: function () {
+                    var savedLoginName = cookies.get(cookiename);
+                    if (savedLoginName) $('#LoginName').val(savedLoginName);
+
+                },
+                saveCookies: function () {
+                    // Get the expiration date of the cookie
+                    var expires = new Date();
+                    expires.setDate(expires.getDate() + 365);
+
+                    // Set the cookies
+                    cookies.set(cookiename, $('#LoginName').val(), {
+                        expires: expires
+                    });
+                },
+                signin: function () {
+                    // Validate the form
+                    if (!$('form', $context).valid()) {
+                        $("#loginbutton").buttonState("reset");
+                        return false;
+                    }
+                    // Submit the form
+                    var senddata = $('form').serializeObject();
+                    ajax.json({
+                        url: '/login',
+                        data: senddata,
+                        beforeSend: function () {
+                            toastr.clear();
+                        },
+                        success: function (response) {
+                            if (!response.Status) {
+                                actions.throwError("Login Failed", response.ErrorMessage);
+                                $("#loginbutton").buttonState("reset");
+                            }
+                            else {
+                                actions.saveCookies();
+                                redirectURL = (response.RedirectUrl != '') ? response.RedirectUrl : decodeURIComponent(url.current.queryKey.ReturnUrl || landingUrl);
+                                window.location = redirectURL;
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            actions.throwError("Login Failed", error);
+                            $("#loginbutton").buttonState("reset");
+                        }
+                    });
+                },
+                throwError: function (title, error) {
+                    toastr.error(error, title);
+                    $('#Password').focus();
+                    $("#loginbutton").buttonState("reset");
+                }
+            };
+
+            // Initialization
+            function _init() {
+                // Register the event handlers
+                registerEventHandlers();
+                // Load the saved cookies into the form
+                actions.loadCookies();
+                // Focus on the right field
+                if ($('#LoginName').val() == '') $('#LoginName').focus();
+                else $('#Password').focus();
+            }
+            _init();
+        });
+    </script>
+ 
+    
+    <input name="__RequestVerificationToken" type="hidden" value="VSRHmOwkSAuSdIknRFeJhEKToyjvnRzdIIO7_WUxE0C9J7VRjCkSOrFv3pNeIi42wbDmwI6M8XLknc2LQ-bIXDqEAh81" />
+    <div class="modal fade" id="downlineSearchModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h4 class="modal-title">Search Your Downline</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="associate-search">
+
+    <p><strong>Search for your referrer by entering their Customer ID, First or Last name.</strong></p>
+
+    <div class="row margin-0">
+        <div class="col-md-6">
+            <div class="input-group">
+                <input type="text" class="form-control" id="search-field" />
+                <a class="input-group-addon btn btn-primary" data-role="search"><span class="fa-search"></span></a>
+            </div>
+        </div>
+    </div>
+
+    <div id="search-results-container" style="display: none;">
+        <div class="space-20"></div>
+
+        <h5>Search Results</h5>
+
+
+        <div id="search-results" style="overflow-y: auto; max-height: 400px;"></div>
+        <script id="search-results-template" data-target="#search-results" type="text/x-handlebars-template">
+            {{#each enrollers}}
+            <div class="row no-margin">
+                <div class="col-sm-3">
+                    <img src="{{AvatarURL}}" class="img-fluid" />
+                </div>
+                <div class="col-sm-9 results-info">
+                    <span><span class="name">{{FullName}}</span>, ID# <span class="id">{{CustomerID}}</span></span><br />
+                    <span>{{MainCity}}, {{MainState}}</span><br />
+                    <a href="{{ReplicatedSiteUrl}}" data-url="{{ReplicatedSiteUrl}}" data-webalias="{{WebAlias}}">{{ReplicatedSiteUrl}}</a>
+                    <div class="space-10"></div>
+                    <a data-role="use-distributor" class="btn btn-primary">Choose</a>
+                </div>              
+            </div>
+            <div class="space-10"></div>
+            {{/each}}
+        </script>
+    </div>
+</div>
+
+
+<script>
+    require(["jquery", "ajax", "toastr", "handlebars", "pubsub"], function ($, ajax, toastr, Handlebars) {
+
+        // Settings
+        var context = ".associate-search",
+            $context = $(context);
+
+
+        // Event Handlers
+        function registerEventHandlers() {
+            $('#search-field').on("keypress", function (e) {
+                if (e.which == 13) {
+                    e.preventDefault();
+                    $('[data-role="search"]').click();
+                }
+            });
+
+            $('[data-role="search"]', $context).on('click', function () {
+                var query = $('#search-field', $context).val();
+
+                if (query != "") {
+                    actions.search(query);
+                }
+                else {
+                    $('#search-field', $context).focus();
+                }
+            });
+
+            $('#search-results', $context).on("click", '[data-role="use-distributor"]', function () {
+                var $activeRow = $(this).parents('.row:first'),
+                    id = $('.id', $activeRow).html(),
+                    name = $('.name', $activeRow).html(),
+                    url = $("[data-url]", $activeRow).data("url"),
+                webalias = $("[data-webalias]", $activeRow).data("webalias");
+
+                var enroller = {
+                    CustomerID: id,
+                    FullName: name,
+                    Url: url,
+                    WebAlias: webalias
+                };
+
+                    $('#enrollerID').val(parseInt(enroller.CustomerID));
+
+                window.trigger("enrollment.showenrollerinfo", enroller);
+            });
+        }
+
+
+        // Actions
+        var actions = {
+            search: function (query) {
+                ajax.json({
+                    url: "/enrollment/getdistributors",
+                    data: { query: query },
+                    success: function (response) {
+                        if (response.success) {
+
+                            if (response.enrollers.length == 0) {
+                                toastr.error("This search returned no results.", "We&#39;re sorry");
+                                $("#search-field").val("");
+                                return;
+                            }
+
+
+                            var source = $("#search-results-template").html();
+                            var template = Handlebars.compile(source);
+                            var html = template(response);
+                            $("#search-results").html(html);
+
+                            $("#search-results-container").show();
+                        }
+                        else {
+                            console.log("Message", response.message);
+                            toastr.error("This search returned no results.", "We&#39;re sorry");
+                        }
+                    }
+                });
+            }
+        };
+
+
+        // Helpers
+        var helpers = {
+
+        };
+
+
+        // Initialization
+        function init() {
+            registerEventHandlers();
+
+        }
+        init();
+
+    });
+</script>
+
+<style>
+    .results-info { padding-left: 30px; }
+</style>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+<script>
+        function customizePagerForAspNet() {
+            function decodeHtmlEntities(text) {
+                // Create a temporary DOM element
+                const textArea = document.createElement('textarea');
+
+                // Set the HTML content
+                textArea.innerHTML = text;
+
+                // Get the decoded text
+                const decodedText = textArea.value;
+
+                // Clean up
+                textArea.remove();
+
+                return decodedText;
+            }
+
+            // Function to initialize customization
+            function initCustomization() {
+                const selectElements = document.querySelectorAll(
+                    "div.k-pager-wrap.k-grid-pager.k-widget > span.k-pager-sizes.k-label > span > select"
+                );
+
+                if (selectElements.length === 0) {
+                    console.log("select not found");
+                    return;
+                }
+
+                selectElements.forEach((selectElement) => {
+                    // Check if text is already added to avoid duplication
+                    if (selectElement.previousSibling && selectElement.previousSibling.classList?.contains("pager-text")) {
+                        return;
+                    }
+
+                    // Create the "items per page" text element
+                    const textElement = document.createElement("span");
+                    const decodedString = decodeHtmlEntities("Items per page");
+                    textElement.textContent = decodedString;
+                    textElement.classList.add("pager-text"); // Add CSS class for styling
+
+                    // Insert the text before the <select> element
+                    selectElement.parentNode.insertBefore(textElement, selectElement);
+                });
+            }
+
+            // Wait for DOM content to fully load
+            document.addEventListener("DOMContentLoaded", () => {
+                // Retry initialization after a delay to account for dynamic rendering
+                setTimeout(initCustomization, 500);
+            });
+        }
+
+        // Execute the function
+        customizePagerForAspNet();
+
+
+</script>
+    <style>
+        .pager-text {
+            color: #a5a5a5;
+        }
+
+        .k-pager-sizes span {
+            display: flex;
+            width: 100% !important;
+            padding: 0;
+            margin: 0;
+            align-items: center;
+            justify-content: right;
+            column-gap: .5rem;
+        }
+    </style>
+</body>
+</html>
