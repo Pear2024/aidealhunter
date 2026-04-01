@@ -3,12 +3,17 @@ import { useState, useEffect } from 'react';
 
 export default function ReelsQueueDashboard() {
     const [queue, setQueue] = useState([]);
+    const [stats, setStats] = useState({ pending: 0, posted: 0, failed: 0 });
     const [loading, setLoading] = useState(true);
 
     const fetchQueue = async () => {
         try {
             const res = await fetch('/api/reels/queue');
-            if (res.ok) setQueue(await res.json());
+            if (res.ok) {
+                const data = await res.json();
+                setQueue(data.queue || []);
+                setStats(data.stats || { pending: 0, posted: 0, failed: 0 });
+            }
         } catch (e) {
             console.error(e);
         } finally {
@@ -38,6 +43,21 @@ export default function ReelsQueueDashboard() {
                 Topics marked as <span className="font-bold text-yellow-500">pending</span> will be posted automatically 
                 one by one every 4 hours according to your GitHub Actions schedule.
             </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-center">
+                <div className="bg-yellow-50 dark:bg-yellow-900/40 p-6 rounded-xl border border-yellow-200 dark:border-yellow-800 shadow-sm">
+                    <p className="text-4xl font-black text-yellow-600 dark:text-yellow-400">{stats.pending}</p>
+                    <p className="text-sm font-semibold text-yellow-700 dark:text-yellow-300 uppercase mt-2">📥 Found & Pending News</p>
+                </div>
+                <div className="bg-green-50 dark:bg-green-900/40 p-6 rounded-xl border border-green-200 dark:border-green-800 shadow-sm">
+                    <p className="text-4xl font-black text-green-600 dark:text-green-400">{stats.posted}</p>
+                    <p className="text-sm font-semibold text-green-700 dark:text-green-300 uppercase mt-2">✅ Successully Posted</p>
+                </div>
+                <div className="bg-red-50 dark:bg-red-900/40 p-6 rounded-xl border border-red-200 dark:border-red-800 shadow-sm">
+                    <p className="text-4xl font-black text-red-600 dark:text-red-400">{stats.failed}</p>
+                    <p className="text-sm font-semibold text-red-700 dark:text-red-300 uppercase mt-2">❌ Upload Failed (Errors)</p>
+                </div>
+            </div>
 
             {loading ? <p className="animate-pulse">Loading database queue...</p> : (
                 <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700">

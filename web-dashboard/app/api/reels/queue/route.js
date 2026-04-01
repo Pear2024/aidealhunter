@@ -16,8 +16,18 @@ export async function GET() {
     let conn;
     try {
         conn = await getDb();
+        
+        // 1. Fetch exact aggregate stats across the entire table
+        const [statRows] = await conn.execute(`SELECT status, COUNT(*) as count FROM health_reels_queue GROUP BY status`);
+        const stats = { pending: 0, posted: 0, failed: 0 };
+        statRows.forEach(row => {
+            stats[row.status] = row.count;
+        });
+
+        // 2. Fetch recent queue items
         const [rows] = await conn.execute(`SELECT * FROM health_reels_queue ORDER BY status ASC, created_at DESC LIMIT 50`);
-        return NextResponse.json(rows);
+        
+        return NextResponse.json({ queue: rows, stats });
     } catch (error) {
         console.error("Queue Fetch Error:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });
