@@ -88,7 +88,11 @@ async function main() {
             required: ["script", "caption", "image_prompt"]
         };
         const textModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash", generationConfig: { responseMimeType: "application/json", responseSchema: schema } });
-        const result = await textModel.generateContent(`Title: ${selectedTopic}. Write a viral 15-second educational Reels script and an in-depth 3-paragraph social media caption based on this.`);
+        
+        const todayStr = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
+        const aiPrompt = `Today's date is ${todayStr}. Title: ${selectedTopic}. Write a viral 15-second educational Reels script and an in-depth 3-paragraph social media caption based on this. VERY IMPORTANT: If today is a major US holiday, seasonal shift (like Spring/Winter), or global health awareness day, cleverly and naturally tie the medical/cellular nutrition fact into the holiday/seasonal theme! If not, just write normally.`;
+        
+        const result = await textModel.generateContent(aiPrompt);
         const aiResponse = JSON.parse(result.response.text());
         
         let cleanScript = aiResponse.script.slice(0, 190);
