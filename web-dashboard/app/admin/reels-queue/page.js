@@ -44,6 +44,36 @@ export default function ReelsQueueDashboard() {
                 one by one every 4 hours according to your GitHub Actions schedule.
             </p>
 
+            <div className="mb-8 p-6 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl shadow-lg border border-blue-500 flex flex-col md:flex-row items-center justify-between">
+                <div className="text-white mb-4 md:mb-0">
+                    <h2 className="text-xl font-bold flex items-center gap-2">🚀 Need a post immediately?</h2>
+                    <p className="opacity-90 text-sm mt-1">Bypass the schedule and force the engine to generate and publish the next pending topic to Facebook right now.</p>
+                </div>
+                <button 
+                    onClick={async (e) => {
+                        e.target.disabled = true;
+                        const originalText = e.target.innerText;
+                        e.target.innerText = "⏳ Booting Servers...";
+                        try {
+                            const res = await fetch('/api/reels/trigger', { method: 'POST' });
+                            const data = await res.json();
+                            if (res.ok) {
+                                alert("✅ " + data.message);
+                            } else {
+                                alert("❌ Error: " + data.error);
+                            }
+                        } catch(err) {
+                            alert("Something went wrong!");
+                        }
+                        e.target.innerText = originalText;
+                        e.target.disabled = false;
+                    }}
+                    className="whitespace-nowrap px-6 py-3 bg-white text-blue-700 font-bold rounded-lg shadow hover:bg-gray-50 transition transform hover:scale-105"
+                >
+                    ⚡️ Force Post Now
+                </button>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-center">
                 <div className="bg-yellow-50 dark:bg-yellow-900/40 p-6 rounded-xl border border-yellow-200 dark:border-yellow-800 shadow-sm">
                     <p className="text-4xl font-black text-yellow-600 dark:text-yellow-400">{stats.pending}</p>
