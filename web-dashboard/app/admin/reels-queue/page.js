@@ -34,6 +34,34 @@ export default function ReelsQueueDashboard() {
         fetchQueue();
     }, []);
 
+    const getNextRunTime = () => {
+        const now = new Date();
+        const runTimesUTC = [
+            { h: 0, m: 7 }, { h: 4, m: 17 }, { h: 8, m: 27 }, 
+            { h: 12, m: 37 }, { h: 16, m: 47 }, { h: 20, m: 57 }
+        ];
+        
+        let nextRun = null;
+        for (const time of runTimesUTC) {
+            const candidate = new Date();
+            candidate.setUTCHours(time.h, time.m, 0, 0);
+            if (candidate > now) {
+                nextRun = candidate;
+                break;
+            }
+        }
+        
+        // If all times for today have passed, pick the first time tomorrow
+        if (!nextRun) {
+            nextRun = new Date();
+            nextRun.setUTCDate(nextRun.getUTCDate() + 1);
+            nextRun.setUTCHours(runTimesUTC[0].h, runTimesUTC[0].m, 0, 0);
+        }
+        return nextRun;
+    };
+
+    const nextRunTime = getNextRunTime();
+
     return (
         <div className="p-8 max-w-6xl mx-auto bg-gray-50 dark:bg-gray-900 min-h-screen text-gray-900 dark:text-gray-100">
             <h1 className="text-3xl font-bold mb-8 text-blue-600 dark:text-blue-400">📅 Medical Reels Content Queue</h1>
@@ -41,11 +69,25 @@ export default function ReelsQueueDashboard() {
             <p className="mb-6 text-sm opacity-80 bg-blue-100 dark:bg-blue-900 p-4 rounded-lg">
                 The AI engine automatically fetches fresh news and inserts them here when the queue runs dry. 
                 Topics marked as <span className="font-bold text-yellow-500">pending</span> will be posted automatically 
-                one by one every 4 hours according to your GitHub Actions schedule.
+                according to your GitHub Actions schedule.
             </p>
 
-            <div className="mb-8 p-6 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl shadow-lg border border-blue-500 flex flex-col md:flex-row items-center justify-between">
-                <div className="text-white mb-4 md:mb-0">
+            <div className="mb-8 p-5 bg-gradient-to-r from-purple-600 to-indigo-800 rounded-xl shadow-lg border border-purple-500 flex flex-col sm:flex-row items-center justify-between text-white">
+                <div className="flex items-center gap-4 mb-4 sm:mb-0">
+                    <div className="text-4xl">⏱️</div>
+                    <div>
+                        <h2 className="text-lg font-bold">Next Automated Post Pipeline</h2>
+                        <p className="opacity-90 text-sm">The script will autonomously wake up and process the top pending news at this exact time.</p>
+                    </div>
+                </div>
+                <div className="text-right bg-white/20 px-6 py-3 rounded-lg border border-white/30 backdrop-blur-sm">
+                    <p className="text-xs uppercase tracking-widest font-bold opacity-80">Scheduled For (Local Time)</p>
+                    <p className="text-2xl font-black tabular-nums">{nextRunTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+            </div>
+
+            <div className="mb-8 p-6 bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl shadow-lg border border-blue-500 flex flex-col md:flex-row items-center justify-between text-white">
+                <div className="mb-4 md:mb-0">
                     <h2 className="text-xl font-bold flex items-center gap-2">🚀 Need a post immediately?</h2>
                     <p className="opacity-90 text-sm mt-1">Bypass the schedule and force the engine to generate and publish the next pending topic to Facebook right now.</p>
                 </div>
@@ -57,11 +99,8 @@ export default function ReelsQueueDashboard() {
                         try {
                             const res = await fetch('/api/reels/trigger', { method: 'POST' });
                             const data = await res.json();
-                            if (res.ok) {
-                                alert("✅ " + data.message);
-                            } else {
-                                alert("❌ Error: " + data.error);
-                            }
+                            if (res.ok) alert("✅ " + data.message);
+                            else alert("❌ Error: " + data.error);
                         } catch(err) {
                             alert("Something went wrong!");
                         }
