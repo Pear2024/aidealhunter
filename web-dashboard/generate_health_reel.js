@@ -106,26 +106,24 @@ async function main() {
         const audioBase64 = await googleTTS.getAudioBase64(cleanScript, { lang: 'en', slow: false, host: 'https://translate.google.com' });
         fs.writeFileSync(audioPath, Buffer.from(audioBase64, 'base64'));
 
-        // Background Image Generation (Switched to Official OpenAI DALL-E 3 due to AIMLAPI instability)
-        console.log("🎨 Generating Cinematic AI Background via Official OpenAI DALL-E 3...");
+        // Background Image Generation (Switched to Official Google Imagen 4.0 API)
+        console.log("🎨 Generating Cinematic AI Background via Official Google Imagen 4.0...");
 
         const imgPath = path.join(tempDir, 'health_bg.png');
         try {
-            if (!process.env.OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is completely missing from environment / secrets!");
+            if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is completely missing from environment / secrets!");
             
-            const bgRes = await axios.post('https://api.openai.com/v1/images/generations', {
-                model: "dall-e-3",
-                prompt: aiResponse.image_prompt,
-                n: 1,
-                size: "1024x1024"
-            }, { headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' } });
+            const bgRes = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${process.env.GEMINI_API_KEY}`, {
+                instances: [{ prompt: aiResponse.image_prompt }],
+                parameters: { sampleCount: 1, aspectRatio: '1:1' }
+            }, { headers: { 'Content-Type': 'application/json' } });
             
-            const imgData = await axios.get(bgRes.data.data[0].url, { responseType: 'arraybuffer' });
-            fs.writeFileSync(imgPath, imgData.data);
-            console.log("🎞️ Background Image Generated Successfully via OpenAI!");
+            const b64 = bgRes.data.predictions[0].bytesBase64Encoded;
+            fs.writeFileSync(imgPath, Buffer.from(b64, 'base64'));
+            console.log("🎞️ Background Image Generated Successfully via Google Imagen!");
         } catch (imgErr) {
             console.error("\n❌ Image Gen Failed:", imgErr.response ? JSON.stringify(imgErr.response.data) : imgErr.message);
-            throw new Error("Image generation failed on OpenAI. Aborting reel creation to prevent blank/green screen uploads.");
+            throw new Error("Image generation failed on Google Imagen. Aborting reel creation to prevent blank/green screen uploads.");
         }
 
         // FFMPEG Assembly (Without Hardcoded Subtitles)
