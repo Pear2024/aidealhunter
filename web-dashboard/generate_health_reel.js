@@ -106,30 +106,26 @@ async function main() {
         const audioBase64 = await googleTTS.getAudioBase64(cleanScript, { lang: 'en', slow: false, host: 'https://translate.google.com' });
         fs.writeFileSync(audioPath, Buffer.from(audioBase64, 'base64'));
 
-        // Background Image Generation 
-        console.log("🎨 Generating Cinematic AI Background via AIMLAPI...");
-        const imgModels = [
-            "dall-e-3",
-            "flux/schnell"
-        ];
-        const selectedImageModel = imgModels[Math.floor(Math.random() * imgModels.length)];
-        console.log("Using Image Engine:", selectedImageModel);
+        // Background Image Generation (Switched to Official OpenAI DALL-E 3 due to AIMLAPI instability)
+        console.log("🎨 Generating Cinematic AI Background via Official OpenAI DALL-E 3...");
 
         const imgPath = path.join(tempDir, 'health_bg.png');
         try {
-            const bgRes = await axios.post('https://api.aimlapi.com/v1/images/generations', {
-                model: selectedImageModel,
+            if (!process.env.OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is completely missing from environment / secrets!");
+            
+            const bgRes = await axios.post('https://api.openai.com/v1/images/generations', {
+                model: "dall-e-3",
                 prompt: aiResponse.image_prompt,
                 n: 1,
                 size: "1024x1024"
-            }, { headers: { 'Authorization': `Bearer ${process.env.AIMLAPI_KEY}`, 'Content-Type': 'application/json' } });
+            }, { headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' } });
             
             const imgData = await axios.get(bgRes.data.data[0].url, { responseType: 'arraybuffer' });
             fs.writeFileSync(imgPath, imgData.data);
-            console.log("🎞️ Background Image Generated Successfully!");
+            console.log("🎞️ Background Image Generated Successfully via OpenAI!");
         } catch (imgErr) {
             console.error("\n❌ Image Gen Failed:", imgErr.response ? JSON.stringify(imgErr.response.data) : imgErr.message);
-            throw new Error("Image generation failed on AIMLAPI. Aborting reel creation to prevent blank/green screen uploads.");
+            throw new Error("Image generation failed on OpenAI. Aborting reel creation to prevent blank/green screen uploads.");
         }
 
         // FFMPEG Assembly (Without Hardcoded Subtitles)
