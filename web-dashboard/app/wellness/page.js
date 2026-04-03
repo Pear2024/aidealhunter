@@ -37,6 +37,12 @@ export default function WellnessAI() {
         const newUsage = usageCount + 1;
         setUsageCount(newUsage);
         localStorage.setItem('ai_wellness_usage', newUsage.toString());
+        
+        // Fire Facebook Pixel Lead Event
+        if (typeof window !== 'undefined' && window.fbq) {
+            window.fbq('track', 'Lead');
+            console.log('✅ Facebook Pixel: Lead Event Fired');
+        }
       }
     } catch (e) {
       console.error(e);
