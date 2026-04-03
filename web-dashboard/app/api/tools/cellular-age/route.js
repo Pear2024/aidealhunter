@@ -26,7 +26,6 @@ export async function POST(request) {
            Mention "Liposomal Absorption Technology" ensuring 95% cellular delivery.
         5. Contact Callout: Conclude with this block:
            <div style="background:#f8fafc; border-left:4px solid #3b82f6; padding:12px; margin: 15px 0;"><strong>📞 Speak to our Cellular Health Advisor (Free):</strong> Call or Text 951-249-1521 to discuss your cellular reversal plan.</div>
-        6. CTA Button: End with: <a href="https://threeinternational.com/en/ShopProducts/1712892" target="_blank" style="display:inline-block; padding:12px 24px; background-color:#3b82f6; color:white; border-radius:8px; text-decoration:none; font-weight:bold; margin-top:10px;">Begin Cellular Reversal Now</a>
         `;
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
