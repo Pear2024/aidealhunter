@@ -28,7 +28,7 @@ export async function POST(request) {
            - Visage Super Serum (Bakuchiol, Squalane, Vitex agnus-castus): Neurocosmetic super-serum for locking in hydration and wrinkle reduction. Link: https://www.pdr.net/full-prescribing-information/hl/?druglabelid=24511
            INSTRUCTION: When you pitch the specific Three product, explicitly mention its cutting-edge active ingredients (like MBC-267 Peptides, Humic Shale Extract, or Liposomal CoQ10) to sound highly clinical and impress the patient!
         5. Free Volunteer Nurse Support: Emphasize that they do not have to go through this health journey alone. Offer a free consultation by instructing them to "Call or Text our Free Volunteer Nurse at 951-249-1521 for personalized support and medical guidance." Format this prominently using an HTML call-out box or bold text (e.g. <div style="background:#f0fdf4; border-left:4px solid #10b981; padding:12px; margin: 15px 0;"><strong>📞 Free Volunteer Nurse Consultation:</strong> 951-249-1521</div>).
-        6. Structure the output clearly using HTML formatting for easy rendering. Use <h2>, <h3>, <strong>, <ul>, and <p> tags.
+        6. Structure the output clearly using HTML formatting for easy rendering. Use <h2>, <h3>, <strong>, <ul>, and <p> tags.\`;
 
         // Using Gemini Flash as default since it's fast and available in the ecosystem
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
