@@ -54,25 +54,26 @@ Be the best version of yourself.
 async function generateAndPostAd(adInfo, index) {
     console.log(`\n🚀 Processing [Ad ${index + 1}: ${adInfo.name}]...`);
     try {
-        // 1. Generate Ad Creative via DALL-E 3 (Official OpenAI SDK)
-        console.log(`🎨 Generating Image via OpenAI...`);
-        const imgRes = await axios.post('https://api.openai.com/v1/images/generations', {
-            model: "dall-e-3",
-            prompt: adInfo.imagePrompt,
-            n: 1, size: "1024x1024"
-        }, { headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' } });
+        // 1. Generate Ad Creative via Google Imagen 4.0
+        console.log(`🎨 Generating Image via Google Imagen 4.0...`);
+        const imgRes = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${process.env.GEMINI_API_KEY}`, {
+            instances: [{ prompt: adInfo.imagePrompt }],
+            parameters: { sampleCount: 1, aspectRatio: '1:1' }
+        }, { headers: { 'Content-Type': 'application/json' } });
         
-        const imageUrl = imgRes.data.data[0].url;
-        console.log(`✅ Image Ready: ${imageUrl}`);
+        const b64 = imgRes.data.predictions[0].bytesBase64Encoded;
+        
+        // Convert base64 to Blob/Buffer for Facebook multipart upload, or use a temp file
+        const FormData = require('form-data');
+        const form = new FormData();
+        form.append('message', adInfo.copy);
+        form.append('access_token', PAGE_TOKEN);
+        form.append('source', Buffer.from(b64, 'base64'), 'ad_image.png');
 
-        // 2. Post to Facebook using Graph API (Pages API for Photos)
+        // 2. Post to Facebook using Graph API (Multipart Form)
         console.log(`📡 Publishing to Facebook Page...`);
-        const fbRes = await axios.post(`https://graph.facebook.com/v19.0/${PAGE_ID}/photos`, null, {
-            params: {
-                url: imageUrl,
-                message: adInfo.copy,
-                access_token: PAGE_TOKEN
-            }
+        const fbRes = await axios.post(`https://graph.facebook.com/v19.0/${PAGE_ID}/photos`, form, {
+            headers: form.getHeaders()
         });
 
         console.log(`🎉 SUCCESS! Ad Posted to Facebook. Post ID: ${fbRes.data.post_id}`);

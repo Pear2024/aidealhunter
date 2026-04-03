@@ -12,6 +12,9 @@ export default function WellnessAI() {
   const [loading, setLoading] = useState(false);
   const [diagnosis, setDiagnosis] = useState(null);
   const [usageCount, setUsageCount] = useState(0);
+  const [contactNurse, setContactNurse] = useState(null);
+  const [nurseName, setNurseName] = useState('');
+  const [nursePhone, setNursePhone] = useState('');
 
   useEffect(() => {
     const usage = parseInt(localStorage.getItem('ai_wellness_usage') || '0', 10);
@@ -183,10 +186,69 @@ export default function WellnessAI() {
               className="prose prose-slate max-w-none prose-h2:text-xl prose-h2:font-bold prose-h2:text-slate-800 prose-h2:mt-8 prose-h2:mb-4 prose-h3:text-lg prose-h3:text-teal-700 prose-strong:text-slate-900 prose-p:leading-relaxed prose-a:bg-slate-900 prose-a:text-white prose-a:font-medium prose-a:px-6 prose-a:py-3 prose-a:rounded-xl prose-a:no-underline hover:prose-a:bg-slate-800 transition-all"
               dangerouslySetInnerHTML={{ __html: diagnosis }}
             />
+
+            {contactNurse === null && (
+              <div className="mt-12 p-8 bg-slate-50 border border-slate-200 rounded-2xl text-center shadow-inner">
+                <h3 className="text-xl font-bold text-slate-800 mb-4">Would you like our Medical Support Nurse to contact you?</h3>
+                <p className="text-slate-500 mb-6 max-w-xl mx-auto">Get personalized guidance on managing your symptoms and understanding the holistic cellular protocol. This is a 100% free consultation.</p>
+                <div className="flex flex-col md:flex-row items-center justify-center gap-4">
+                   <button 
+                     onClick={() => setContactNurse(true)}
+                     className="w-full md:w-auto px-8 py-4 bg-slate-900 hover:bg-slate-800 text-white font-bold rounded-xl transition-all shadow-lg"
+                   >
+                     Yes, Contact Me (Free)
+                   </button>
+                   <a 
+                     href="https://threeinternational.com/en/ShopProducts/1712892"
+                     target="_blank"
+                     rel="noreferrer"
+                     onClick={() => setContactNurse(false)}
+                     className="w-full md:w-auto px-8 py-4 bg-white border-2 border-slate-200 hover:border-slate-300 text-slate-700 font-bold rounded-xl transition-all shadow-sm block text-center"
+                   >
+                     No, Explore the Holistic Alternative
+                   </a>
+                </div>
+              </div>
+            )}
+            
+            {contactNurse === true && (
+              <div className="mt-12 p-8 bg-teal-50 border border-teal-200 rounded-2xl shadow-inner">
+                <h3 className="text-xl font-bold text-teal-800 mb-4 text-center">Schedule Your Free Nurse Callback</h3>
+                <div className="space-y-4 max-w-sm mx-auto">
+                   <input type="text" placeholder="Your Name" value={nurseName} onChange={e => setNurseName(e.target.value)} className="w-full p-4 rounded-xl border border-teal-200 focus:ring-2 focus:ring-teal-500 bg-white" />
+                   <input type="tel" placeholder="Phone Number" value={nursePhone} onChange={e => setNursePhone(e.target.value)} className="w-full p-4 rounded-xl border border-teal-200 focus:ring-2 focus:ring-teal-500 bg-white" />
+                   <button 
+                     onClick={() => {
+                       if(!nurseName || !nursePhone) { alert("Please enter name and phone."); return; }
+                       // Simulated save (in reality, you'd POST this to an API endpoint to update the Lead record)
+                       alert("Thank you " + nurseName + "! Our volunteer nurse will call you at " + nursePhone + " shortly.");
+                       setContactNurse(false);
+                     }}
+                     className="w-full px-8 py-4 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl transition-all shadow-lg hover:shadow-teal-500/30"
+                   >
+                     Request Callback Now
+                   </button>
+                </div>
+              </div>
+            )}
+
+            {contactNurse === false && (
+              <div className="mt-12 text-center p-8 bg-emerald-50 rounded-2xl border border-emerald-100">
+                 <h3 className="text-xl font-bold text-emerald-800 mb-4 text-center">Ready to begin your cellular recovery?</h3>
+                 <a 
+                   href="https://threeinternational.com/en/ShopProducts/1712892"
+                   target="_blank"
+                   rel="noreferrer"
+                   className="inline-block w-full md:w-auto px-10 py-5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl transition-all shadow-xl shadow-emerald-500/30 hover:scale-105 uppercase tracking-wide"
+                 >
+                   Explore the Holistic Alternative
+                 </a>
+              </div>
+            )}
             
             <div className="mt-12 pt-8 border-t border-slate-100 flex items-center justify-between">
               <button 
-                onClick={() => { setStep(1); setSymptoms(''); setDiagnosis(null); }}
+                onClick={() => { setStep(1); setSymptoms(''); setDiagnosis(null); setContactNurse(null); }}
                 className="text-sm font-semibold text-slate-500 hover:text-slate-800 transition-colors"
               >
                 ← Restart Assessment
