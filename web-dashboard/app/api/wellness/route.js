@@ -49,6 +49,27 @@ export async function POST(request) {
         
         const responseText = result.response.text();
 
+        // Save Lead to Aiven MySQL
+        try {
+            const mysql = require('mysql2/promise');
+            const pool = mysql.createPool({
+                host: process.env.MYSQL_HOST,
+                user: process.env.MYSQL_USER,
+                password: process.env.MYSQL_PASSWORD,
+                database: process.env.MYSQL_DATABASE,
+                port: process.env.MYSQL_PORT,
+                waitForConnections: true,
+                connectionLimit: 5,
+            });
+            await pool.query(
+                `INSERT INTO wellness_leads (symptoms, duration, lifestyle, ai_diagnosis) VALUES (?, ?, ?, ?)`,
+                [symptoms.slice(0, 1000), duration.slice(0, 255), lifestyle.slice(0, 1000), responseText]
+            );
+            console.log("✅ Successfully logged wellness assessment lead to DB.");
+        } catch (dbError) {
+            console.error("⚠️ Failed to log lead to DB (but diagnosis was returned):", dbError);
+        }
+
         return NextResponse.json({ success: true, diagnosis: responseText });
 
     } catch (error) {
