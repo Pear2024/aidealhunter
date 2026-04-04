@@ -27,7 +27,7 @@ const products = {
     tagline: 'The Ultimate Cellular Foundation',
     description: 'A complete clinical portfolio of vitamins, minerals, and phytonutrients. Built to optimize heart, brain, and eye health while supporting a robust gut microbiome.',
     pdrLink: 'https://www.pdr.net/full-prescribing-information/hl/?druglabelid=24471',
-    buyLink: 'https://threeinternational.com/en/ShopProducts/1712892',
+    buyLink: 'https://threeinternational.com/en/productdetail/1712892/2802/US',
     benefits: [
       'Provides a complete portfolio of essential phytonutrients',
       'Supports a healthy gut microbiome for systemic health',
@@ -37,7 +37,7 @@ const products = {
     ingredients: ['72 Trace Minerals', 'Omega-3 Complex', 'Enzyme Blend', 'Probiotics'],
     color: 'from-emerald-900 to-teal-900',
     buttonColor: 'bg-emerald-600 hover:bg-emerald-700',
-    image: 'https://images.unsplash.com/photo-1550831107-1553da8c8464?q=80&w=1000&auto=format&fit=crop'
+    image: 'https://threeinternational.com/shopping/productdetailimages/210128/Vitalite%CC%81_Additional4.webp'
   },
   imune: {
     name: 'Imúne',
