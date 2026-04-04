@@ -44,7 +44,7 @@ const products = {
     tagline: 'Advanced Innate & Adaptive Immune Modulation',
     description: 'Fortify your bodys natural defenses. This formula promotes the health of both innate and adaptive immune systems while enhancing the gut microbiome for better systemic immunity.',
     pdrLink: 'https://www.pdr.net/full-prescribing-information/hl/?druglabelid=24469',
-    buyLink: 'https://threeinternational.com/en/ShopProducts/1712892',
+    buyLink: 'https://threeinternational.com/en/productdetail/1712892/2803/US',
     benefits: [
       'Promotes the health of innate AND adaptive immune systems',
       'Supports a rapid, healthy immune response',
@@ -54,7 +54,7 @@ const products = {
     ingredients: ['Liposomal Vitamin C', 'Quercetin', 'Elderberry', 'Reishi/Shiitake Blend'],
     color: 'from-blue-900 to-cyan-900',
     buttonColor: 'bg-blue-600 hover:bg-blue-700',
-    image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ca?q=80&w=1000&auto=format&fit=crop'
+    image: 'https://threeinternational.com/shopping/productdetailimages/210136/Imu%CC%81ne_Additional4.webp'
   },
   revive: {
     name: 'Revíve',
