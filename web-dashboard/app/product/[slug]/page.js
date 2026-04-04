@@ -61,7 +61,7 @@ const products = {
     tagline: 'Erase Inflammation & Joint Pain',
     description: 'A potent anti-inflammatory complex designed to maintain a healthy inflammatory status, support healthy joints, ease muscle stiffness, and counteract free radical damage from exercise.',
     pdrLink: 'https://www.pdr.net/full-prescribing-information/hl/?druglabelid=24470',
-    buyLink: 'https://threeinternational.com/en/ShopProducts/1712892',
+    buyLink: 'https://threeinternational.com/en/productdetail/1712892/2799/US',
     benefits: [
       'Maintains a healthy systemic inflammatory status',
       'Supports healthy joints and eases muscle stiffness',
@@ -71,7 +71,7 @@ const products = {
     ingredients: ['Curcumin (Turmeric)', 'Boswellia', 'Black Cumin Oil', 'Sea Buckthorn'],
     color: 'from-amber-700 to-orange-900',
     buttonColor: 'bg-orange-600 hover:bg-orange-700',
-    image: 'https://images.unsplash.com/photo-1620019448896-bc98dd3901b5?q=80&w=1000&auto=format&fit=crop'
+    image: 'https://threeinternational.com/shopping/productdetailimages/210122/Revi%CC%81ve_Additional4.webp'
   },
   purifi: {
     name: 'Purífi',
