@@ -199,7 +199,7 @@ export default function WellnessAI() {
                      Yes, Contact Me (Free)
                    </button>
                    <a 
-                     href="https://threeinternational.com/en/ShopProducts/1712892"
+                     href="/product/eternel"
                      target="_blank"
                      rel="noreferrer"
                      onClick={() => setContactNurse(false)}
@@ -242,7 +242,7 @@ export default function WellnessAI() {
               <div className="mt-12 text-center p-8 bg-emerald-50 rounded-2xl border border-emerald-100">
                  <h3 className="text-xl font-bold text-emerald-800 mb-4 text-center">Ready to begin your cellular recovery?</h3>
                  <a 
-                   href="https://threeinternational.com/en/ShopProducts/1712892"
+                   href="/product/eternel"
                    target="_blank"
                    rel="noreferrer"
                    className="inline-block w-full md:w-auto px-10 py-5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl transition-all shadow-xl shadow-emerald-500/30 hover:scale-105 uppercase tracking-wide"

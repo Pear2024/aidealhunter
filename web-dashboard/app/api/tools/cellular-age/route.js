@@ -21,11 +21,10 @@ export async function POST(request) {
            </div>
         3. Explain Risk: In 2-3 short, clinical sentences (Native US English), explain WHY their cells are aging faster (mentioning 'Oxidative Stress' or 'Chronic Inflammation').
         4. The Solution (Three International): Explain that standard drug-store vitamins cannot penetrate the cell membrane. Recommend exactly ONE primary product from Three International based on their inputs:
-           - If Stress/Aging focus: Éternel (Resveratrol, CoQ10, Glutathione). PDR Link: <a href="https://www.pdr.net/full-prescribing-information/hl/?druglabelid=24467" target="_blank" style="color: #10b981; font-weight: bold;">(Verify Éternel on PDR.net)</a>
-           - If Energy/Diet focus: Vitalité (72 Trace Minerals, Omega-3). PDR Link: <a href="https://www.pdr.net/full-prescribing-information/hl/?druglabelid=24471" target="_blank" style="color: #10b981; font-weight: bold;">(Verify Vitalité on PDR.net)</a>
+           - If Stress/Aging focus: Éternel (Resveratrol, CoQ10, Glutathione). Sales Page Link: <a href="https://nadaniadigitalllc.com/product/eternel" target="_blank" style="color: #10b981; font-weight: bold;">(Read Clinical Review & See PDR Info)</a>
+           - If Energy/Diet focus: Vitalité (72 Trace Minerals, Omega-3). Sales Page Link: <a href="https://nadaniadigitalllc.com/product/vitalite" target="_blank" style="color: #10b981; font-weight: bold;">(Read Clinical Review & See PDR Info)</a>
            Mention "Liposomal Absorption Technology" ensuring 95% cellular delivery.
-        5. Contact Callout: Conclude with this block:
-           <div style="background:#f8fafc; border-left:4px solid #3b82f6; padding:12px; margin: 15px 0;"><strong>📞 Speak to our Cellular Health Advisor (Free):</strong> Call or Text 951-249-1521 to discuss your cellular reversal plan.</div>
+        5. Strict HTML Formatting: You MUST wrap the entire response in raw HTML tags (<h2>, <p>, <strong>, etc.) for beautiful rendering. Do NOT use markdown code blocks. Start immediately with the HTML tags.
         `;
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
