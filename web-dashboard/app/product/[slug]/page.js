@@ -275,8 +275,12 @@ export default function ProductSalesPage() {
                      <Microscope size={32} />
                   </div>
                   <div>
-                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">Dr. Dan Gubler, Ph.D.</h3>
-                    <p className="text-blue-600 font-bold uppercase tracking-wider text-xs">Chief Scientific Officer at Three</p>
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                       Dr. Dan Gubler, Ph.D.
+                    </h3>
+                    <a href="https://www.linkedin.com/in/dan-gubler-ph-d-6721363/" target="_blank" rel="noopener noreferrer" className="inline-block mt-1 text-blue-600 hover:text-blue-800 font-bold uppercase tracking-wider text-xs border-b border-blue-200 hover:border-blue-500 transition-colors">
+                       Chief Scientific Officer at Three (Verify LinkedIn ↗)
+                    </a>
                   </div>
                 </div>
                 
