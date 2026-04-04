@@ -67,20 +67,20 @@ export default function Home() {
       </section>
 
       {/* Partners / Trust Banner */}
-      <section className="py-6 md:py-10 border-y border-slate-200 bg-white">
+      <section className="py-3 md:py-10 border-y border-slate-200 bg-white">
         <div className="max-w-7xl mx-auto px-6">
-          <p className="text-center text-xs md:text-sm font-semibold text-slate-400 mb-4 md:mb-6 tracking-wider uppercase">Backed By Science & Distributed Globally</p>
-          <div className="flex flex-wrap justify-center items-center gap-4 md:gap-12 opacity-60 grayscale">
-            <div className="text-sm md:text-xl font-bold flex items-center gap-1"><ShieldCheck size={20} className="md:w-7 md:h-7" /> PDR Listed</div>
-            <div className="text-sm md:text-xl font-black flex items-center gap-1">GMP CERTIFIED</div>
-            <div className="text-sm md:text-xl font-bold flex items-center gap-1"><Microscope size={20} className="md:w-7 md:h-7" /> CLINICAL GRADE</div>
-            <div className="text-sm md:text-xl font-serif italic font-bold">Nature+Tech</div>
+          <p className="text-center text-[10px] md:text-sm font-semibold text-slate-400 mb-2 md:mb-6 tracking-wider uppercase">Backed By Science & Distributed Globally</p>
+          <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 md:gap-12 opacity-60 grayscale">
+            <div className="text-xs md:text-xl font-bold flex items-center gap-1"><ShieldCheck size={16} className="md:w-7 md:h-7" /> PDR Listed</div>
+            <div className="text-xs md:text-xl font-black flex items-center gap-1">GMP CERTIFIED</div>
+            <div className="text-xs md:text-xl font-bold flex items-center gap-1"><Microscope size={16} className="md:w-7 md:h-7" /> CLINICAL GRADE</div>
+            <div className="text-xs md:text-xl font-serif italic font-bold">Nature+Tech</div>
           </div>
         </div>
       </section>
 
       {/* Features Grid */}
-      <section className="py-24 bg-slate-50" id="science">
+      <section className="py-12 md:py-24 bg-slate-50" id="science">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">The Future of Holistic Healing</h2>
@@ -119,7 +119,7 @@ export default function Home() {
       </section>
 
       {/* Cellular Nutrition Section */}
-      <section className="py-24 bg-white" id="nutrition">
+      <section className="py-12 md:py-24 bg-white" id="nutrition">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col lg:flex-row items-center gap-16">
             <div className="lg:w-1/2">
@@ -168,7 +168,7 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-24 relative overflow-hidden bg-slate-900" id="ai">
+      <section className="py-16 md:py-24 relative overflow-hidden bg-slate-900" id="ai">
         <div className="absolute inset-0 opacity-10">
            <img src="https://images.unsplash.com/photo-1530213786676-41ce9f481c5d?q=80&w=2070&auto=format&fit=crop" className="w-full h-full object-cover" alt="Cells" />
         </div>
