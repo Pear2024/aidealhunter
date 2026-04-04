@@ -15,8 +15,29 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "Nadania Wellness - Health & Nutrition Hub",
-  description: "Curated insights on health, holistic wellness, and premium nutrition.",
+  title: "Nadania Wellness - Clinical Health & Cellular Nutrition",
+  description: "Advanced Medical AI Diagnostics & PDR-listed Cellular Nutrition.",
+  openGraph: {
+    title: "Nadania Wellness - Clinical Health & AI Diagnostics",
+    description: "Understand your body. Transform your health with Medical AI and Liposomal Cellular Nutrition.",
+    url: "https://nadaniadigitalllc.com",
+    siteName: "Nadania Wellness",
+    images: [
+      {
+        url: "https://threeinternational.com/shopping/productdetailimages/210102/E%CC%81ternel_Additional4.webp",
+        width: 1200,
+        height: 630,
+        alt: "Nadania Wellness - Clinical AI System Online"
+      }
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Nadania Wellness - Clinical Health & AI Diagnostics",
+    description: "Understand your body. Transform your health with Medical AI and Liposomal Cellular Nutrition.",
+    images: ["https://threeinternational.com/shopping/productdetailimages/210102/E%CC%81ternel_Additional4.webp"],
+  }
 };
 
 export default function RootLayout({ children }) {
