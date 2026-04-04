@@ -22,45 +22,46 @@ export default function AIStudioPage() {
     { name: "Visage", desc: "Premium Skincare" }
   ];
 
-  const symptomMap = {
-    "Anti-Aging": { product: "Éternel", audience: "Women 40+ wanting to reverse cellular aging" },
-    "Antioxidant Protection": { product: "Éternel", audience: "Health-conscious individuals seeking longevity" },
-    "Blood Sugar Support": { product: "GLP-THREE", audience: "People struggling with cravings and blood sugar crashes" },
-    "Blood Pressure Support": { product: "Vitalité", audience: "Stressed adults over 40 needing heart support" },
-    "Bone Health": { product: "Revíve", audience: "Aging parents experiencing physical decline" },
-    "Brain Health / Memory": { product: "Vitalité", audience: "Professionals dealing with severe afternoon brain fog" },
-    "Daily Nutritional Needs": { product: "Vitalité", audience: "Busy individuals relying on fast food and cheap vitamins" },
-    "Detoxification / Liver / Kidney": { product: "Purífi", audience: "People feeling perpetually sluggish and congested" },
-    "Digestive / Gut Health": { product: "Purífi", audience: "Individuals plagued by bloating and poor digestion" },
-    "Energy": { product: "Kynetik", audience: "Burned-out workers needing intense natural stamina" },
-    "Eye Health": { product: "Vitalité", audience: "Tech workers experiencing daily digital eye strain" },
-    "Heart Health": { product: "Éternel", audience: "Health-conscious executives securing their cardiovascular future" },
-    "Hormone Health": { product: "Éternel", audience: "Women experiencing imbalances and daily mood swings" },
-    "Hydration": { product: "Kynetik", audience: "Active people struggling with chronic dehydration" },
-    "Inflammatory / Joint / Muscle": { product: "Revíve", audience: "Former athletes crippled by chronic knee and back pain" },
-    "Immune Support / Lung": { product: "Imúne", audience: "Travelers and parents who catch every cold" },
-    "Metabolism / Weight": { product: "GLP-THREE", audience: "Moms struggling to lose stubborn postpartum belly fat" },
-    "Mood Support": { product: "Kynetik", audience: "Overwhelmed professionals seeking mental clarity and joy" },
-    "Nerve Health": { product: "Revíve", audience: "Individuals dealing with nerve tension and oxidative stress" },
-    "Post-Exercise Recovery": { product: "Revíve", audience: "Fitness enthusiasts whose bodies take too long to heal" },
-    "Sleep": { product: "Vitalité", audience: "Restless sleepers unable to achieve deep REM cycles" },
-    "Skin, Hair & Nails": { product: "Collagène", audience: "Beauty-focused women combating hair thinning and dull skin" },
-    "Urinary Health": { product: "Purífi", audience: "Individuals prone to poor urinary tract balance" },
-    "Women's Health": { product: "Éternel", audience: "Women navigating life transitions demanding cellular support" }
-  };
+  const symptomList = [
+    { symptom: "Anti-Aging", product: "Éternel", audience: "Women 40+ wanting to reverse cellular aging" },
+    { symptom: "Antioxidant Protection", product: "Éternel", audience: "Health-conscious individuals seeking longevity" },
+    { symptom: "Blood Sugar Support", product: "GLP-THREE", audience: "People struggling with cravings and blood sugar crashes" },
+    { symptom: "Blood Pressure Support", product: "Vitalité", audience: "Stressed adults over 40 needing heart support" },
+    { symptom: "Bone Health", product: "Revíve", audience: "Aging parents experiencing physical decline" },
+    { symptom: "Brain Health / Memory", product: "Vitalité", audience: "Professionals dealing with severe afternoon brain fog" },
+    { symptom: "Daily Nutritional Needs", product: "Vitalité", audience: "Busy individuals relying on fast food and cheap vitamins" },
+    { symptom: "Detoxification / Liver / Kidney", product: "Purífi", audience: "People feeling perpetually sluggish and congested" },
+    { symptom: "Digestive / Gut Health", product: "Purífi", audience: "Individuals plagued by bloating and poor digestion" },
+    { symptom: "Energy", product: "Kynetik", audience: "Burned-out workers needing intense natural stamina" },
+    { symptom: "Eye Health", product: "Vitalité", audience: "Tech workers experiencing daily digital eye strain" },
+    { symptom: "Heart Health", product: "Éternel", audience: "Health-conscious executives securing their cardiovascular future" },
+    { symptom: "Hormone Health", product: "Éternel", audience: "Women experiencing imbalances and daily mood swings" },
+    { symptom: "Hydration", product: "Kynetik", audience: "Active people struggling with chronic dehydration" },
+    { symptom: "Inflammatory / Joint / Muscle", product: "Revíve", audience: "Former athletes crippled by chronic knee and back pain" },
+    { symptom: "Immune Support / Lung", product: "Imúne", audience: "Travelers and parents who catch every cold" },
+    { symptom: "Metabolism / Weight", product: "GLP-THREE", audience: "Moms struggling to lose stubborn postpartum belly fat" },
+    { symptom: "Mood Support", product: "Kynetik", audience: "Overwhelmed professionals seeking mental clarity and joy" },
+    { symptom: "Nerve Health", product: "Revíve", audience: "Individuals dealing with nerve tension and oxidative stress" },
+    { symptom: "Post-Exercise Recovery", product: "Revíve", audience: "Fitness enthusiasts whose bodies take too long to heal" },
+    { symptom: "Sleep", product: "Vitalité", audience: "Restless sleepers unable to achieve deep REM cycles" },
+    { symptom: "Skin, Hair & Nails", product: "Collagène", audience: "Beauty-focused women combating hair thinning and dull skin" },
+    { symptom: "Urinary Health", product: "Purífi", audience: "Individuals prone to poor urinary tract balance" },
+    { symptom: "Women's Health", product: "Éternel", audience: "Women navigating life transitions demanding cellular support" }
+  ];
 
   const handleSymptomChange = (newSymptom) => {
     setSymptom(newSymptom);
-    if (symptomMap[newSymptom]) {
-      setProduct(symptomMap[newSymptom].product);
-      setAudience(symptomMap[newSymptom].audience);
+    const found = symptomList.find(s => s.symptom === newSymptom);
+    if (found) {
+      setProduct(found.product);
+      setAudience(found.audience);
     }
   };
 
   const autoSuggestAudience = () => {
-    // Wand feature to slightly randomize audience for the given symptom (or just regenerate base on standard)
-    if (symptomMap[symptom]) {
-      setAudience(symptomMap[symptom].audience + " in 2026");
+    const found = symptomList.find(s => s.symptom === symptom);
+    if (found) {
+      setAudience(found.audience + " in 2026");
     }
   };
 
@@ -118,7 +119,7 @@ export default function AIStudioPage() {
                   onChange={(e) => handleSymptomChange(e.target.value)}
                   className="w-full p-4 rounded-xl border border-blue-200 bg-blue-50 text-blue-900 focus:ring-2 focus:ring-blue-500 font-bold outline-none cursor-pointer"
                 >
-                  {Object.keys(symptomMap).map(sym => <option key={sym} value={sym}>{sym}</option>)}
+                  {symptomList.map(item => <option key={item.symptom} value={item.symptom}>{item.symptom}</option>)}
                 </select>
               </div>
               
