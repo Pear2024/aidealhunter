@@ -4,23 +4,10 @@ import { Sparkles, Film, Copy, Check, Wand2, Loader2 } from "lucide-react";
 
 export default function AIStudioPage() {
   const [symptom, setSymptom] = useState("Anti-Aging");
-  const [product, setProduct] = useState("Éternel");
-  const [audience, setAudience] = useState("Women 40+ noticing fine lines and losing skin elasticity");
+  const [audience, setAudience] = useState("Women 40+ wanting to reverse cellular aging");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState("");
-
-  const products = [
-    { name: "Éternel", desc: "Anti-aging & Cellular Resveratrol" },
-    { name: "Revíve", desc: "Joint Pain & Inflammation Recovery" },
-    { name: "Imúne", desc: "Immunity Booster & White Blood Cell Support" },
-    { name: "GLP-THREE", desc: "Weight Management & Cravings" },
-    { name: "Vitalité", desc: "Daily Foundational Nutrition & Energy" },
-    { name: "Purífi", desc: "Detoxification & Gut Health" },
-    { name: "Collagène", desc: "Skin, Hair & Nails" },
-    { name: "Kynetik", desc: "Energy & Focus" },
-    { name: "Visage", desc: "Premium Skincare" }
-  ];
 
   const symptomList = [
     { symptom: "Anti-Aging", product: "Éternel", audience: "Women 40+ wanting to reverse cellular aging" },
@@ -53,7 +40,6 @@ export default function AIStudioPage() {
     setSymptom(newSymptom);
     const found = symptomList.find(s => s.symptom === newSymptom);
     if (found) {
-      setProduct(found.product);
       setAudience(found.audience);
     }
   };
@@ -69,11 +55,10 @@ export default function AIStudioPage() {
     setLoading(true);
     setResult(null);
     try {
-      const selectedDev = products.find(p => p.name === product);
       const response = await fetch("/api/studio/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ product: selectedDev.name, productDesc: selectedDev.desc, audience })
+        body: JSON.stringify({ symptom, audience })
       });
       const data = await response.json();
       setResult(data);
@@ -145,22 +130,16 @@ export default function AIStudioPage() {
             </div>
 
             {/* Right Column: The Solution (Auto-matched) */}
-            <div className="bg-emerald-50 rounded-xl p-6 border border-emerald-200 flex flex-col justify-center relative overflow-hidden">
+            <div className="bg-emerald-50 rounded-xl p-8 border border-emerald-200 flex flex-col justify-center relative overflow-hidden">
               <div className="absolute top-0 right-0 p-4 opacity-10">
-                <Sparkles size={100} className="text-emerald-500" />
+                <Sparkles size={120} className="text-emerald-500" />
               </div>
-              <label className="block text-sm font-bold text-emerald-800 mb-2">✨ AI Automatically Matched Product:</label>
-              
-              <select 
-                value={product}
-                onChange={(e) => setProduct(e.target.value)}
-                className="w-full p-4 rounded-xl border-2 border-emerald-400 bg-white text-emerald-900 font-black text-lg focus:ring-2 focus:ring-emerald-500 outline-none relative z-10"
-              >
-                {products.map(p => <option key={p.name} value={p.name}>{p.name} - {p.desc}</option>)}
-              </select>
-              
+              <h3 className="text-2xl font-black text-emerald-900 mb-2 relative z-10">Curiosity Gap Strategy</h3>
+              <p className="text-emerald-800 text-md relative z-10 font-medium">
+                We will <span className="font-bold underline text-emerald-900">NOT</span> mention any products in this Ad. 
+              </p>
               <p className="mt-4 text-emerald-700 text-sm italic relative z-10">
-                Based on the official Three International Symptom Guide, <strong>{product}</strong> is the optimal solution for <strong>{symptom}</strong>. The Hollywood script will pitch this product as the ultimate breakthrough.
+                Instead of selling directly, the AI will hook <strong>{audience}</strong> by agitating their <strong>{symptom}</strong>, and then force them to visit <strong>Nadania Wellness</strong> for a Free Clinical AI Assessment to find the cure. This massively increases click-through rates.
               </p>
             </div>
           </div>
