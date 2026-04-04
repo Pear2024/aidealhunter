@@ -218,9 +218,15 @@ export default function WellnessAI() {
                    <input type="text" placeholder="Your Name" value={nurseName} onChange={e => setNurseName(e.target.value)} className="w-full p-4 rounded-xl border border-teal-200 focus:ring-2 focus:ring-teal-500 bg-white" />
                    <input type="tel" placeholder="Phone Number" value={nursePhone} onChange={e => setNursePhone(e.target.value)} className="w-full p-4 rounded-xl border border-teal-200 focus:ring-2 focus:ring-teal-500 bg-white" />
                    <button 
-                     onClick={() => {
+                     onClick={async () => {
                        if(!nurseName || !nursePhone) { alert("Please enter name and phone."); return; }
-                       // Simulated save (in reality, you'd POST this to an API endpoint to update the Lead record)
+                       try {
+                           await fetch('/api/leads/nurse', {
+                               method: 'POST',
+                               headers: { 'Content-Type': 'application/json' },
+                               body: JSON.stringify({ name: nurseName, phone: nursePhone, source: 'Wellness AI Assessment' })
+                           });
+                       } catch(e) { console.error("Lead submission failed", e); }
                        alert("Thank you " + nurseName + "! Our volunteer nurse will call you at " + nursePhone + " shortly.");
                        setContactNurse(false);
                      }}

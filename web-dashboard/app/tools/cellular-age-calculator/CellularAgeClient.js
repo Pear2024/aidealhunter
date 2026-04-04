@@ -173,8 +173,15 @@ export default function CellularAgeClient() {
                    <input type="text" placeholder="Your Name" value={nurseName} onChange={e => setNurseName(e.target.value)} className="w-full p-4 rounded-xl border border-blue-200 focus:ring-2 focus:ring-blue-500 bg-white" />
                    <input type="tel" placeholder="Phone Number" value={nursePhone} onChange={e => setNursePhone(e.target.value)} className="w-full p-4 rounded-xl border border-blue-200 focus:ring-2 focus:ring-blue-500 bg-white" />
                    <button 
-                     onClick={() => {
+                     onClick={async () => {
                        if(!nurseName || !nursePhone) { alert("Please enter name and phone."); return; }
+                       try {
+                           await fetch('/api/leads/nurse', {
+                               method: 'POST',
+                               headers: { 'Content-Type': 'application/json' },
+                               body: JSON.stringify({ name: nurseName, phone: nursePhone, source: 'Cellular Age Calculator' })
+                           });
+                       } catch(e) { console.error("Lead submission failed", e); }
                        alert("Thank you " + nurseName + "! Our volunteer nurse will call you at " + nursePhone + " shortly.");
                        setContactNurse(false);
                      }}
