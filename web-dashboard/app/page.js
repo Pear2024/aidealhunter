@@ -14,8 +14,8 @@ export default function Home() {
             <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-700 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20">
               <Activity className="text-white" size={24} />
             </div>
-            <span className="font-extrabold text-2xl tracking-tight text-slate-900">
-              Nadania<span className="text-emerald-600 font-light">Wellness</span>
+            <span className="font-extrabold text-xl md:text-2xl tracking-tight text-slate-900">
+              Nadania<span className="text-emerald-600 font-light hidden sm:inline">Wellness</span>
             </span>
           </div>
           <div className="hidden md:flex flex-1 justify-center gap-8 text-sm font-semibold text-slate-600">
@@ -23,7 +23,7 @@ export default function Home() {
             <a href="#nutrition" className="hover:text-emerald-600 transition-colors">Cellular Nutrition</a>
             <a href="#ai" className="hover:text-emerald-600 transition-colors">AI Diagnostics</a>
           </div>
-          <Link href="/wellness" className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2.5 rounded-full font-semibold text-sm transition-all shadow-md active:scale-95">
+          <Link href="/wellness" className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 md:px-6 md:py-2.5 rounded-full font-semibold text-xs md:text-sm transition-all shadow-md active:scale-95 whitespace-nowrap">
             Take Assessment
           </Link>
         </div>
