@@ -3,8 +3,9 @@ import React, { useState } from "react";
 import { Sparkles, Film, Copy, Check, Wand2, Loader2 } from "lucide-react";
 
 export default function AIStudioPage() {
+  const [symptom, setSymptom] = useState("Anti-Aging");
   const [product, setProduct] = useState("Éternel");
-  const [audience, setAudience] = useState("Burned-out Executives (Age 35-50)");
+  const [audience, setAudience] = useState("Women 40+ noticing fine lines and losing skin elasticity");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState("");
@@ -14,46 +15,53 @@ export default function AIStudioPage() {
     { name: "Revíve", desc: "Joint Pain & Inflammation Recovery" },
     { name: "Imúne", desc: "Immunity Booster & White Blood Cell Support" },
     { name: "GLP-THREE", desc: "Weight Management & Cravings" },
-    { name: "Vitalité", desc: "Daily Foundational Nutrition & Energy" }
+    { name: "Vitalité", desc: "Daily Foundational Nutrition & Energy" },
+    { name: "Purífi", desc: "Detoxification & Gut Health" },
+    { name: "Collagène", desc: "Skin, Hair & Nails" },
+    { name: "Kynetik", desc: "Energy & Focus" },
+    { name: "Visage", desc: "Premium Skincare" }
   ];
 
-  const viralAudiences = {
-    "Éternel": [
-      "Women 40+ noticing fine lines and losing skin elasticity",
-      "Stressed moms lacking sleep and feeling visibly aged",
-      "Health-conscious executives seeking elite longevity hacks",
-      "People spending thousands on skincare with no real results from the inside out"
-    ],
-    "Revíve": [
-      "Former athletes now struggling with chronic knee and back pain",
-      "Elderly parents who can no longer play with their grandchildren",
-      "Office workers 35+ plagued by tech-neck and stiff joints",
-      "People dependent on daily painkillers just to get out of bed"
-    ],
-    "Imúne": [
-      "People who catch every cold that goes around their office",
-      "Travelers constantly exhausted and sick after long flights",
-      "Teachers or nurses exposed to germs daily needing a cellular shield",
-      "Individuals feeling perpetually run-down and slow to recover"
-    ],
-    "GLP-THREE": [
-      "People tired of yo-yo dieting and constant sugar cravings",
-      "Moms struggling to lose stubborn postpartum belly fat",
-      "Busy professionals ordering takeout who can't stop night snacking",
-      "Individuals seeking natural, non-prescription GLP-1 hormone support"
-    ],
-    "Vitalité": [
-      "Burned-out professionals relying on 4 cups of coffee to survive",
-      "Parents dealing with severe afternoon brain fog and fatigue",
-      "People buying cheap drugstore vitamins that just pass through their body",
-      "Anyone feeling general lack of vitality and cellular nutrient starvation"
-    ]
+  const symptomMap = {
+    "Anti-Aging": { product: "Éternel", audience: "Women 40+ wanting to reverse cellular aging" },
+    "Antioxidant Protection": { product: "Éternel", audience: "Health-conscious individuals seeking longevity" },
+    "Blood Sugar Support": { product: "GLP-THREE", audience: "People struggling with cravings and blood sugar crashes" },
+    "Blood Pressure Support": { product: "Vitalité", audience: "Stressed adults over 40 needing heart support" },
+    "Bone Health": { product: "Revíve", audience: "Aging parents experiencing physical decline" },
+    "Brain Health / Memory": { product: "Vitalité", audience: "Professionals dealing with severe afternoon brain fog" },
+    "Daily Nutritional Needs": { product: "Vitalité", audience: "Busy individuals relying on fast food and cheap vitamins" },
+    "Detoxification / Liver / Kidney": { product: "Purífi", audience: "People feeling perpetually sluggish and congested" },
+    "Digestive / Gut Health": { product: "Purífi", audience: "Individuals plagued by bloating and poor digestion" },
+    "Energy": { product: "Kynetik", audience: "Burned-out workers needing intense natural stamina" },
+    "Eye Health": { product: "Vitalité", audience: "Tech workers experiencing daily digital eye strain" },
+    "Heart Health": { product: "Éternel", audience: "Health-conscious executives securing their cardiovascular future" },
+    "Hormone Health": { product: "Éternel", audience: "Women experiencing imbalances and daily mood swings" },
+    "Hydration": { product: "Kynetik", audience: "Active people struggling with chronic dehydration" },
+    "Inflammatory / Joint / Muscle": { product: "Revíve", audience: "Former athletes crippled by chronic knee and back pain" },
+    "Immune Support / Lung": { product: "Imúne", audience: "Travelers and parents who catch every cold" },
+    "Metabolism / Weight": { product: "GLP-THREE", audience: "Moms struggling to lose stubborn postpartum belly fat" },
+    "Mood Support": { product: "Kynetik", audience: "Overwhelmed professionals seeking mental clarity and joy" },
+    "Nerve Health": { product: "Revíve", audience: "Individuals dealing with nerve tension and oxidative stress" },
+    "Post-Exercise Recovery": { product: "Revíve", audience: "Fitness enthusiasts whose bodies take too long to heal" },
+    "Sleep": { product: "Vitalité", audience: "Restless sleepers unable to achieve deep REM cycles" },
+    "Skin, Hair & Nails": { product: "Collagène", audience: "Beauty-focused women combating hair thinning and dull skin" },
+    "Urinary Health": { product: "Purífi", audience: "Individuals prone to poor urinary tract balance" },
+    "Women's Health": { product: "Éternel", audience: "Women navigating life transitions demanding cellular support" }
+  };
+
+  const handleSymptomChange = (newSymptom) => {
+    setSymptom(newSymptom);
+    if (symptomMap[newSymptom]) {
+      setProduct(symptomMap[newSymptom].product);
+      setAudience(symptomMap[newSymptom].audience);
+    }
   };
 
   const autoSuggestAudience = () => {
-    const options = viralAudiences[product] || viralAudiences["Vitalité"];
-    const randomOption = options[Math.floor(Math.random() * options.length)];
-    setAudience(randomOption);
+    // Wand feature to slightly randomize audience for the given symptom (or just regenerate base on standard)
+    if (symptomMap[symptom]) {
+      setAudience(symptomMap[symptom].audience + " in 2026");
+    }
   };
 
   const generateAd = async () => {
@@ -101,35 +109,58 @@ export default function AIStudioPage() {
           </div>
           
           <div className="p-8 grid md:grid-cols-2 gap-8">
-            <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">Select Product to Promote:</label>
+            {/* Left Column: The Problem */}
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">1. Select Target Symptom / Goal:</label>
+                <select 
+                  value={symptom}
+                  onChange={(e) => handleSymptomChange(e.target.value)}
+                  className="w-full p-4 rounded-xl border border-blue-200 bg-blue-50 text-blue-900 focus:ring-2 focus:ring-blue-500 font-bold outline-none cursor-pointer"
+                >
+                  {Object.keys(symptomMap).map(sym => <option key={sym} value={sym}>{sym}</option>)}
+                </select>
+              </div>
+              
+              <div className="relative">
+                <label className="block text-sm font-bold text-slate-700 mb-2">2. Fine-tune the Audience Hook:</label>
+                <div className="relative">
+                  <input 
+                    type="text"
+                    value={audience}
+                    onChange={(e) => setAudience(e.target.value)}
+                    placeholder="Describe specific pain point..."
+                    className="w-full p-4 pr-14 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                  />
+                  <button
+                    onClick={autoSuggestAudience}
+                    title="Auto-Suggest Magical Hook"
+                    className="absolute right-2 top-2 bottom-2 aspect-square bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-lg flex items-center justify-center transition-colors"
+                  >
+                    <Wand2 size={20} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: The Solution (Auto-matched) */}
+            <div className="bg-emerald-50 rounded-xl p-6 border border-emerald-200 flex flex-col justify-center relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-10">
+                <Sparkles size={100} className="text-emerald-500" />
+              </div>
+              <label className="block text-sm font-bold text-emerald-800 mb-2">✨ AI Automatically Matched Product:</label>
+              
               <select 
                 value={product}
                 onChange={(e) => setProduct(e.target.value)}
-                className="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
+                className="w-full p-4 rounded-xl border-2 border-emerald-400 bg-white text-emerald-900 font-black text-lg focus:ring-2 focus:ring-emerald-500 outline-none relative z-10"
               >
                 {products.map(p => <option key={p.name} value={p.name}>{p.name} - {p.desc}</option>)}
               </select>
-            </div>
-            
-            <div className="relative">
-              <label className="block text-sm font-bold text-slate-700 mb-2">Target Audience / Pain Point:</label>
-              <div className="relative">
-                <input 
-                  type="text"
-                  value={audience}
-                  onChange={(e) => setAudience(e.target.value)}
-                  placeholder="e.g. Elderly with joint pain, Moms trying to lose weight..."
-                  className="w-full p-4 pr-14 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
-                />
-                <button
-                  onClick={autoSuggestAudience}
-                  title="Auto-Suggest Viral Audience"
-                  className="absolute right-2 top-2 bottom-2 aspect-square bg-emerald-100 hover:bg-emerald-200 text-emerald-600 rounded-lg flex items-center justify-center transition-colors"
-                >
-                  <Wand2 size={20} />
-                </button>
-              </div>
+              
+              <p className="mt-4 text-emerald-700 text-sm italic relative z-10">
+                Based on the official Three International Symptom Guide, <strong>{product}</strong> is the optimal solution for <strong>{symptom}</strong>. The Hollywood script will pitch this product as the ultimate breakthrough.
+              </p>
             </div>
           </div>
           
