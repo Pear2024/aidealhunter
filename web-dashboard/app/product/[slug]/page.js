@@ -95,7 +95,7 @@ const products = {
     tagline: 'Stimulate Original Collagen Production',
     description: 'Unlike standard aesthetic supplements, Collagène doesn\'t just replace—it actively stimulates the bodys natural collagen production to promote vibrant, youthful skin, hair, and nails.',
     pdrLink: 'https://www.pdr.net/full-prescribing-information/hl/?druglabelid=24466',
-    buyLink: 'https://threeinternational.com/en/ShopProducts/1712892',
+    buyLink: 'https://threeinternational.com/en/productdetail/1712892/2798/US',
     benefits: [
       'Stimulates the bodys natural, original collagen production',
       'Promotes vibrant, elastic, and youthful-looking skin',
@@ -105,7 +105,7 @@ const products = {
     ingredients: ['Marine Collagen (I, II, III)', 'Hyaluronic Acid', 'Keratin', 'Vitamin C'],
     color: 'from-rose-800 to-pink-900',
     buttonColor: 'bg-rose-600 hover:bg-rose-700',
-    image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?q=80&w=1000&auto=format&fit=crop'
+    image: 'https://threeinternational.com/shopping/productdetailimages/210109/Collage%CC%80ne_Additional4.webp'
   },
   'glp-three': {
     name: 'GLP THREE',
