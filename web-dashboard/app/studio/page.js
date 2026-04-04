@@ -44,11 +44,22 @@ export default function AIStudioPage() {
     }
   };
 
+  const viralHooks = [
+    "High-income professionals experiencing severe burnout and brain fog",
+    "Moms over 35 who have zero energy left at the end of the day",
+    "Aging adults who are terrified of losing their physical independence",
+    "Corporate executives suffering from chronic stress and poor sleep",
+    "Fitness enthusiasts who keep getting injured and heal too slowly",
+    "Women in their 40s noticing rapid aging and hormonal shifts",
+    "People who have spent thousands on doctors but still feel terrible",
+    "Individuals suffering from chronic, unexplained inflammation and pain",
+    "Tech workers suffering from horrible posture, eye strain, and headaches",
+    "People desperately trying to lose stubborn belly fat and failing"
+  ];
+
   const autoSuggestAudience = () => {
-    const found = symptomList.find(s => s.symptom === symptom);
-    if (found) {
-      setAudience(found.audience + " in 2026");
-    }
+    const randomHook = viralHooks[Math.floor(Math.random() * viralHooks.length)];
+    setAudience(randomHook);
   };
 
   const generateAd = async () => {
