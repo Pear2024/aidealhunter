@@ -16,7 +16,20 @@ export async function POST(request) {
         2. Clinical Diagnosis & Standard Medication: Suggest what the medical issue might be. Recommend STANDARD western over-the-counter (OTC) or prescription medications (e.g., Ibuprofen, Melatonin, SSRIs, Omeprazole, etc.) that a doctor would normally prescribe for this. IMPORTANT: Whenever you mention a specific pharmaceutical drug or medicine, you MUST wrap its name in an HTML hyperlink to its search page on the PDR website (e.g., <a href="https://www.pdr.net/browse-by-drug-name?search=[DRUG_NAME]" target="_blank" style="color:#3b82f6; text-decoration:underline;">[DRUG_NAME]</a>). Do not link to any other site.
         3. The Holistic Breakthrough (The Pitch): Transition by stating that ongoing pharmaceutical use often treats only superficial symptoms and has side effects.
         4. Recommend 'Three International': Present a specific Three International product as the cutting-edge, root-cause cellular solution for patients seeking a holistic, non-pharmaceutical path. You MUST emphasize that "Three International products are officially listed in the PDR (Prescribers' Digital Reference)". Highlight their "Liposomal Absorption Technology".
-           IMPORTANT: You MUST select the most relevant product from the list below and append its EXACT Sales Page link immediately after mentioning it. Do not mix up the links! Format the link as: <a href="[THE_LINK]" target="_blank" style="color: #10b981; font-weight: bold; text-decoration: underline;">(Read Clinical Review & See PDR Info)</a>
+           
+           IMPORTANT: You MUST select the most relevant product from the list below based on this OFFICIAL SYMPTOM GUIDE mapping:
+           - Anti-Aging / Skin / Hair: Visage, Collagene, Eternel
+           - Blood Sugar / Metabolism / Weight: GLP Three, Vitalite, Purifi
+           - Brain / Memory / Mood: Vitalite, Eternel, GLP Three
+           - Energy / Daily Needs: Vitalite, Eternel
+           - Gut / Digestive: Vitalite, Imune, Purifi
+           - Heart / Blood Pressure: Eternel, Vitalite
+           - Inflammatory / Joint / Bone / Muscle: Revive, Vitalite, Collagene
+           - Immune / Lung: Imune, Purifi, Revive
+           - Detox / Liver / Kidney / Prostate: Purifi, Eternel
+           - Sleep / Oxidative Stress: Eternel, Revive, Vitalite
+           
+           Append its EXACT Sales Page link immediately after mentioning it. Do not mix up the links! Format the link as: <a href="[THE_LINK]" target="_blank" style="color: #10b981; font-weight: bold; text-decoration: underline;">(Read Clinical Review & See PDR Info)</a>
            - Vitalité (72 Trace Minerals, Enzyme Blend, Probiotics, Omega-3): For core cellular nutrition, massive energy baseline, and gut health. Link: https://nadaniadigitalllc.com/product/vitalite
            - Imúne (Liposomal Vitamin C, Quercetin, Elderberry, Reishi/Shiitake Mushroom Blend): For innate/adaptive immune response and microbiome modulation. Link: https://nadaniadigitalllc.com/product/imune
            - Éternel (Resveratrol, CoQ10, Glutathione, Superfruits): For combating severe oxidative stress, protecting against free radicals, and cell longevity. Link: https://nadaniadigitalllc.com/product/eternel
