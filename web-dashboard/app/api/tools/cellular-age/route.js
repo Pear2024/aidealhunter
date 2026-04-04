@@ -26,17 +26,22 @@ export async function POST(request) {
                  <strong>Optimal Range:</strong> Your goal should be a Biological Age of [RealAge - 2] to [RealAge - 8] years old.
               </div>
            </div>
-        3. Format - The Clinical Analysis: Provide a detailed, 2-paragraph medical explanation in Native US English. Explain WHY their age is what it is. If they are younger, praise their habits but explain how modern life still causes micro-stressors. If older, explain 'Oxidative Stress', 'Telomere Shortening', and 'Chronic Inflammation'.
-        4. Format - Biomarker Breakdown: Create a bulleted list analyzing their specific weak points:
+        3. Format - Diagnostic Methodology: Directly below the header, add a brief, highly professional "Calculation Methodology" box. Mention that this AI assessment is a heuristic based on 3 pillars of Anti-Aging Science: Telomere Attrition (stress/sleep), Mitochondrial Dysfunction (energy), and Oxidative Stress/Allostatic Load (diet/lifestyle). Make it sound extremely credible and clinical.
+           Example HTML structure:
+           <div style="background: #f1f5f9; padding: 15px; border-radius: 8px; margin-bottom: 25px; font-size: 0.9rem; color: #475569; border: 1px solid #e2e8f0;">
+              <strong>🔬 Scientific Methodology:</strong> This assessment correlates your lifestyle biomarkers using heuristic proxies for <em>Telomere Attrition</em>, <em>Mitochondrial Efficiency</em>, and <em>Oxidative Stress</em>.
+           </div>
+        4. Format - The Clinical Analysis: Provide a detailed, 2-paragraph medical explanation in Native US English. Explain WHY their age is what it is. If they are younger, praise their habits but explain how modern life still causes micro-stressors. If older, explain 'Oxidative Stress', 'Telomere Shortening', and 'Chronic Inflammation'.
+        5. Format - Biomarker Breakdown: Create a bulleted list analyzing their specific weak points:
            <ul style="list-style-type: none; padding: 0; margin-bottom: 30px;">
              <li style="margin-bottom: 10px; padding: 15px; background: #fff1f2; border-left: 4px solid #ef4444; border-radius: 4px; color: #1f2937;"><strong>🩸 Energy & Mitochondria:</strong> [Analyze their energy input]</li>
              <li style="margin-bottom: 10px; padding: 15px; background: #fff1f2; border-left: 4px solid #ef4444; border-radius: 4px; color: #1f2937;"><strong>🧠 Stress & Cortisol:</strong> [Analyze their stress input]</li>
            </ul>
-        5. The Solution (Three International): Explain that standard drug-store vitamins are destroyed in the stomach and cannot penetrate the cell membrane. Recommend exactly ONE primary product from Three International based on their inputs:
+        6. The Solution (Three International): Explain that standard drug-store vitamins are destroyed in the stomach and cannot penetrate the cell membrane. Recommend exactly ONE primary product from Three International based on their inputs:
            - If Stress/Aging focus: <strong>Éternel</strong> (Resveratrol, CoQ10, Glutathione). Sales Page Link: <a href="https://bit.ly/nadaniawellness-eternel" target="_blank" style="color: #10b981; font-weight: bold; text-decoration: underline;">(Click Here to Read Clinical Review & See PDR Info)</a>
            - If Energy/Diet/Gut focus: <strong>Vitalité</strong> (72 Trace Minerals, Omega-3). Sales Page Link: <a href="https://bit.ly/nadaniawellness-vitalite" target="_blank" style="color: #10b981; font-weight: bold; text-decoration: underline;">(Click Here to Read Clinical Review & See PDR Info)</a>
            Mention "Liposomal Absorption Technology" ensuring 95% cellular delivery bypassing the digestive tract.
-        6. Strict HTML Formatting: You MUST wrap the entire response in raw HTML tags (<h2>, <p>, <ul>, <li>, <strong>, <a>) for beautiful rendering. Use standard CSS inline styles where applicable. Do NOT use markdown code blocks or backticks. Start immediately with the HTML.
+        7. Strict HTML Formatting: You MUST wrap the entire response in raw HTML tags (<h2>, <p>, <ul>, <li>, <strong>, <a>) for beautiful rendering. Use standard CSS inline styles where applicable. Do NOT use markdown code blocks or backticks. Start immediately with the HTML.
         `;
 
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
