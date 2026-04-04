@@ -78,7 +78,7 @@ const products = {
     tagline: 'Deep 5-Organ Cellular Detoxification',
     description: 'Cleanse and detoxify the five eliminative organs (liver, lungs, colon, kidneys, skin) to dramatically increase nutrient absorption and actively eliminate heavy metal toxins.',
     pdrLink: 'https://www.pdr.net/full-prescribing-information/hl/?druglabelid=24468',
-    buyLink: 'https://threeinternational.com/en/ShopProducts/1712892',
+    buyLink: 'https://threeinternational.com/en/productdetail/1712892/2801/US',
     benefits: [
       'Detoxifies the liver, lungs, colon, kidneys, and skin',
       'Eliminates heavy metal toxins blocking cellular pathways',
@@ -88,7 +88,7 @@ const products = {
     ingredients: ['Humic Shale Extract', 'Liposomal Milk Thistle', 'Burdock Root', 'Chlorophyllin'],
     color: 'from-slate-800 to-zinc-900',
     buttonColor: 'bg-slate-700 hover:bg-slate-800',
-    image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=1000&auto=format&fit=crop'
+    image: 'https://threeinternational.com/shopping/productdetailimages/210143/Purifi%CC%81_Additional4.webp'
   },
   collagene: {
     name: 'Collagène',
