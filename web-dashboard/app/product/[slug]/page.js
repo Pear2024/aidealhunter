@@ -2,37 +2,37 @@
 import React from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowRight, ShieldCheck, Microscope, Zap, CheckCircle2, Award } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Microscope, Zap, CheckCircle2, Award, FileText, ActivitySquare } from 'lucide-react';
 
 const products = {
   eternel: {
     name: 'Éternel',
     tagline: 'Defend Your Cells against Aging & Oxidative Stress',
-    description: 'A revolutionary blend of Liposomal Resveratrol, CoQ10, and Glutathione designed to neutralize free radicals and promote cellular longevity.',
+    description: 'A revolutionary clinical blend of Liposomal Resveratrol, CoQ10, and Glutathione designed to neutralize free radicals, protect against UV damage, and promote cellular longevity.',
     pdrLink: 'https://www.pdr.net/full-prescribing-information/hl/?druglabelid=24467',
-    buyLink: 'https://threeinternational.com/en/ShopProducts/1712892', // Replace with user's specific affiliate link
+    buyLink: 'https://threeinternational.com/en/ShopProducts/1712892', 
     benefits: [
-      'Protects cells from damage and premature aging',
-      'Promotes cellular energy and overall vitality',
+      'Protects and supports cells from damage and premature aging',
+      'Promotes deep cellular longevity and overall health',
       'Neutralizes free radicals with powerful antioxidants',
-      'Maximum absorption via Liposomal Technology'
+      'Provides protection against cellular UV damage'
     ],
     ingredients: ['Resveratrol', 'Glutathione', 'Coenzyme Q10 (CoQ10)', 'Superfruit Blend'],
     color: 'from-purple-900 to-fuchsia-900',
     buttonColor: 'bg-purple-600 hover:bg-purple-700',
-    image: 'https://images.unsplash.com/photo-1615486171448-4d69106be022?q=80&w=1000&auto=format&fit=crop' // placeholder
+    image: 'https://images.unsplash.com/photo-1615486171448-4d69106be022?q=80&w=1000&auto=format&fit=crop'
   },
   vitalite: {
     name: 'Vitalité',
     tagline: 'The Ultimate Cellular Foundation',
-    description: 'A daily foundational supplement packing 72 trace minerals, massive enzyme blends, probiotics, and Omega-3s to optimize your health baseline.',
+    description: 'A complete clinical portfolio of vitamins, minerals, and phytonutrients. Built to optimize heart, brain, and eye health while supporting a robust gut microbiome.',
     pdrLink: 'https://www.pdr.net/full-prescribing-information/hl/?druglabelid=24471',
     buyLink: 'https://threeinternational.com/en/ShopProducts/1712892',
     benefits: [
-      'Supports gut microbiome health',
-      'Provides 72 vital trace minerals',
-      'Enhances daily energy and focus',
-      'High bioavailability for cellular uptake'
+      'Provides a complete portfolio of essential phytonutrients',
+      'Supports a healthy gut microbiome for systemic health',
+      'Promotes advanced heart, brain, and eye health',
+      'Boosts cellular energy and daily focus'
     ],
     ingredients: ['72 Trace Minerals', 'Omega-3 Complex', 'Enzyme Blend', 'Probiotics'],
     color: 'from-emerald-900 to-teal-900',
@@ -41,15 +41,15 @@ const products = {
   },
   imune: {
     name: 'Imúne',
-    tagline: 'Advanced Immune Modulation',
-    description: 'Fortify your bodys natural defenses with Liposomal Vitamin C, Quercetin, Elderberry, and a proprietary medicinal mushroom blend.',
+    tagline: 'Advanced Innate & Adaptive Immune Modulation',
+    description: 'Fortify your bodys natural defenses. This formula promotes the health of both innate and adaptive immune systems while enhancing the gut microbiome for better systemic immunity.',
     pdrLink: 'https://www.pdr.net/full-prescribing-information/hl/?druglabelid=24469',
     buyLink: 'https://threeinternational.com/en/ShopProducts/1712892',
     benefits: [
-      'Boosts innate and adaptive immunity',
-      'Powerful respiratory system support',
-      'Modulates autoimmune responses',
-      'Absorbs directly into the immune cells'
+      'Promotes the health of innate AND adaptive immune systems',
+      'Supports a rapid, healthy immune response',
+      'Enhances the gut microbiome for foundational immunity',
+      'Absorbs directly into immune cells via CAT'
     ],
     ingredients: ['Liposomal Vitamin C', 'Quercetin', 'Elderberry', 'Reishi/Shiitake Blend'],
     color: 'from-blue-900 to-cyan-900',
@@ -59,14 +59,14 @@ const products = {
   revive: {
     name: 'Revíve',
     tagline: 'Erase Inflammation & Joint Pain',
-    description: 'A potent anti-inflammatory complex using bio-active Curcumin, Boswellia, and Black Cumin oil to restore mobility and shut down chronic inflammation.',
+    description: 'A potent anti-inflammatory complex designed to maintain a healthy inflammatory status, support healthy joints, ease muscle stiffness, and counteract free radical damage from exercise.',
     pdrLink: 'https://www.pdr.net/full-prescribing-information/hl/?druglabelid=24470',
     buyLink: 'https://threeinternational.com/en/ShopProducts/1712892',
     benefits: [
-      'Relieves joint stiffness and muscle soreness',
-      'Neutralizes systemic chronic inflammation',
-      'Speeds up exercise recovery',
-      'Clinically proven joint mobility support'
+      'Maintains a healthy systemic inflammatory status',
+      'Supports healthy joints and eases muscle stiffness',
+      'Promotes rapid exercise recovery',
+      'Counteracts exercise-induced free radical damage'
     ],
     ingredients: ['Curcumin (Turmeric)', 'Boswellia', 'Black Cumin Oil', 'Sea Buckthorn'],
     color: 'from-amber-700 to-orange-900',
@@ -75,15 +75,15 @@ const products = {
   },
   purifi: {
     name: 'Purífi',
-    tagline: 'Deep Cellular Detoxification',
-    description: 'Cleanse your organs and strip heavy metals with Humic Shale Extract and Liposomal Milk Thistle, restoring your bodys natural filtration system.',
+    tagline: 'Deep 5-Organ Cellular Detoxification',
+    description: 'Cleanse and detoxify the five eliminative organs (liver, lungs, colon, kidneys, skin) to dramatically increase nutrient absorption and actively eliminate heavy metal toxins.',
     pdrLink: 'https://www.pdr.net/full-prescribing-information/hl/?druglabelid=24468',
     buyLink: 'https://threeinternational.com/en/ShopProducts/1712892',
     benefits: [
-      'Flushes toxins and heavy metals from cells',
-      'Supports optimal liver and kidney function',
-      'Improves nutrient absorption',
-      'Eliminates cellular waste effectively'
+      'Detoxifies the liver, lungs, colon, kidneys, and skin',
+      'Eliminates heavy metal toxins blocking cellular pathways',
+      'Substantially increases overall nutrient absorption',
+      'Supports a healthy weight management profile'
     ],
     ingredients: ['Humic Shale Extract', 'Liposomal Milk Thistle', 'Burdock Root', 'Chlorophyllin'],
     color: 'from-slate-800 to-zinc-900',
@@ -92,23 +92,21 @@ const products = {
   },
   collagene: {
     name: 'Collagène',
-    tagline: 'Structural Integrity & Dermal Elasticity',
-    description: 'Medical-grade Marine Collagen (Types I, II, III) infused with Hyaluronic Acid explicitly designed for anti-aging and connective tissue strength.',
+    tagline: 'Stimulate Original Collagen Production',
+    description: 'Unlike standard aesthetic supplements, Collagène doesn\'t just replace—it actively stimulates the bodys natural collagen production to promote vibrant, youthful skin, hair, and nails.',
     pdrLink: 'https://www.pdr.net/full-prescribing-information/hl/?druglabelid=24466',
     buyLink: 'https://threeinternational.com/en/ShopProducts/1712892',
     benefits: [
-      'Visibly reduces fine lines and wrinkles',
-      'Strengthens hair follicles and nail beds',
-      'Supports tendon and ligament elasticity',
-      'Deeply hydrates skin at the cellular level'
+      'Stimulates the bodys natural, original collagen production',
+      'Promotes vibrant, elastic, and youthful-looking skin',
+      'Supports structurally healthy hair and nails',
+      'Provides additional support for immune response and joints'
     ],
     ingredients: ['Marine Collagen (I, II, III)', 'Hyaluronic Acid', 'Keratin', 'Vitamin C'],
     color: 'from-rose-800 to-pink-900',
     buttonColor: 'bg-rose-600 hover:bg-rose-700',
     image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?q=80&w=1000&auto=format&fit=crop'
-  }
-},
-
+  },
   'glp-three': {
     name: 'GLP THREE',
     tagline: 'Metabolic & Blood Sugar Support',
@@ -145,7 +143,6 @@ const products = {
     buttonColor: 'bg-sky-600 hover:bg-sky-700',
     image: 'https://images.unsplash.com/photo-1615486171448-4d69106be022?q=80&w=1000&auto=format&fit=crop'
   }
-
 };
 
 export default function ProductSalesPage() {
@@ -158,7 +155,7 @@ export default function ProductSalesPage() {
       <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-800">
         <div className="text-center">
           <h1 className="text-3xl font-bold mb-4">Product Not Found</h1>
-          <Link href="/" className="text-emerald-600 underline">Return Home</Link>
+          <Link href="/" className="text-emerald-600 underline">Return to Assessment</Link>
         </div>
       </div>
     );
@@ -166,77 +163,104 @@ export default function ProductSalesPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans selection:bg-emerald-200">
+      
+      {/* Navigation */}
+      <nav className="absolute w-full z-50 top-0 text-white/70 py-4 px-6 font-semibold flex justify-between">
+         <Link href="/wellness" className="hover:text-white flex items-center gap-2 transition-colors">
+            ← Back to Assessment Results
+         </Link>
+      </nav>
+
       {/* Hero Section */}
       <section className={`relative pt-32 pb-24 text-white overflow-hidden bg-gradient-to-br ${product.color}`}>
-        <div className="absolute inset-0 bg-black/40 z-0"></div>
+        <div className="absolute inset-0 bg-black/30 z-0"></div>
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/microbial-mat.png')] opacity-20 z-0 mix-blend-overlay"></div>
+        
         <div className="max-w-6xl mx-auto px-6 relative z-10 grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur border border-white/30 text-sm font-semibold mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur border border-white/30 text-sm font-semibold mb-6 shadow-lg shadow-black/10">
               <ShieldCheck size={16} /> Clinical Grade Formula
             </div>
-            <h1 className="text-5xl md:text-7xl font-extrabold mb-6 tracking-tight leading-tight">{product.name}</h1>
-            <p className="text-2xl font-light text-white/90 mb-6">{product.tagline}</p>
-            <p className="text-lg text-white/80 mb-10 leading-relaxed">
+            <h1 className="text-6xl md:text-7xl font-black mb-4 tracking-tight leading-none drop-shadow-lg">{product.name}</h1>
+            <p className="text-2xl font-bold text-white/90 mb-6 drop-shadow">{product.tagline}</p>
+            <p className="text-lg text-white/80 mb-10 leading-relaxed max-w-lg">
               {product.description}
             </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <a href={product.buyLink} target="_blank" rel="noopener noreferrer" className={`px-8 py-4 rounded-full font-bold text-lg text-white text-center flex items-center justify-center gap-2 transition-transform hover:scale-105 shadow-xl ${product.buttonColor}`}>
-                Order {product.name} Now <ArrowRight size={20} />
-              </a>
-              <a href="#science" className="px-8 py-4 rounded-full font-bold text-lg bg-white/10 hover:bg-white/20 text-white text-center backdrop-blur transition-colors border border-white/20">
-                View Clinical Data
+            <div className="flex flex-col sm:flex-row gap-4 shadow-2xl rounded-full max-w-max">
+              <a href={product.buyLink} target="_blank" rel="noopener noreferrer" className={`px-10 py-5 rounded-full font-black text-xl text-white text-center flex items-center justify-center gap-3 transition-transform hover:scale-105 shadow-xl ${product.buttonColor}`}>
+                Order {product.name} Now <ArrowRight size={22} className="stroke-[3px]" />
               </a>
             </div>
           </div>
-          <div className="hidden lg:block relative">
-             <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent blur-3xl rounded-full"></div>
-             <img src={product.image} alt={product.name} className="w-full h-[500px] object-cover rounded-3xl shadow-2xl relative z-10 border-4 border-white/10" />
+          <div className="hidden lg:flex relative items-center justify-center">
+             <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent blur-3xl rounded-full w-[400px] h-[400px] m-auto z-0 animate-pulse"></div>
+             <img src={product.image} alt={product.name} className="w-full max-w-md object-cover rounded-[3rem] shadow-2xl relative z-10 border-4 border-white/10 aspect-[4/5]" />
           </div>
         </div>
       </section>
 
-      {/* PDR Trust Banner */}
-      <section className="py-8 bg-white border-b border-slate-200 shadow-sm">
-        <div className="max-w-5xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-blue-50 text-blue-800 rounded-2xl flex items-center justify-center font-black text-2xl border-2 border-blue-100 shadow-sm">
-              PDR
-            </div>
-            <div>
-              <h3 className="font-bold text-slate-900 text-lg">Listed in the Physicians' Desk Reference</h3>
-              <p className="text-sm text-slate-500">Recognized globally by medical professionals.</p>
-            </div>
-          </div>
-          <a href={product.pdrLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 font-semibold hover:underline flex items-center gap-1 text-sm">
-            Verify {product.name} on PDR.net <ExternalLinkIcon size={14} />
-          </a>
+      {/* THREE SCIENTIFIC PILLARS BANNER */}
+      <section className="py-12 bg-white border-y border-slate-200">
+        <div className="max-w-6xl mx-auto px-6">
+           <div className="grid md:grid-cols-3 gap-8 text-slate-800">
+               <div className="flex gap-4">
+                 <div className="w-14 h-14 bg-blue-50 shrink-0 text-blue-600 rounded-2xl flex items-center justify-center shadow-inner border border-blue-100">
+                   <ActivitySquare size={28} />
+                 </div>
+                 <div>
+                   <h3 className="font-extrabold text-lg mb-1">CAT Technology</h3>
+                   <p className="text-sm text-slate-600 leading-relaxed"><strong>Cellular Absorption Technology.</strong> Nutrients are wrapped in liposomes, ensuring they bypass stomach destruction and achieve maximum bioavailability.</p>
+                 </div>
+               </div>
+               <div className="flex gap-4">
+                 <div className="w-14 h-14 bg-emerald-50 shrink-0 text-emerald-600 rounded-2xl flex items-center justify-center shadow-inner border border-emerald-100">
+                   <FileText size={28} />
+                 </div>
+                 <div>
+                   <h3 className="font-extrabold text-lg mb-1">Clinical Dossier</h3>
+                   <p className="text-sm text-slate-600 leading-relaxed">Backed by heavily researched <strong>Peer-Reviewed Clinical Data</strong> validating every ingredient and absorption mechanism.</p>
+                 </div>
+               </div>
+               <div className="flex gap-4">
+                 <div className="w-14 h-14 bg-blue-50 shrink-0 text-slate-900 rounded-2xl flex items-center justify-center shadow-inner border border-slate-200">
+                   <p className="font-black text-2xl tracking-tighter">PDR</p>
+                 </div>
+                 <div>
+                   <h3 className="font-extrabold text-lg mb-1">PDR Certified</h3>
+                   <p className="text-sm text-slate-600 leading-relaxed">Listed explicitly in the <strong>Physicians' Desk Reference</strong>, demonstrating world-class medical integrity and trust.</p>
+                 </div>
+               </div>
+           </div>
         </div>
       </section>
 
-      {/* The Dr. Dan Gubler Section */}
+      {/* The Dr. Dan Gubler & Clinical Details Section */}
       <section id="science" className="py-24 bg-slate-50">
         <div className="max-w-6xl mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             
             {/* Benefits */}
             <div>
-              <h2 className="text-3xl font-extrabold text-slate-900 mb-8">Why {product.name} is Different</h2>
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-100 text-amber-800 font-bold text-xs uppercase tracking-widest rounded-full mb-4">
+                Clinical Outcomes
+              </div>
+              <h2 className="text-4xl font-extrabold text-slate-900 mb-8 leading-tight">Why {product.name} Surpasses Ordinary Supplements</h2>
               <div className="space-y-6 mb-10">
                 {product.benefits.map((benefit, idx) => (
                   <div key={idx} className="flex items-start gap-4">
-                    <div className={`mt-1 bg-white p-1 rounded-full shadow-sm text-emerald-500`}>
+                    <div className={`mt-1 bg-white p-1 rounded-full shadow-sm text-emerald-500 border border-slate-100`}>
                       <CheckCircle2 size={24} />
                     </div>
-                    <p className="text-lg text-slate-700 font-medium leading-relaxed">{benefit}</p>
+                    <p className="text-xl text-slate-700 font-medium leading-relaxed">{benefit}</p>
                   </div>
                 ))}
               </div>
               
-              <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-sm">
-                <h3 className="text-sm uppercase tracking-wider font-bold text-slate-400 mb-4">Active Clinical Ingredients</h3>
+              <div className="p-6 bg-white rounded-3xl border border-slate-200 shadow-sm">
+                <h3 className="text-sm uppercase tracking-wider font-extrabold text-slate-400 mb-4">Pure Active Ingredients</h3>
                 <div className="flex flex-wrap gap-2">
                   {product.ingredients.map((ing, idx) => (
-                     <span key={idx} className="px-4 py-2 bg-slate-50 border border-slate-100 rounded-full text-sm font-semibold text-slate-700">{ing}</span>
+                     <span key={idx} className="px-5 py-2.5 bg-slate-50 hover:bg-slate-100 cursor-default transition-colors border border-slate-100 shadow-sm rounded-full text-sm font-semibold text-slate-800">{ing}</span>
                   ))}
                 </div>
               </div>
@@ -244,26 +268,28 @@ export default function ProductSalesPage() {
 
             {/* Dr. Dan Gubler Bio */}
             <div className="relative">
-              <div className="absolute inset-0 bg-blue-100 rounded-3xl translate-x-4 translate-y-4 z-0"></div>
-              <div className="bg-white p-8 rounded-3xl border border-blue-100 shadow-xl relative z-10">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-full flex items-center justify-center text-white shadow-md">
-                     <Microscope size={28} />
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-[2rem] translate-x-6 translate-y-6 z-0 border border-blue-200"></div>
+              <div className="bg-white p-10 rounded-[2rem] border border-blue-100 shadow-2xl relative z-10 transition-transform hover:-translate-y-1 duration-500">
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="w-20 h-20 bg-gradient-to-br from-slate-800 to-slate-900 rounded-full flex items-center justify-center text-white shadow-xl border-4 border-white">
+                     <Microscope size={32} />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-slate-900">Dr. Dan Gubler, Ph.D.</h3>
-                    <p className="text-blue-600 font-semibold text-sm">Chief Scientific Officer</p>
+                    <h3 className="text-2xl font-black text-slate-900 tracking-tight">Dr. Dan Gubler, Ph.D.</h3>
+                    <p className="text-blue-600 font-bold uppercase tracking-wider text-xs">Chief Scientific Officer at Three</p>
                   </div>
                 </div>
-                <h4 className="font-black text-slate-800 text-lg mb-4">Formulated by World-Class Caltech Science</h4>
-                <p className="text-slate-600 text-sm leading-relaxed mb-4">
-                  <strong>{product.name}</strong> was engineered from the ground up by Dr. Dan Gubler, a globally recognized <span className="text-slate-900 font-semibold">Phytonutrient Chemist</span> and former Caltech Postdoctoral Fellow (NASA's leading scientific partner institution).
+                
+                <h4 className="font-extrabold text-slate-800 text-xl mb-4 leading-snug text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-600">Formulated by World-Class Caltech Science</h4>
+                
+                <p className="text-slate-600 text-[15px] leading-relaxed mb-6">
+                  <strong>{product.name}</strong> was engineered from the molecular level up by Dr. Dan Gubler, a globally recognized <span className="text-slate-900 font-semibold border-b border-slate-300">Phytonutrient Chemist</span> and former Caltech Postdoctoral Fellow.
                 </p>
-                <ul className="space-y-3 text-sm text-slate-600 mb-6">
-                  <li className="flex gap-2"><Award size={16} className="text-amber-500 shrink-0 mt-0.5" /> <strong>Ph.D. in Organic Chemistry</strong>, expert in extracting healing molecules from nature.</li>
-                  <li className="flex gap-2"><Zap size={16} className="text-amber-500 shrink-0 mt-0.5" /> <strong>Cellular Absorption Master:</strong> His breakthrough Liposomal technology ensures these ingredients aren't destroyed in your stomach, but bypass digestion to enter your cells with 100% bioavailability.</li>
+                <ul className="space-y-4 text-[15px] text-slate-700 mb-8 font-medium">
+                  <li className="flex gap-3"><Award size={20} className="text-amber-500 shrink-0 mt-0.5" /> <span><strong>Ph.D. in Organic Chemistry</strong>, an expert in extracting cellular healing molecules directly from nature.</span></li>
+                  <li className="flex gap-3"><Zap size={20} className="text-amber-500 shrink-0 mt-0.5" /> <span><strong>Cellular Absorption Master:</strong> His breakthrough Liposomal technology ensures these ingredients bypass digestive destruction to enter your cells with near 100% bioavailability.</span></li>
                 </ul>
-                <div className="p-4 bg-slate-50 rounded-xl italic text-slate-700 text-sm border-l-4 border-blue-500 font-medium">
+                <div className="p-6 bg-slate-50/80 rounded-2xl italic text-slate-800 border-l-4 border-blue-500 text-lg font-serif">
                   "We didn't just build a supplement. We created a targeted cellular delivery system using the most powerful compounds in nature."
                 </div>
               </div>
@@ -273,29 +299,36 @@ export default function ProductSalesPage() {
         </div>
       </section>
 
+      {/* Verify PDR Callout */}
+      <section className="py-16 bg-slate-900 text-center border-t border-slate-800">
+         <div className="max-w-3xl mx-auto px-6">
+           <div className="w-20 h-20 bg-white text-slate-900 rounded-3xl flex items-center justify-center font-black text-3xl shadow-xl mx-auto mb-6 transform -rotate-3">
+              PDR
+           </div>
+           <h3 className="text-3xl font-extrabold text-white mb-4">Validate Our Clinical Integrity</h3>
+           <p className="text-slate-400 mb-8 max-w-xl mx-auto text-lg leading-relaxed">
+             We operate with complete scientific transparency. {product.name} is trusted by physicians and is officially listed in the Prescribers' Digital Reference.
+           </p>
+           <a href={product.pdrLink} target="_blank" rel="noopener noreferrer" className="inline-flex px-8 py-3 rounded-xl font-bold text-blue-400 bg-blue-900/30 border border-blue-800/50 hover:bg-blue-900/50 transition-colors">
+             Read Full {product.name} PDR Report →
+           </a>
+         </div>
+      </section>
+
       {/* Final CTA */}
-      <section className={`py-24 bg-gradient-to-br ${product.color} text-center`}>
-        <div className="max-w-3xl mx-auto px-6">
-          <h2 className="text-4xl font-extrabold text-white mb-6">Ready to Transform Your Health?</h2>
-          <p className="text-xl text-white/80 mb-10">
-            Join thousands of patients currently using {product.name} to optimize their bodies at the cellular level. Backed by science, guaranteed by the PDR.
+      <section className={`py-32 bg-gradient-to-br ${product.color} text-center relative overflow-hidden`}>
+        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10 mix-blend-overlay"></div>
+        <div className="max-w-3xl mx-auto px-6 relative z-10">
+          <h2 className="text-4xl md:text-5xl font-black text-white mb-6 tracking-tight drop-shadow-md">Ready to Transform Your Health?</h2>
+          <p className="text-xl md:text-2xl font-light text-white/90 mb-12 max-w-2xl mx-auto leading-relaxed">
+            Join thousands of patients currently using {product.name} to optimize their bodies at the cellular level.
           </p>
-          <a href={product.buyLink} target="_blank" rel="noopener noreferrer" className={`inline-flex px-10 py-5 rounded-full font-bold text-xl text-center items-center justify-center gap-3 transition-transform hover:scale-105 shadow-2xl bg-white text-slate-900 hover:bg-slate-50`}>
-            Order {product.name} Now <ArrowRight size={24} />
+          <a href={product.buyLink} target="_blank" rel="noopener noreferrer" className={`inline-flex px-12 py-6 rounded-full font-black text-2xl text-center items-center justify-center gap-4 transition-transform hover:scale-105 shadow-[0_20px_50px_rgba(0,0,0,0.4)] bg-white text-slate-900 hover:bg-slate-100 ring-4 ring-white/20`}>
+            Buy {product.name} Now <ArrowRight size={28} className="stroke-[3px]" />
           </a>
-          <p className="mt-6 text-white/50 text-sm">You will be securely redirected to the official Three International portal.</p>
+          <p className="mt-8 text-white/60 font-medium">You will be securely redirected to the official Three International portal.</p>
         </div>
       </section>
     </div>
-  );
-}
-
-function ExternalLinkIcon({ size=24, className="" }) {
-  return (
-    <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-      <polyline points="15 3 21 3 21 9"></polyline>
-      <line x1="10" y1="14" x2="21" y2="3"></line>
-    </svg>
   );
 }
