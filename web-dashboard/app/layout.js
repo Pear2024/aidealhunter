@@ -24,7 +24,7 @@ export const metadata = {
     siteName: "Nadania Wellness",
     images: [
       {
-        url: "https://threeinternational.com/shopping/productdetailimages/210102/E%CC%81ternel_Additional4.webp",
+        url: "https://nadaniadigitalllc.com/og-family.png",
         width: 1200,
         height: 630,
         alt: "Nadania Wellness - Clinical AI System Online"
@@ -36,7 +36,7 @@ export const metadata = {
     card: "summary_large_image",
     title: "Nadania Wellness - Clinical Health & AI Diagnostics",
     description: "Understand your body. Transform your health with Medical AI and Liposomal Cellular Nutrition.",
-    images: ["https://threeinternational.com/shopping/productdetailimages/210102/E%CC%81ternel_Additional4.webp"],
+    images: ["https://nadaniadigitalllc.com/og-family.png"],
   }
 };
 
