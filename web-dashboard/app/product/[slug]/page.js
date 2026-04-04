@@ -181,7 +181,7 @@ export default function ProductSalesPage() {
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/20 backdrop-blur border border-white/30 text-sm font-semibold mb-6 shadow-lg shadow-black/10">
               <ShieldCheck size={16} /> Clinical Grade Formula
             </div>
-            <h1 className="text-6xl md:text-7xl font-black mb-4 tracking-tight leading-none drop-shadow-lg">{product.name}</h1>
+            <h1 className="text-5xl md:text-7xl font-black mb-4 tracking-tight leading-none drop-shadow-lg">{product.name}</h1>
             <p className="text-2xl font-bold text-white/90 mb-6 drop-shadow">{product.tagline}</p>
             <p className="text-lg text-white/80 mb-10 leading-relaxed max-w-lg">
               {product.description}
@@ -192,8 +192,8 @@ export default function ProductSalesPage() {
               </a>
             </div>
           </div>
-          <div className="hidden lg:flex relative items-center justify-center">
-             <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent blur-3xl rounded-full w-[400px] h-[400px] m-auto z-0 animate-pulse"></div>
+          <div className="flex relative items-center justify-center mt-12 lg:mt-0">
+             <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent blur-3xl rounded-full w-[300px] h-[300px] md:w-[400px] md:h-[400px] m-auto z-0 animate-pulse"></div>
              <img src={product.image} alt={product.name} className="w-full max-w-lg object-contain relative z-10 rounded-3xl shadow-2xl" style={{ maxHeight: '500px' }} />
           </div>
         </div>
