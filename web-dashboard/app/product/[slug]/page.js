@@ -20,7 +20,7 @@ const products = {
     ingredients: ['Resveratrol', 'Glutathione', 'Coenzyme Q10 (CoQ10)', 'Superfruit Blend'],
     color: 'from-purple-900 to-fuchsia-900',
     buttonColor: 'bg-purple-600 hover:bg-purple-700',
-    image: 'https://images.unsplash.com/photo-1615486171448-4d69106be022?q=80&w=1000&auto=format&fit=crop'
+    image: 'https://threeinternational.com/shopping/productimageswebp/large/NENUSA009701/eternel-lg-638488836134810045.webp'
   },
   vitalite: {
     name: 'Vitalité',
