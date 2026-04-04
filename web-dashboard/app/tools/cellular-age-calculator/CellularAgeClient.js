@@ -15,6 +15,7 @@ export default function CellularAgeClient() {
   const [contactNurse, setContactNurse] = useState(null);
   const [nurseName, setNurseName] = useState('');
   const [nursePhone, setNursePhone] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
   const handleCalculate = async () => {
     if (!realAge || !stressLevel || !energyLevel || !sleepQuality || !dietHabits) {
@@ -22,30 +23,58 @@ export default function CellularAgeClient() {
         return;
     }
     setLoading(true);
+    setErrorMsg('');
     try {
       const res = await fetch('/api/tools/cellular-age', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ realAge, stressLevel, energyLevel, sleepQuality, dietHabits })
       });
-      const data = await res.json();
-      if (data.success) {
-        setResult(data.diagnosis);
-        if (typeof window !== 'undefined' && window.fbq) {
-            window.fbq('track', 'Lead');
+      
+      const text = await res.text();
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (parseError) {
+        console.error("Failed to parse JSON response:", text);
+        setErrorMsg('The server returned an invalid response. Please try again or check your ad blocker.');
+        setLoading(false);
+        return;
+      }
+      
+      if (data.success && data.diagnosis) {
+        // Before setting result, strip potential markdown blocks from AI just in case
+        let cleanDiagnosis = data.diagnosis;
+        if (cleanDiagnosis.startsWith("```html")) {
+            cleanDiagnosis = cleanDiagnosis.replace(/```html/g, "").replace(/```/g, "").trim();
+        }
+        
+        setResult(cleanDiagnosis);
+        
+        try {
+            if (typeof window !== 'undefined' && window.fbq) {
+                window.fbq('track', 'Lead');
+            }
+        } catch (fbqError) {
+            console.error(fbqError);
         }
       } else {
-        alert("Server error. Please try again later.");
+        alert("Server error: " + (data.error || "Please try again later."));
       }
     } catch (e) {
       console.error(e);
-      alert("Network error.");
+      alert("Network or connection error. Please verify your internet connection.");
     }
     setLoading(false);
   };
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-12">
+      {errorMsg && (
+         <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 font-semibold shadow-sm border border-red-100">
+            {errorMsg}
+         </div>
+      )}
       {!result ? (
         <div className="bg-white rounded-2xl p-8 shadow-lg border border-slate-100">
            <h2 className="text-2xl font-bold mb-6 text-slate-800">Enter Your Biomarkers</h2>
@@ -135,7 +164,7 @@ export default function CellularAgeClient() {
            </div>
         </div>
       ) : (
-        <div className="bg-white rounded-2xl p-8 shadow-xl border border-blue-100">
+        <div className="bg-white rounded-2xl p-8 shadow-xl border border-blue-100 flex flex-col gap-2">
            <div 
               className="prose prose-slate max-w-none prose-p:leading-relaxed"
               dangerouslySetInnerHTML={{ __html: result }}
@@ -154,7 +183,7 @@ export default function CellularAgeClient() {
                      Yes, Contact Me (Free)
                    </button>
                    <a 
-                     href="https://threeinternational.com/en/ShopProducts/1712892"
+                     href="https://bit.ly/nadaniawellness-eternel"
                      target="_blank"
                      rel="noreferrer"
                      onClick={() => setContactNurse(false)}
@@ -197,7 +226,7 @@ export default function CellularAgeClient() {
               <div className="mt-8 text-center p-8 bg-blue-50 rounded-2xl border border-blue-100">
                  <h3 className="text-xl font-bold text-blue-800 mb-4 text-center">Ready to begin your cellular reversal?</h3>
                  <a 
-                   href="https://threeinternational.com/en/ShopProducts/1712892"
+                   href="https://bit.ly/nadaniawellness-eternel"
                    target="_blank"
                    rel="noreferrer"
                    className="inline-block w-full md:w-auto px-10 py-5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl transition-all shadow-xl shadow-blue-500/30 hover:scale-105 uppercase tracking-wide"
