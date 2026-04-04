@@ -17,6 +17,45 @@ export default function AIStudioPage() {
     { name: "Vitalité", desc: "Daily Foundational Nutrition & Energy" }
   ];
 
+  const viralAudiences = {
+    "Éternel": [
+      "Women 40+ noticing fine lines and losing skin elasticity",
+      "Stressed moms lacking sleep and feeling visibly aged",
+      "Health-conscious executives seeking elite longevity hacks",
+      "People spending thousands on skincare with no real results from the inside out"
+    ],
+    "Revíve": [
+      "Former athletes now struggling with chronic knee and back pain",
+      "Elderly parents who can no longer play with their grandchildren",
+      "Office workers 35+ plagued by tech-neck and stiff joints",
+      "People dependent on daily painkillers just to get out of bed"
+    ],
+    "Imúne": [
+      "People who catch every cold that goes around their office",
+      "Travelers constantly exhausted and sick after long flights",
+      "Teachers or nurses exposed to germs daily needing a cellular shield",
+      "Individuals feeling perpetually run-down and slow to recover"
+    ],
+    "GLP-THREE": [
+      "People tired of yo-yo dieting and constant sugar cravings",
+      "Moms struggling to lose stubborn postpartum belly fat",
+      "Busy professionals ordering takeout who can't stop night snacking",
+      "Individuals seeking natural, non-prescription GLP-1 hormone support"
+    ],
+    "Vitalité": [
+      "Burned-out professionals relying on 4 cups of coffee to survive",
+      "Parents dealing with severe afternoon brain fog and fatigue",
+      "People buying cheap drugstore vitamins that just pass through their body",
+      "Anyone feeling general lack of vitality and cellular nutrient starvation"
+    ]
+  };
+
+  const autoSuggestAudience = () => {
+    const options = viralAudiences[product] || viralAudiences["Vitalité"];
+    const randomOption = options[Math.floor(Math.random() * options.length)];
+    setAudience(randomOption);
+  };
+
   const generateAd = async () => {
     setLoading(true);
     setResult(null);
@@ -73,15 +112,24 @@ export default function AIStudioPage() {
               </select>
             </div>
             
-            <div>
+            <div className="relative">
               <label className="block text-sm font-bold text-slate-700 mb-2">Target Audience / Pain Point:</label>
-              <input 
-                type="text"
-                value={audience}
-                onChange={(e) => setAudience(e.target.value)}
-                placeholder="e.g. Elderly with joint pain, Moms trying to lose weight..."
-                className="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
-              />
+              <div className="relative">
+                <input 
+                  type="text"
+                  value={audience}
+                  onChange={(e) => setAudience(e.target.value)}
+                  placeholder="e.g. Elderly with joint pain, Moms trying to lose weight..."
+                  className="w-full p-4 pr-14 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
+                />
+                <button
+                  onClick={autoSuggestAudience}
+                  title="Auto-Suggest Viral Audience"
+                  className="absolute right-2 top-2 bottom-2 aspect-square bg-emerald-100 hover:bg-emerald-200 text-emerald-600 rounded-lg flex items-center justify-center transition-colors"
+                >
+                  <Wand2 size={20} />
+                </button>
+              </div>
             </div>
           </div>
           
