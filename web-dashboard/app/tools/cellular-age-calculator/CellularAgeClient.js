@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Activity, Beaker, ArrowRight, Loader2 } from 'lucide-react';
 
 export default function CellularAgeClient() {
+  const resultRef = useRef(null);
   const [realAge, setRealAge] = useState('');
   const [stressLevel, setStressLevel] = useState('');
   const [energyLevel, setEnergyLevel] = useState('');
@@ -67,6 +68,12 @@ export default function CellularAgeClient() {
     }
     setLoading(false);
   };
+
+  useEffect(() => {
+     if (result && resultRef.current) {
+         resultRef.current.innerHTML = result;
+     }
+  }, [result]);
 
   return (
     <div className="max-w-3xl mx-auto px-6 py-12">
@@ -166,8 +173,8 @@ export default function CellularAgeClient() {
       ) : (
         <div className="bg-white rounded-2xl p-8 shadow-xl border border-blue-100 flex flex-col gap-2">
            <div 
+              ref={resultRef}
               className="prose prose-slate max-w-none prose-p:leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: result }}
             />
 
             {/* Nurse Contact Area */}
