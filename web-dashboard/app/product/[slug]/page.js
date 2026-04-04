@@ -10,7 +10,7 @@ const products = {
     tagline: 'Defend Your Cells against Aging & Oxidative Stress',
     description: 'A revolutionary clinical blend of Liposomal Resveratrol, CoQ10, and Glutathione designed to neutralize free radicals, protect against UV damage, and promote cellular longevity.',
     pdrLink: 'https://www.pdr.net/full-prescribing-information/hl/?druglabelid=24467',
-    buyLink: 'https://threeinternational.com/en/ShopProducts/1712892', 
+    buyLink: 'https://threeinternational.com/en/productdetail/1712892/2797/US', 
     benefits: [
       'Protects and supports cells from damage and premature aging',
       'Promotes deep cellular longevity and overall health',
