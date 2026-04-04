@@ -67,7 +67,7 @@ export default function AIStudioPage() {
               <select 
                 value={product}
                 onChange={(e) => setProduct(e.target.value)}
-                className="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-emerald-500 outline-none"
+                className="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
               >
                 {products.map(p => <option key={p.name} value={p.name}>{p.name} - {p.desc}</option>)}
               </select>
@@ -80,7 +80,7 @@ export default function AIStudioPage() {
                 value={audience}
                 onChange={(e) => setAudience(e.target.value)}
                 placeholder="e.g. Elderly with joint pain, Moms trying to lose weight..."
-                className="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 focus:ring-2 focus:ring-emerald-500 outline-none"
+                className="w-full p-4 rounded-xl border border-slate-200 bg-slate-50 text-slate-900 focus:ring-2 focus:ring-emerald-500 outline-none"
               />
             </div>
           </div>
