@@ -194,7 +194,7 @@ export default function ProductSalesPage() {
           </div>
           <div className="hidden lg:flex relative items-center justify-center">
              <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent blur-3xl rounded-full w-[400px] h-[400px] m-auto z-0 animate-pulse"></div>
-             <img src={product.image} alt={product.name} className="w-full max-w-lg object-contain relative z-10 drop-shadow-2xl" style={{ maxHeight: '500px' }} />
+             <img src={product.image} alt={product.name} className="w-full max-w-lg object-contain relative z-10 rounded-3xl shadow-2xl" style={{ maxHeight: '500px' }} />
           </div>
         </div>
       </section>
