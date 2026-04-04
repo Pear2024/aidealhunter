@@ -21,8 +21,8 @@ export async function POST(request) {
            </div>
         3. Explain Risk: In 2-3 short, clinical sentences (Native US English), explain WHY their cells are aging faster (mentioning 'Oxidative Stress' or 'Chronic Inflammation').
         4. The Solution (Three International): Explain that standard drug-store vitamins cannot penetrate the cell membrane. Recommend exactly ONE primary product from Three International based on their inputs:
-           - If Stress/Aging focus: Éternel (Resveratrol, CoQ10, Glutathione). Sales Page Link: <a href="https://nadaniadigitalllc.com/product/eternel" target="_blank" style="color: #10b981; font-weight: bold;">(Read Clinical Review & See PDR Info)</a>
-           - If Energy/Diet focus: Vitalité (72 Trace Minerals, Omega-3). Sales Page Link: <a href="https://nadaniadigitalllc.com/product/vitalite" target="_blank" style="color: #10b981; font-weight: bold;">(Read Clinical Review & See PDR Info)</a>
+           - If Stress/Aging focus: Éternel (Resveratrol, CoQ10, Glutathione). Sales Page Link: <a href="https://bit.ly/nadaniawellness-eternel" target="_blank" style="color: #10b981; font-weight: bold;">(Read Clinical Review & See PDR Info)</a>
+           - If Energy/Diet focus: Vitalité (72 Trace Minerals, Omega-3). Sales Page Link: <a href="https://bit.ly/nadaniawellness-vitalite" target="_blank" style="color: #10b981; font-weight: bold;">(Read Clinical Review & See PDR Info)</a>
            Mention "Liposomal Absorption Technology" ensuring 95% cellular delivery.
         5. Strict HTML Formatting: You MUST wrap the entire response in raw HTML tags (<h2>, <p>, <strong>, etc.) for beautiful rendering. Do NOT use markdown code blocks. Start immediately with the HTML tags.
         `;

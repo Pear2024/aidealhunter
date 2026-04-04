@@ -30,13 +30,13 @@ export async function POST(request) {
            - Sleep / Oxidative Stress: Eternel, Revive, Vitalite
            
            Append its EXACT Sales Page link immediately after mentioning it. Do not mix up the links! Format the link as: <a href="[THE_LINK]" target="_blank" style="color: #10b981; font-weight: bold; text-decoration: underline;">(Read Clinical Review & See PDR Info)</a>
-           - Vitalité (72 Trace Minerals, Enzyme Blend, Probiotics, Omega-3): For core cellular nutrition, massive energy baseline, and gut health. Link: https://nadaniadigitalllc.com/product/vitalite
-           - Imúne (Liposomal Vitamin C, Quercetin, Elderberry, Reishi/Shiitake Mushroom Blend): For innate/adaptive immune response and microbiome modulation. Link: https://nadaniadigitalllc.com/product/imune
-           - Éternel (Resveratrol, CoQ10, Glutathione, Superfruits): For combating severe oxidative stress, protecting against free radicals, and cell longevity. Link: https://nadaniadigitalllc.com/product/eternel
-           - Revíve (Curcumin/Turmeric, Boswellia, Black Cumin Oil, Sea Buckthorn): For intense joint recovery, mitigating muscle stiffness, and neutralizing chronic inflammation. Link: https://nadaniadigitalllc.com/product/revive
-           - Purífi (Humic Shale Extract, Liposomal Milk Thistle, Burdock, Chlorophyllin): For full-body organ detoxification and stripping heavy metals. Link: https://nadaniadigitalllc.com/product/purifi
-           - Collagène (Marine Collagen Types I, II, III, Hyaluronic Acid, Keratin): For dermal elasticity, fine line reduction, and connective tissue tensile strength. Link: https://nadaniadigitalllc.com/product/collagene
-           - GLP THREE (MBC-267 Peptides from Norwegian Salmon & Mushrooms, Saffron Extract): Breakthrough natural GLP-1 mimetic to curb neurological food cravings and manage blood sugar. Link: https://nadaniadigitalllc.com/product/glp-three
+           - Vitalité (72 Trace Minerals, Enzyme Blend, Probiotics, Omega-3): For core cellular nutrition, massive energy baseline, and gut health. Link: https://bit.ly/nadaniawellness-vitalite
+           - Imúne (Liposomal Vitamin C, Quercetin, Elderberry, Reishi/Shiitake Mushroom Blend): For innate/adaptive immune response and microbiome modulation. Link: https://bit.ly/nadaniawellness-imune
+           - Éternel (Resveratrol, CoQ10, Glutathione, Superfruits): For combating severe oxidative stress, protecting against free radicals, and cell longevity. Link: https://bit.ly/nadaniawellness-eternel
+           - Revíve (Curcumin/Turmeric, Boswellia, Black Cumin Oil, Sea Buckthorn): For intense joint recovery, mitigating muscle stiffness, and neutralizing chronic inflammation. Link: https://bit.ly/nadaniawellness-revive
+           - Purífi (Humic Shale Extract, Liposomal Milk Thistle, Burdock, Chlorophyllin): For full-body organ detoxification and stripping heavy metals. Link: https://bit.ly/nadania-purify
+           - Collagène (Marine Collagen Types I, II, III, Hyaluronic Acid, Keratin): For dermal elasticity, fine line reduction, and connective tissue tensile strength. Link: https://bit.ly/nadaniawellness-Collagene
+           - GLP THREE (MBC-267 Peptides from Norwegian Salmon & Mushrooms, Saffron Extract): Breakthrough natural GLP-1 mimetic to curb neurological food cravings and manage blood sugar. Link: https://bit.ly/nadaniawellness-glpthree
            - Visage Crème Caviar (Mountain Caviar/Kochia scoparia, Panax Ginseng, Acetyl hexapeptide-8): Premium dermal moisturizer for deep cellular repair. Link: https://nadaniadigitalllc.com/product/visage-creme
            - Visage Super Serum (Bakuchiol, Squalane, Vitex agnus-castus): Neurocosmetic super-serum for locking in hydration and wrinkle reduction. Link: https://nadaniadigitalllc.com/product/visage-serum
            INSTRUCTION: When you pitch the specific Three product, explicitly mention its cutting-edge active ingredients (like MBC-267 Peptides, Humic Shale Extract, or Liposomal CoQ10) to sound highly clinical and impress the patient!
