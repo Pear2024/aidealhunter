@@ -112,12 +112,12 @@ const products = {
     tagline: 'Metabolic & Blood Sugar Support',
     description: 'A revolutionary natural GLP-1 mimetic using MBC-267 Peptides from Norwegian Salmon to naturally curb cravings and manage blood sugar.',
     pdrLink: 'https://www.pdr.net/full-prescribing-information/hl/?druglabelid=24563',
-    buyLink: 'https://threeinternational.com/en/ShopProducts/1712892',
+    buyLink: 'https://threeinternational.com/en/productdetail/1712892/3478/US',
     benefits: ['Curbs neurological food cravings', 'Natural GLP-1 mimetic without the side effects', 'Balances blood sugar levels', 'Promotes healthy weight management'],
     ingredients: ['MBC-267 Peptides (Norwegian Salmon)', 'Mushroom Blend', 'Saffron Extract'],
     color: 'from-red-900 to-rose-900',
     buttonColor: 'bg-red-600 hover:bg-red-700',
-    image: 'https://images.unsplash.com/photo-1579684385127-1ef15d508118?q=80&w=1000&auto=format&fit=crop'
+    image: 'https://threeinternational.com/shopping/productdetailimages/210254/GLPTHREE_Additional1.webp'
   },
   'visage-creme': {
     name: 'Visage Crème Caviar',
