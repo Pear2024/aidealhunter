@@ -67,15 +67,14 @@ export default function Home() {
       </section>
 
       {/* Partners / Trust Banner */}
-      <section className="py-10 border-y border-slate-200 bg-white">
+      <section className="py-6 md:py-10 border-y border-slate-200 bg-white">
         <div className="max-w-7xl mx-auto px-6">
-          <p className="text-center text-sm font-semibold text-slate-400 mb-6 tracking-wider uppercase">Backed By Science & Distributed Globally</p>
-          <div className="flex flex-wrap justify-center items-center gap-12 opacity-60 grayscale">
-            {/* Dummy logos representing PDR, Science, FDA standards etc. */}
-            <div className="text-xl font-bold flex items-center gap-1"><ShieldCheck size={28}/> PDR Listed</div>
-            <div className="text-xl font-black flex items-center gap-1">GMP CERTIFIED</div>
-            <div className="text-xl font-bold flex items-center gap-1"><Microscope size={28}/> CLINICAL GRADE</div>
-            <div className="text-xl font-serif italic font-bold">Nature+Tech</div>
+          <p className="text-center text-xs md:text-sm font-semibold text-slate-400 mb-4 md:mb-6 tracking-wider uppercase">Backed By Science & Distributed Globally</p>
+          <div className="flex flex-wrap justify-center items-center gap-4 md:gap-12 opacity-60 grayscale">
+            <div className="text-sm md:text-xl font-bold flex items-center gap-1"><ShieldCheck size={20} className="md:w-7 md:h-7" /> PDR Listed</div>
+            <div className="text-sm md:text-xl font-black flex items-center gap-1">GMP CERTIFIED</div>
+            <div className="text-sm md:text-xl font-bold flex items-center gap-1"><Microscope size={20} className="md:w-7 md:h-7" /> CLINICAL GRADE</div>
+            <div className="text-sm md:text-xl font-serif italic font-bold">Nature+Tech</div>
           </div>
         </div>
       </section>
