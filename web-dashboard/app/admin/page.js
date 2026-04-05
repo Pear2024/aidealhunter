@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Activity, Users } from 'lucide-react';
+import { Activity, Users, Film, HeartPulse, Calculator } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
@@ -60,6 +60,42 @@ export default function AdminDashboard() {
                       <h3 className="font-bold text-xl text-white m-0 p-0 border-none">Medical Reels</h3>
                   </div>
                   <p className="text-gray-400 text-sm">Review, trigger, and manage the AI's upcoming scheduled Facebook Videos.</p>
+              </div>
+          </Link>
+
+          <Link href="/studio" style={{ textDecoration: 'none' }}>
+              <div className="p-6 rounded-2xl bg-[#111] border border-[#222] hover:border-[#8b5cf6] transition-all cursor-pointer h-full">
+                  <div className="flex items-center gap-4 mb-4">
+                      <div className="p-3 rounded-full bg-[#8b5cf6]/20 text-[#8b5cf6]">
+                          <Film size={24} />
+                      </div>
+                      <h3 className="font-bold text-xl text-white m-0 p-0 border-none">Nadania AI Studio</h3>
+                  </div>
+                  <p className="text-gray-400 text-sm">Generate Hollywood-level cinematic video and audio ads instantly.</p>
+              </div>
+          </Link>
+
+          <Link href="/wellness" style={{ textDecoration: 'none' }}>
+              <div className="p-6 rounded-2xl bg-[#111] border border-[#222] hover:border-[#10b981] transition-all cursor-pointer h-full">
+                  <div className="flex items-center gap-4 mb-4">
+                      <div className="p-3 rounded-full bg-[#10b981]/20 text-[#10b981]">
+                          <HeartPulse size={24} />
+                      </div>
+                      <h3 className="font-bold text-xl text-white m-0 p-0 border-none">Nadania Wellness</h3>
+                  </div>
+                  <p className="text-gray-400 text-sm">View and manage the core Wellness platform storefront.</p>
+              </div>
+          </Link>
+
+          <Link href="/tools/cellular-age-calculator" style={{ textDecoration: 'none' }}>
+              <div className="p-6 rounded-2xl bg-[#111] border border-[#222] hover:border-[#f59e0b] transition-all cursor-pointer h-full">
+                  <div className="flex items-center gap-4 mb-4">
+                      <div className="p-3 rounded-full bg-[#f59e0b]/20 text-[#f59e0b]">
+                          <Calculator size={24} />
+                      </div>
+                      <h3 className="font-bold text-xl text-white m-0 p-0 border-none">Age Calculator</h3>
+                  </div>
+                  <p className="text-gray-400 text-sm">Access the Clinical Cellular Age verification assessment tool.</p>
               </div>
           </Link>
       </div>
