@@ -106,7 +106,18 @@ export default function AdminDashboard() {
                       </div>
                       <h3 className="font-bold text-xl text-white m-0 p-0 border-none">Prompt Builder</h3>
                   </div>
-                  <p className="text-gray-400 text-sm">Construct flawless AI prompts using the ultimate 6-pillar framework.</p>
+                  <p className="text-gray-400 text-sm">Construct flawless AI text prompts using the ultimate 6-pillar framework.</p>
+              </div>
+          </Link>
+          <Link href="/image-prompt" style={{ textDecoration: 'none' }}>
+              <div className="p-6 rounded-2xl bg-[#111] border border-[#222] hover:border-[#3b82f6] transition-all cursor-pointer h-full">
+                  <div className="flex items-center gap-4 mb-4">
+                      <div className="p-3 rounded-full bg-[#3b82f6]/20 text-[#3b82f6]">
+                          <Film size={24} />
+                      </div>
+                      <h3 className="font-bold text-xl text-white m-0 p-0 border-none">Image Prompt Builder</h3>
+                  </div>
+                  <p className="text-gray-400 text-sm">Create breathtaking Midjourney/DALL-E image prompts using the visual composition formula.</p>
               </div>
           </Link>
       </div>
