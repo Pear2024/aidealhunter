@@ -186,7 +186,6 @@ function StudioPageContent() {
               </div>
             </div>
 
-            {/* Right Column: The Solution (Auto-matched) */}
             <div className="bg-emerald-50 rounded-xl p-8 border border-emerald-200 flex flex-col justify-center relative overflow-hidden">
               <div className="absolute top-0 right-0 p-4 opacity-10">
                 <Sparkles size={120} className="text-emerald-500" />
@@ -219,57 +218,78 @@ function StudioPageContent() {
             <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6">
                 <h2 className="text-2xl font-black text-emerald-900">{result.title}</h2>
-                <p className="text-emerald-700 mt-2"><strong>Viral Rationale:</strong> <span>{result.rationale}</span></p>
-                <div className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden mt-8 animate-in fade-in duration-500">
-                  <div className="bg-slate-800 px-6 py-4">
-                    <h3 className="text-white font-bold text-lg flex items-center gap-2"><Sparkles size={18} className="text-emerald-400"/> Director's Timeline (Veo 3)</h3>
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block mb-1">💡 Viral Rationale</span>
+                    <p className="text-emerald-800 text-sm">{result.rationale}</p>
                   </div>
-                  <div className="divide-y divide-slate-100">
-                    {result.scenes?.map((scene, i) => (
-                      <div key={i} className="p-0 flex flex-col md:flex-row hover:bg-slate-50 transition-colors">
-                        {/* --- TIMELINE COLUMN --- */}
-                        <div className="md:w-48 bg-slate-50/50 p-6 border-b md:border-b-0 md:border-r border-slate-100 flex flex-col items-center justify-center shrink-0">
-                          <div className="bg-emerald-100 text-emerald-800 font-black text-xl px-4 py-2 rounded-xl text-center shadow-sm border border-emerald-200 inline-block font-mono tracking-tighter w-full">
-                            {scene.timestamp || `${i * 5}s-${(i + 1) * 5}s`}
-                          </div>
-                          <h3 className="font-bold text-slate-700 mt-3 text-center text-sm uppercase tracking-wider">{scene.concept}</h3>
-                          <div className="mt-1 text-[10px] font-bold text-slate-400">SCENE {scene.scene || i+1}</div>
-                        </div>
-                        
-                        {/* --- CONTENT GRID --- */}
-                        <div className="p-6 flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
-                          {/* Video Prompt */}
-                          <div className="relative group flex flex-col h-full bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
-                            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-3 flex items-center gap-1.5"><span className="text-sm">📹</span> VIDEO (FLOW)</p>
-                            <div className="text-sm text-slate-700 font-medium pb-8 leading-relaxed">{scene.video_prompt}</div>
-                            <button onClick={() => copyToClipboard(scene.video_prompt, `video_${i}`)} className="absolute bottom-3 right-3 p-2 bg-white rounded-lg shadow-sm border border-slate-200 text-slate-500 hover:text-emerald-600 transition-colors">
-                              {copied === `video_${i}` ? <Check size={16} /> : <Copy size={16} />}
-                            </button>
-                          </div>
-
-                          {/* Audio Prompt */}
-                          <div className="relative group flex flex-col h-full bg-blue-50/50 p-5 rounded-xl border border-blue-100 shadow-sm">
-                            <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-3 flex items-center gap-1.5"><span className="text-sm">🎵</span> AUDIO FX</p>
-                            <div className="text-sm text-blue-800 font-medium pb-8 leading-relaxed">{scene.audio_prompt}</div>
-                            <button onClick={() => copyToClipboard(scene.audio_prompt, `audio_${i}`)} className="absolute bottom-3 right-3 p-2 bg-white rounded-lg shadow-sm border border-blue-200 text-blue-500 hover:text-blue-600 transition-colors">
-                              {copied === `audio_${i}` ? <Check size={16} /> : <Copy size={16} />}
-                            </button>
-                          </div>
-
-                          {/* Voiceover Prompt */}
-                          <div className="relative group flex flex-col h-full bg-purple-50 p-5 rounded-xl border border-purple-100 shadow-sm">
-                            <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-3 flex items-center gap-1.5"><span className="text-sm">🎤</span> VOICEOVER</p>
-                            <div className="text-sm text-purple-800 font-bold italic pb-8 leading-relaxed">"{scene.voiceover}"</div>
-                            <button onClick={() => copyToClipboard(scene.voiceover, `vo_${i}`)} className="absolute bottom-3 right-3 p-2 bg-white rounded-lg shadow-sm border border-purple-200 text-purple-500 hover:text-purple-600 transition-colors">
-                              {copied === `vo_${i}` ? <Check size={16} /> : <Copy size={16} />}
-                            </button>
-                          </div>
-                        </div>
+                  {result.facebook_caption && (
+                    <div className="relative group pt-4 border-t border-emerald-200/50">
+                      <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest block mb-2 flex items-center gap-1.5">📱 Facebook / Social Copy</span>
+                      <div className="bg-white/60 p-4 rounded-xl text-emerald-900 text-sm whitespace-pre-wrap font-medium pb-8 leading-relaxed">
+                        {result.facebook_caption}
                       </div>
-                    ))}
-                  </div>
+                      <button 
+                        onClick={() => copyToClipboard(result.facebook_caption, 'social_copy')}
+                        className="absolute bottom-3 right-3 p-2 bg-white rounded-lg shadow-sm border border-emerald-200 text-emerald-600 hover:text-emerald-700 transition-colors"
+                      >
+                        {copied === 'social_copy' ? <Check size={16} /> : <Copy size={16} />}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              <div className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden mt-8 animate-in fade-in duration-500">
+                <div className="bg-slate-800 px-6 py-4">
+                  <h3 className="text-white font-bold text-lg flex items-center gap-2"><Sparkles size={18} className="text-emerald-400"/> Director's Timeline (Veo 3)</h3>
+                </div>
+                <div className="divide-y divide-slate-100">
+                  {result.scenes?.map((scene, i) => (
+                    <div key={i} className="p-0 flex flex-col md:flex-row hover:bg-slate-50 transition-colors">
+                      {/* --- TIMELINE COLUMN --- */}
+                      <div className="md:w-48 bg-slate-50/50 p-6 border-b md:border-b-0 md:border-r border-slate-100 flex flex-col items-center justify-center shrink-0">
+                        <div className="bg-emerald-100 text-emerald-800 font-black text-xl px-4 py-2 rounded-xl text-center shadow-sm border border-emerald-200 inline-block font-mono tracking-tighter w-full">
+                          {scene.timestamp || `${i * 5}s-${(i + 1) * 5}s`}
+                        </div>
+                        <h3 className="font-bold text-slate-700 mt-3 text-center text-sm uppercase tracking-wider">{scene.concept}</h3>
+                        <div className="mt-1 text-[10px] font-bold text-slate-400">SCENE {scene.scene || i+1}</div>
+                      </div>
+                      
+                      {/* --- CONTENT GRID --- */}
+                      <div className="p-6 flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Video Prompt */}
+                        <div className="relative group flex flex-col h-full bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                          <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-3 flex items-center gap-1.5"><span className="text-sm">📹</span> VIDEO (FLOW)</p>
+                          <div className="text-sm text-slate-700 font-medium pb-8 leading-relaxed">{scene.video_prompt}</div>
+                          <button onClick={() => copyToClipboard(scene.video_prompt, `video_${i}`)} className="absolute bottom-3 right-3 p-2 bg-white rounded-lg shadow-sm border border-slate-200 text-slate-500 hover:text-emerald-600 transition-colors">
+                            {copied === `video_${i}` ? <Check size={16} /> : <Copy size={16} />}
+                          </button>
+                        </div>
+
+                        {/* Audio Prompt */}
+                        <div className="relative group flex flex-col h-full bg-blue-50/50 p-5 rounded-xl border border-blue-100 shadow-sm">
+                          <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-3 flex items-center gap-1.5"><span className="text-sm">🎵</span> AUDIO FX</p>
+                          <div className="text-sm text-blue-800 font-medium pb-8 leading-relaxed">{scene.audio_prompt}</div>
+                          <button onClick={() => copyToClipboard(scene.audio_prompt, `audio_${i}`)} className="absolute bottom-3 right-3 p-2 bg-white rounded-lg shadow-sm border border-blue-200 text-blue-500 hover:text-blue-600 transition-colors">
+                            {copied === `audio_${i}` ? <Check size={16} /> : <Copy size={16} />}
+                          </button>
+                        </div>
+
+                        {/* Voiceover Prompt */}
+                        <div className="relative group flex flex-col h-full bg-purple-50 p-5 rounded-xl border border-purple-100 shadow-sm">
+                          <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-3 flex items-center gap-1.5"><span className="text-sm">🎤</span> VOICEOVER</p>
+                          <div className="text-sm text-purple-800 font-bold italic pb-8 leading-relaxed">"{scene.voiceover}"</div>
+                          <button onClick={() => copyToClipboard(scene.voiceover, `vo_${i}`)} className="absolute bottom-3 right-3 p-2 bg-white rounded-lg shadow-sm border border-purple-200 text-purple-500 hover:text-purple-600 transition-colors">
+                            {copied === `vo_${i}` ? <Check size={16} /> : <Copy size={16} />}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
             </div>
           )}
         </div>
