@@ -180,6 +180,19 @@ export default function AIStudioPage() {
                 </div>
                 
                 <div className="p-6 space-y-4">
+                  {/* --- AI STORYBOARD VISUAL MOCKUP --- */}
+                  <div className="w-full rounded-xl overflow-hidden shadow-sm border border-slate-200 bg-slate-200 aspect-video relative">
+                     <img 
+                       src={`https://image.pollinations.ai/prompt/${encodeURIComponent(scene.video_prompt + " cinematic lighting, photorealistic, 4k")}`} 
+                       alt={scene.concept}
+                       className="w-full h-full object-cover"
+                     />
+                     <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-2">
+                        <Sparkles size={14} className="text-purple-400" />
+                        AI Storyboard Mockup
+                     </div>
+                  </div>
+
                   {/* Video Prompt */}
                   <div className="relative group">
                     <p className="text-xs font-bold text-emerald-600 uppercase mb-1">📹 Video Prompt (Paste in Google Flow)</p>
