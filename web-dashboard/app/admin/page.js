@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Activity, Users, BarChart3 } from 'lucide-react';
+import { Activity, Users } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
@@ -33,11 +33,6 @@ export default function AdminDashboard() {
       <header className="header">
         <h1>🩺 Nadania Medical AI Command Center</h1>
         <p className="subtitle">Automated Content Engine & Operations Dashboard</p>
-        <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', marginTop: '15px' }}>
-          <Link href="/" style={{ color: 'var(--accent)', textDecoration: 'none' }}>← Go back to Public Storefront</Link>
-          <Link href="/admin/analytics" style={{ color: 'var(--success)', textDecoration: 'none' }}>View Analytics 📈</Link>
-          <Link href="/admin/agents" style={{ color: '#ff9a9e', textDecoration: 'none', fontWeight: 'bold' }}>AI Overlord 🌌 →</Link>
-        </div>
       </header>
 
       <h2 className="text-xl font-bold mb-4 text-white mt-10">Daily Operations Control</h2>
@@ -67,19 +62,6 @@ export default function AdminDashboard() {
                   <p className="text-gray-400 text-sm">Review, trigger, and manage the AI's upcoming scheduled Facebook Videos.</p>
               </div>
           </Link>
-          
-          <Link href="/admin/analytics" style={{ textDecoration: 'none' }}>
-              <div className="p-6 rounded-2xl bg-[#111] border border-[#222] hover:border-[#00D084] transition-all cursor-pointer h-full">
-                  <div className="flex items-center gap-4 mb-4">
-                      <div className="p-3 rounded-full bg-[#00D084]/20 text-[#00D084]">
-                          <BarChart3 size={24} />
-                      </div>
-                      <h3 className="font-bold text-xl text-white m-0 p-0 border-none">Web Analytics</h3>
-                  </div>
-                  <p className="text-gray-400 text-sm">Monitor live traffic, user journeys, conversion events, and engagement.</p>
-              </div>
-          </Link>
-
       </div>
 
       {/* --- INJECTED MARKETING HUB (Storyboard & Manual Reels) --- */}
