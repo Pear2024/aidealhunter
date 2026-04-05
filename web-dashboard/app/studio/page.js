@@ -181,9 +181,9 @@ export default function AIStudioPage() {
                 
                 <div className="p-6 space-y-4">
                   {/* --- AI STORYBOARD VISUAL MOCKUP --- */}
-                  <div className="w-full rounded-xl overflow-hidden shadow-sm border border-slate-200 bg-slate-200 aspect-video relative">
+                   <div className="w-full rounded-xl overflow-hidden shadow-sm border border-slate-200 bg-slate-200 aspect-video relative">
                      <img 
-                       src={`https://image.pollinations.ai/prompt/${encodeURIComponent(scene.video_prompt + " cinematic lighting, photorealistic, 4k")}`} 
+                       src={`https://image.pollinations.ai/prompt/${encodeURIComponent("Cinematic ad, " + scene.concept + ", photorealistic 8k")}`} 
                        alt={scene.concept}
                        className="w-full h-full object-cover"
                      />
