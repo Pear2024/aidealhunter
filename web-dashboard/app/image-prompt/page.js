@@ -58,7 +58,8 @@ export default function ImagePromptBuilderPage() {
       setState: setLighting,
       color: "amber",
       desc: "แสงในภาพเป็นแบบไหน? บรรยากาศให้อารมณ์แบบใด?",
-      example: "cinematic lighting, dramatic shadows, volumetric neon fog, moody atmosphere"
+      example: "cinematic lighting, dramatic shadows, volumetric neon fog, moody atmosphere",
+      suggestions: ["Cinematic lighting", "Natural sunlight", "Moody dark lighting", "Volumetric fog", "Neon lights"]
     },
     {
       id: "camera",
@@ -67,8 +68,9 @@ export default function ImagePromptBuilderPage() {
       state: camera,
       setState: setCamera,
       color: "rose",
-      desc: "อยากให้ภาพออกมาเหมือนถ่ายด้วยกล้องอะไร มุมมองไหน? (อารมณ์คล้ายการกำกับภาพ)",
-      example: "low angle shot, 35mm lens, sharp focus, shallow depth of field, f/1.8"
+      desc: "อยากให้ภาพออกมาเหมือนถ่ายด้วยกล้องอะไร มุมมองไหน? (คลิกเลือกคำศัพท์แนะนำด้านล่างได้เลย)",
+      example: "low angle shot, 35mm lens, sharp focus, shallow depth of field, f/1.8",
+      suggestions: ["Close-up shot", "Extreme wide angle", "Eye-level shot", "Bird's-eye view (มุมสูง)", "Macro shot (ซูมใกล้มาก)"]
     },
     {
       id: "style",
@@ -78,7 +80,8 @@ export default function ImagePromptBuilderPage() {
       setState: setStyle,
       color: "purple",
       desc: "ต้องการภาพแนวไหน? รูปถ่ายของจริง, อนิเมชั่น 3D, หรือภาพวาดสีน้ำลายเส้นศิลปิน?",
-      example: "hyper-realistic photography, 8k resolution, Unreal Engine 5 render, award winning photo"
+      example: "hyper-realistic photography, 8k resolution, Unreal Engine 5 render, award winning photo",
+      suggestions: ["Hyper-realistic photography", "Unreal Engine 5 render", "Anime style", "Cinematic movie still", "Oil painting"]
     },
     {
       id: "parameters",
@@ -88,9 +91,19 @@ export default function ImagePromptBuilderPage() {
       setState: setParameters,
       color: "slate",
       desc: "การตั้งค่าพิเศษสำหรับ Midjourney เช่น สัดส่วนภาพ (Aspect Ratio) หรือเวอร์ชั่นตัวประมวลผล",
-      example: "--ar 16:9 --v 6.0 --stylize 250"
+      example: "--ar 16:9 --v 6.0 --stylize 250",
+      suggestions: ["--ar 16:9 (ภาพแนวนอน)", "--ar 9:16 (ภาพแนวตั้งคลิป)", "--v 6.0"]
     }
   ];
+
+  const handleSuggestionClick = (setter, currentState, suggestion) => {
+    const cleanSuggestion = suggestion.replace(/ \([^)]*\)/, ''); // Remove Thai explanations from the string if present
+    if (currentState) {
+      setter(currentState + ", " + cleanSuggestion);
+    } else {
+      setter(cleanSuggestion);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans pb-24">
@@ -143,6 +156,21 @@ export default function ImagePromptBuilderPage() {
                     placeholder={`[พิมพ์ ${sec.title.split(' ')[1]} ที่นี่...]`}
                     className="w-full bg-white border border-slate-300 rounded-xl px-4 py-3 text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-medium resize-y"
                   />
+                  
+                  {/* Quick Suggestion Badges */}
+                  {sec.suggestions && (
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {sec.suggestions.map((suggestion, sIdx) => (
+                        <button
+                          key={sIdx}
+                          onClick={() => handleSuggestionClick(sec.setState, sec.state, suggestion)}
+                          className={`text-xs px-3 py-1.5 rounded-full border border-${sec.color}-200 bg-${sec.color}-50 text-${sec.color}-700 hover:bg-${sec.color}-100 hover:border-${sec.color}-300 transition-colors cursor-pointer`}
+                        >
+                          + {suggestion}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
