@@ -32,6 +32,7 @@ export async function POST(req) {
       {
         "title": "Ad Title",
         "rationale": "Why this ad will go viral",
+        "facebook_caption": "A highly engaging, short, snappy English Facebook post caption to accompany this video. Must include emojis, a clear curiosity gap, and MUST end with this EXACT link: '👉 Take your Free Cellular AI Assessment: https://bit.ly/nadaniawellness'",
         "scenes": [
           {
             "scene": 1,
