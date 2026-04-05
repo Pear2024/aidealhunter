@@ -2,7 +2,37 @@
 import React, { useState } from "react";
 import { Sparkles, Film, Copy, Check, Wand2, Loader2 } from "lucide-react";
 
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, message: '', stack: '' };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, message: error.message, stack: error.stack };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-10 bg-red-50 text-red-900 min-h-screen">
+          <h1 className="text-3xl font-bold mb-4">React Render Error</h1>
+          <p className="font-mono bg-red-100 p-4 rounded mb-4">{this.state.message}</p>
+          <pre className="text-xs max-w-full overflow-x-auto">{this.state.stack}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 export default function AIStudioPage() {
+  return (
+    <ErrorBoundary>
+      <StudioPageContent />
+    </ErrorBoundary>
+  );
+}
+
+function StudioPageContent() {
   const [symptom, setSymptom] = useState("Anti-Aging");
   const [audience, setAudience] = useState("Women 40+ wanting to reverse cellular aging");
   const [loading, setLoading] = useState(false);
