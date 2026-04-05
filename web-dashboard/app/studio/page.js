@@ -213,7 +213,9 @@ function StudioPageContent() {
                   {/* --- AI STORYBOARD VISUAL MOCKUP --- */}
                    <div className="w-full rounded-xl overflow-hidden shadow-sm border border-slate-200 bg-slate-200 aspect-video relative">
                      <img 
-                       src={`https://image.pollinations.ai/prompt/${encodeURIComponent("Cinematic ad, " + scene.concept.replace(/[:\/]/g, '') + ", photorealistic 8k")}`} 
+                       src={`https://image.pollinations.ai/prompt/${encodeURIComponent(
+                         (scene.video_prompt || scene.concept).substring(0, 300).replace(/[:+\/]/g, ' ') + ", photorealistic 8k, cinematic lighting"
+                       )}?width=800&height=450&nologo=true`} 
                        alt={scene.concept}
                        className="w-full h-full object-cover"
                      />
