@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 export async function POST(req) {
   try {
     const body = await req.json();
-    const { symptom = "Fatigue", audience = "Overworked Executives" } = body;
+    const { symptom = "Fatigue", audience = "Overworked Executives", tone = "Over-the-top Hollywood Comedy" } = body;
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
@@ -15,6 +15,9 @@ export async function POST(req) {
       
       Target Audience / Demographic: ${audience}
       Symptom / Pain Point: ${symptom}
+      Overall Tone & Style: ${tone}
+      
+      CRITICAL RULE (TONE EXECUTION): If the tone is "Hollywood Comedy", you must use absurd, over-the-top cinematic tropes to exaggerate their symptom. Make it genuinely funny and ridiculous. If it is "Dark Drama", make it deeply serious and moody.
       
       CRITICAL RULE (CURIOSITY GAP): Do NOT mention any specific product name, pill, or supplement. The goal of this ad is NOT to sell a product directly. The goal is to agitate their pain point, introduce a vague but powerful "cellular/clinical scientific breakthrough", and force them to click the link to take a "Free Clinical AI Assessment" at Nadania Wellness to find their customized cure.
       

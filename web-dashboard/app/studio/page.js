@@ -33,8 +33,9 @@ export default function AIStudioPage() {
 }
 
 function StudioPageContent() {
-  const [symptom, setSymptom] = useState("Anti-Aging");
+  const [symptom, setSymptom] = useState("Chronic Fatigue & Brain Fog");
   const [audience, setAudience] = useState("Women 40+ wanting to reverse cellular aging");
+  const [tone, setTone] = useState("Over-the-top Hollywood Comedy");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [copied, setCopied] = useState("");
@@ -99,7 +100,7 @@ function StudioPageContent() {
       const response = await fetch("/api/studio/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ symptom, audience })
+        body: JSON.stringify({ symptom, audience, tone })
       });
       const data = await response.json();
       setResult(data);
@@ -138,6 +139,7 @@ function StudioPageContent() {
           <div className="p-8 grid md:grid-cols-2 gap-8">
             {/* Left Column: The Problem */}
             <div className="space-y-6">
+              {/* Symptom Select */}
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2">1. Select Target Symptom / Goal:</label>
                 <select 
@@ -148,9 +150,23 @@ function StudioPageContent() {
                   {symptomList.map(item => <option key={item.symptom} value={item.symptom}>{item.symptom}</option>)}
                 </select>
               </div>
+
+              {/* Tone Select */}
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">2. Cinematic Tone:</label>
+                <select 
+                  value={tone} 
+                  onChange={e => setTone(e.target.value)}
+                  className="w-full p-4 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-900 font-bold focus:ring-2 focus:ring-indigo-500 outline-none cursor-pointer"
+                >
+                  <option value="Over-the-top Hollywood Comedy">🤣 Hollywood Comedy (Absurdity)</option>
+                  <option value="Dark Cinematic Drama">🕷️ Dark Cinematic Drama (Intense)</option>
+                  <option value="Scientific Documentary">🧬 Scientific Documentary (Clinical)</option>
+                </select>
+              </div>
               
               <div className="relative">
-                <label className="block text-sm font-bold text-slate-700 mb-2">2. Fine-tune the Audience Hook:</label>
+                <label className="block text-sm font-bold text-slate-700 mb-2">3. Fine-tune the Audience Hook:</label>
                 <div className="relative">
                   <input 
                     type="text"
