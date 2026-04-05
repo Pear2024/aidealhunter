@@ -213,20 +213,6 @@ function StudioPageContent() {
                   </div>
                   
                   <div className="p-6 space-y-4">
-                    {/* --- AI STORYBOARD VISUAL MOCKUP --- */}
-                   <div className="w-full rounded-xl overflow-hidden shadow-sm border border-slate-200 bg-slate-200 aspect-video relative">
-                     <StoryboardImage 
-                       src={`https://image.pollinations.ai/prompt/${encodeURIComponent((scene.video_prompt || scene.concept).substring(0, 200).replace(/[^a-zA-Z0-9 ]/g, ' ').trim().replace(/\s+/g, ' ') + " photorealistic 8k cinematic lighting")}?width=800&height=450&nologo=true&seed=${scene.scene * 100}`} 
-                       alt={scene.concept}
-                       className="absolute inset-0 w-full h-full object-cover"
-                       delayMs={i * 1000}
-                     />
-                     <div className="absolute top-3 left-3 z-10 bg-black/60 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-2 pointer-events-none">
-                        <Sparkles size={14} className="text-purple-400" />
-                        <span>AI Storyboard Mockup</span>
-                     </div>
-                  </div>
-
                     {/* Video Prompt */}
                     <div className="relative group">
                       <p className="text-xs font-bold text-emerald-600 uppercase mb-1"><span>📹 Video Prompt (Paste in Google Flow)</span></p>
@@ -275,108 +261,7 @@ function StudioPageContent() {
           )}
         </div>
 
-      {/* --- INJECTED STORYBOARD GENERATOR --- */}
-      <h2 className="text-xl font-bold mb-4 text-slate-900 mt-12 border-t border-slate-200 pt-8">Custom AI Storyboard Generator</h2>
-      <div className="mb-12">
-        <StoryboardGenerator />
       </div>
-
-      </div>
-    </div>
-  );
-}
-
-function StoryboardGenerator() {
-  const [status, setStatus] = useState('idle');
-  const [images, setImages] = useState(false);
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setStatus('loading');
-    setImages(false);
-    setTimeout(() => {
-        setImages(true);
-        setStatus('idle');
-    }, 2000);
-  };
-
-  return (
-    <div className="bg-white border border-slate-200 shadow-xl rounded-2xl p-6">
-      <h2 className="text-xl font-bold mb-2 flex items-center gap-2 text-slate-800"><span className="text-xl">🎨</span> Custom Visual AI Storyboard</h2>
-      <p className="text-sm text-slate-500 mb-6">Type a custom prompt to generate an instant 4-scene storyboard mockup.</p>
-      
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <div>
-           <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">AI Visual Prompt</label>
-           <textarea required rows={3} placeholder="e.g. A confident woman glowing with health, cinematic lighting, photorealistic." className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none"></textarea>
-        </div>
-        <button type="submit" disabled={status === 'loading'} className="mt-2 w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg transition-colors">
-          {status === 'loading' && <span>⏳</span>}
-          {status !== 'loading' && <span>✨</span>}
-          <span>{status === 'loading' ? ' Generating Custom Scenes...' : ' Generate Mockup Grid'}</span>
-        </button>
-      </form>
-
-      <div className="dynamic-images-wrapper">
-        {images && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-           <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-center"><div className="w-full aspect-video overflow-hidden rounded mb-2 relative"><StoryboardImage src="https://image.pollinations.ai/prompt/Hook%20cinematic%20lighting" className="absolute inset-0 w-full h-full object-cover" alt="hook" delayMs={500} /></div><span className="text-xs text-slate-600 font-bold">1: Hook (0-3s)</span></div>
-           <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-center"><div className="w-full aspect-video overflow-hidden rounded mb-2 relative"><StoryboardImage src="https://image.pollinations.ai/prompt/Problem%20cinematic%20lighting" className="absolute inset-0 w-full h-full object-cover" alt="problem" delayMs={1500}/></div><span className="text-xs text-slate-600 font-bold">2: Problem (3-6s)</span></div>
-           <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-center"><div className="w-full aspect-video overflow-hidden rounded mb-2 relative"><StoryboardImage src="https://image.pollinations.ai/prompt/Solution%20product%20cinematic%20lighting" className="absolute inset-0 w-full h-full object-cover" alt="solution" delayMs={2500}/></div><span className="text-xs text-slate-600 font-bold">3: Solution (6-10s)</span></div>
-           <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-center"><div className="w-full aspect-video overflow-hidden rounded mb-2 relative"><StoryboardImage src="https://image.pollinations.ai/prompt/Call%20to%20action%20cinematic%20lighting" className="absolute inset-0 w-full h-full object-cover" alt="cta" delayMs={3500}/></div><span className="text-xs text-slate-600 font-bold">4: Call To Action</span></div>
-        </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function StoryboardImage({ src, alt, className, delayMs = 0 }) {
-  const [currentSrc, setCurrentSrc] = useState(null);
-  const [retries, setRetries] = useState(0);
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
-
-  React.useEffect(() => {
-    const timer = setTimeout(() => {
-      setCurrentSrc(src);
-    }, delayMs);
-    return () => clearTimeout(timer);
-  }, [src, delayMs]);
-
-  return (
-    <div className={`w-full h-full bg-slate-200 flex items-center justify-center relative overflow-hidden`}>
-      {!loaded && !error && (
-        <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-100/90 z-10 backdrop-blur-sm">
-          <div className="w-5 h-5 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-          <span className="text-[10px] text-emerald-700 mt-2 font-bold animate-pulse uppercase tracking-wider">AI Generating...</span>
-        </div>
-      )}
-      {error && (
-         <div className="absolute inset-0 flex flex-col items-center justify-center bg-red-50 z-10 border border-red-200">
-           <span className="text-[10px] font-bold text-red-600 text-center uppercase">Stream Dropped.</span>
-           <span className="text-[9px] font-bold text-slate-500 text-center animate-pulse">Retrying...</span>
-         </div>
-      )}
-      {currentSrc && (
-        <img 
-          src={currentSrc} 
-          alt={alt}
-          className={`${className} transition-opacity duration-700 ${loaded ? 'opacity-100' : 'opacity-0'}`}
-          onLoad={() => { setLoaded(true); setError(false); }}
-          onError={() => {
-            setError(true);
-            setLoaded(false);
-            if (retries < 15) {
-              const jitter = Math.floor(Math.random() * 3000) + 1500;
-              setTimeout(() => {
-                setRetries(r => r + 1);
-                setCurrentSrc(`${src}&retryAttempt=${retries + 1}`);
-                setError(false);
-              }, jitter);
-            }
-          }}
-        />
-      )}
     </div>
   );
 }
