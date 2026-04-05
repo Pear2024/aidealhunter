@@ -217,18 +217,19 @@ function StudioPageContent() {
                         AI Storyboard Mockup (4 Variations)
                      </div>
                      <div className="grid grid-cols-2 gap-1 p-1">
-                       {[1, 2, 3, 4].map(idx => (
-                         <div key={idx} className="aspect-video relative overflow-hidden rounded-lg bg-slate-200">
-                           <img 
-                             src={`https://image.pollinations.ai/prompt/${encodeURIComponent(
-                               (scene.video_prompt || scene.concept).substring(0, 300).replace(/[:+\/]/g, ' ') + ", photorealistic 8k, cinematic lighting"
-                             )}?width=400&height=225&nologo=true&seed=${scene.scene * 100 + idx}`} 
-                             alt={`${scene.concept} variation ${idx}`}
-                             className="w-full h-full object-cover"
-                             loading="lazy"
-                           />
-                         </div>
-                       ))}
+                       {[1, 2, 3, 4].map(idx => {
+                         const safePrompt = (scene.video_prompt || scene.concept).substring(0, 200).replace(/[^a-zA-Z0-9 ]/g, ' ').trim().replace(/\s+/g, ' ');
+                         return (
+                           <div key={idx} className="aspect-video relative overflow-hidden rounded-lg bg-slate-200">
+                             <img 
+                               src={`https://image.pollinations.ai/prompt/${encodeURIComponent(safePrompt + " photorealistic 8k cinematic lighting")}?width=400&height=225&nologo=true&seed=${(scene.scene || 1) * 100 + idx}`} 
+                               alt={`${scene.concept} variation ${idx}`}
+                               className="w-full h-full object-cover"
+                               loading="lazy"
+                             />
+                           </div>
+                         );
+                       })}
                      </div>
                   </div>
 
