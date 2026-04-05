@@ -204,59 +204,56 @@ function StudioPageContent() {
               <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6">
                 <h2 className="text-2xl font-black text-emerald-900">{result.title}</h2>
                 <p className="text-emerald-700 mt-2"><strong>Viral Rationale:</strong> <span>{result.rationale}</span></p>
-              </div>
-
-              {result.scenes?.map((scene, i) => (
-                <div key={i} className="bg-white border text-slate-800 border-slate-200 overflow-hidden shadow-sm rounded-2xl">
-                  <div className="bg-slate-100 px-6 py-3 border-b border-slate-200 flex justify-between items-center">
-                    <h3 className="font-bold text-slate-700"><span>Scene {scene.scene}: {scene.concept}</span></h3>
+                <div className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden mt-8 animate-in fade-in duration-500">
+                  <div className="bg-slate-800 px-6 py-4">
+                    <h3 className="text-white font-bold text-lg flex items-center gap-2"><Sparkles size={18} className="text-emerald-400"/> Director's Timeline (Veo 3)</h3>
                   </div>
-                  
-                  <div className="p-6 space-y-4">
-                    {/* Video Prompt */}
-                    <div className="relative group">
-                      <p className="text-xs font-bold text-emerald-600 uppercase mb-1"><span>📹 Video Prompt (Paste in Google Flow)</span></p>
-                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-slate-700 font-medium pr-12">
-                        <span>{scene.video_prompt}</span>
-                      </div>
-                      <button 
-                        onClick={() => copyToClipboard(scene.video_prompt, `video_${i}`)}
-                        className="absolute top-8 right-2 p-2 bg-white rounded-lg shadow-sm border border-slate-200 hover:bg-emerald-50 text-slate-500 hover:text-emerald-600 transition"
-                      >
-                        {copied === `video_${i}` ? <Check size={16} /> : <Copy size={16} />}
-                      </button>
-                    </div>
+                  <div className="divide-y divide-slate-100">
+                    {result.scenes?.map((scene, i) => (
+                      <div key={i} className="p-0 flex flex-col md:flex-row hover:bg-slate-50 transition-colors">
+                        {/* --- TIMELINE COLUMN --- */}
+                        <div className="md:w-48 bg-slate-50/50 p-6 border-b md:border-b-0 md:border-r border-slate-100 flex flex-col items-center justify-center shrink-0">
+                          <div className="bg-emerald-100 text-emerald-800 font-black text-xl px-4 py-2 rounded-xl text-center shadow-sm border border-emerald-200 inline-block font-mono tracking-tighter w-full">
+                            {scene.timestamp || `${i * 5}s-${(i + 1) * 5}s`}
+                          </div>
+                          <h3 className="font-bold text-slate-700 mt-3 text-center text-sm uppercase tracking-wider">{scene.concept}</h3>
+                          <div className="mt-1 text-[10px] font-bold text-slate-400">SCENE {scene.scene || i+1}</div>
+                        </div>
+                        
+                        {/* --- CONTENT GRID --- */}
+                        <div className="p-6 flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
+                          {/* Video Prompt */}
+                          <div className="relative group flex flex-col h-full bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-sm">
+                            <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-3 flex items-center gap-1.5"><span className="text-sm">📹</span> VIDEO (FLOW)</p>
+                            <div className="text-sm text-slate-700 font-medium pb-8 leading-relaxed">{scene.video_prompt}</div>
+                            <button onClick={() => copyToClipboard(scene.video_prompt, `video_${i}`)} className="absolute bottom-3 right-3 p-2 bg-white rounded-lg shadow-sm border border-slate-200 text-slate-500 hover:text-emerald-600 transition-colors">
+                              {copied === `video_${i}` ? <Check size={16} /> : <Copy size={16} />}
+                            </button>
+                          </div>
 
-                    {/* Audio Prompt */}
-                    <div className="relative group">
-                      <p className="text-xs font-bold text-blue-600 uppercase mb-1"><span>🎵 Audio Prompt (Sound Fx & Music)</span></p>
-                      <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 text-blue-800 font-medium pr-12">
-                        <span>{scene.audio_prompt}</span>
-                      </div>
-                      <button 
-                        onClick={() => copyToClipboard(scene.audio_prompt, `audio_${i}`)}
-                        className="absolute top-8 right-2 p-2 bg-white rounded-lg shadow-sm border border-blue-200 hover:bg-blue-100 text-blue-600 transition"
-                      >
-                        {copied === `audio_${i}` ? <Check size={16} /> : <Copy size={16} />}
-                      </button>
-                    </div>
+                          {/* Audio Prompt */}
+                          <div className="relative group flex flex-col h-full bg-blue-50/50 p-5 rounded-xl border border-blue-100 shadow-sm">
+                            <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-3 flex items-center gap-1.5"><span className="text-sm">🎵</span> AUDIO FX</p>
+                            <div className="text-sm text-blue-800 font-medium pb-8 leading-relaxed">{scene.audio_prompt}</div>
+                            <button onClick={() => copyToClipboard(scene.audio_prompt, `audio_${i}`)} className="absolute bottom-3 right-3 p-2 bg-white rounded-lg shadow-sm border border-blue-200 text-blue-500 hover:text-blue-600 transition-colors">
+                              {copied === `audio_${i}` ? <Check size={16} /> : <Copy size={16} />}
+                            </button>
+                          </div>
 
-                    {/* Voiceover */}
-                    <div className="relative group">
-                      <p className="text-xs font-bold text-purple-600 uppercase mb-1"><span>🎤 Voiceover Script (Speech)</span></p>
-                      <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 text-purple-800 font-bold italic pr-12">
-                        <span>"{scene.voiceover}"</span>
+                          {/* Voiceover Prompt */}
+                          <div className="relative group flex flex-col h-full bg-purple-50 p-5 rounded-xl border border-purple-100 shadow-sm">
+                            <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest mb-3 flex items-center gap-1.5"><span className="text-sm">🎤</span> VOICEOVER</p>
+                            <div className="text-sm text-purple-800 font-bold italic pb-8 leading-relaxed">"{scene.voiceover}"</div>
+                            <button onClick={() => copyToClipboard(scene.voiceover, `vo_${i}`)} className="absolute bottom-3 right-3 p-2 bg-white rounded-lg shadow-sm border border-purple-200 text-purple-500 hover:text-purple-600 transition-colors">
+                              {copied === `vo_${i}` ? <Check size={16} /> : <Copy size={16} />}
+                            </button>
+                          </div>
+                        </div>
                       </div>
-                      <button 
-                        onClick={() => copyToClipboard(scene.voiceover, `vo_${i}`)}
-                        className="absolute top-8 right-2 p-2 bg-white rounded-lg shadow-sm border border-purple-200 hover:bg-purple-100 text-purple-600 transition"
-                      >
-                        {copied === `vo_${i}` ? <Check size={16} /> : <Copy size={16} />}
-                      </button>
-                    </div>
+                    ))}
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
           )}
         </div>
