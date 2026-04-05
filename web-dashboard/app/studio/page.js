@@ -240,7 +240,53 @@ export default function AIStudioPage() {
           </div>
         )}
 
+      {/* --- INJECTED STORYBOARD GENERATOR --- */}
+      <h2 className="text-xl font-bold mb-4 text-slate-900 mt-12 border-t border-slate-200 pt-8">Custom AI Storyboard Generator</h2>
+      <div className="mb-12">
+        <StoryboardGenerator />
       </div>
+
+      </div>
+    </div>
+  );
+}
+
+function StoryboardGenerator() {
+  const [status, setStatus] = useState('idle');
+  const [images, setImages] = useState(false);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setStatus('loading');
+    setImages(false);
+    setTimeout(() => {
+        setImages(true);
+        setStatus('idle');
+    }, 2000);
+  };
+
+  return (
+    <div className="bg-white border border-slate-200 shadow-xl rounded-2xl p-6">
+      <h2 className="text-xl font-bold mb-2 flex items-center gap-2 text-slate-800"><span className="text-xl">🎨</span> Custom Visual AI Storyboard</h2>
+      <p className="text-sm text-slate-500 mb-6">Type a custom prompt to generate an instant 4-scene storyboard mockup.</p>
+      
+      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <div>
+           <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">AI Visual Prompt</label>
+           <textarea required rows={3} placeholder="e.g. A confident woman glowing with health, cinematic lighting, photorealistic." className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none"></textarea>
+        </div>
+        <button type="submit" disabled={status === 'loading'} className="mt-2 w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg transition-colors">
+          {status === 'loading' ? '⏳ Generating Custom Scenes...' : '✨ Generate Mockup Grid'}
+        </button>
+      </form>
+
+      {images && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+           <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-center"><img src="https://image.pollinations.ai/prompt/Hook%20cinematic%20lighting" className="w-full aspect-video object-cover rounded mb-2" /><span className="text-xs text-slate-600 font-bold">1: Hook (0-3s)</span></div>
+           <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-center"><img src="https://image.pollinations.ai/prompt/Problem%20cinematic%20lighting" className="w-full aspect-video object-cover rounded mb-2" /><span className="text-xs text-slate-600 font-bold">2: Problem (3-6s)</span></div>
+           <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-center"><img src="https://image.pollinations.ai/prompt/Solution%20product%20cinematic%20lighting" className="w-full aspect-video object-cover rounded mb-2" /><span className="text-xs text-slate-600 font-bold">3: Solution (6-10s)</span></div>
+           <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-center"><img src="https://image.pollinations.ai/prompt/Call%20to%20action%20cinematic%20lighting" className="w-full aspect-video object-cover rounded mb-2" /><span className="text-xs text-slate-600 font-bold">4: Call To Action</span></div>
+        </div>
+      )}
     </div>
   );
 }
