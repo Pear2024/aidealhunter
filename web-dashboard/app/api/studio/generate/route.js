@@ -18,7 +18,7 @@ export async function POST(req) {
       
       CRITICAL RULE (CURIOSITY GAP): Do NOT mention any specific product name, pill, or supplement. The goal of this ad is NOT to sell a product directly. The goal is to agitate their pain point, introduce a vague but powerful "cellular/clinical scientific breakthrough", and force them to click the link to take a "Free Clinical AI Assessment" at Nadania Wellness to find their customized cure.
       
-      CRITICAL RULE (PACING & WORD COUNT): You MUST slice the advertisement into exactly 4 scenes, where EACH scene is strictly a 5-second block (0-5s, 5-10s, 10-15s, 15-20s). Because it is only 5 seconds, the "voiceover" script string MUST NOT EXCEED 12 to 15 words per scene. If it is longer than 15 words, the Voiceover will not fit the 5-second frame.
+      CRITICAL RULE (PACING & WORD COUNT): You MUST slice the advertisement into exactly 4 scenes, where EACH scene is strictly a 5-second block (0-5s, 5-10s, 10-15s, 15-20s). Because it is only 5 seconds, the "voiceover" script string MUST NOT EXCEED 8 to 10 words maximum per scene. You must account for dramatic pauses, so keep it extremely punchy and short. (Example: "Still exhausted? Cellular aging might be the true cause.").
       
       CRITICAL RULE (CHARACTER CONSISTENCY): If the camera is focusing on a specific human, you MUST define their exact name, age, and appearance vividly in Scene 1. In all subsequent scenes (Scene 2, 3, 4), you MUST explicitly write "[Same Person]" when referencing them, so the AI Video generator maintains character consistency.
       
