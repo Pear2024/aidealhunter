@@ -210,18 +210,25 @@ function StudioPageContent() {
                 </div>
                 
                 <div className="p-6 space-y-4">
-                  {/* --- AI STORYBOARD VISUAL MOCKUP --- */}
-                   <div className="w-full rounded-xl overflow-hidden shadow-sm border border-slate-200 bg-slate-200 aspect-video relative">
-                     <img 
-                       src={`https://image.pollinations.ai/prompt/${encodeURIComponent(
-                         (scene.video_prompt || scene.concept).substring(0, 300).replace(/[:+\/]/g, ' ') + ", photorealistic 8k, cinematic lighting"
-                       )}?width=800&height=450&nologo=true`} 
-                       alt={scene.concept}
-                       className="w-full h-full object-cover"
-                     />
-                     <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-2">
+                  {/* --- AI STORYBOARD VISUAL MOCKUP (4 VARIATIONS) --- */}
+                   <div className="w-full relative rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shadow-sm">
+                     <div className="absolute top-3 left-3 z-10 bg-black/60 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-2">
                         <Sparkles size={14} className="text-purple-400" />
-                        AI Storyboard Mockup
+                        AI Storyboard Mockup (4 Variations)
+                     </div>
+                     <div className="grid grid-cols-2 gap-1 p-1">
+                       {[1, 2, 3, 4].map(idx => (
+                         <div key={idx} className="aspect-video relative overflow-hidden rounded-lg bg-slate-200">
+                           <img 
+                             src={`https://image.pollinations.ai/prompt/${encodeURIComponent(
+                               (scene.video_prompt || scene.concept).substring(0, 300).replace(/[:+\/]/g, ' ') + ", photorealistic 8k, cinematic lighting"
+                             )}?width=400&height=225&nologo=true&seed=${scene.scene * 100 + idx}`} 
+                             alt={`${scene.concept} variation ${idx}`}
+                             className="w-full h-full object-cover"
+                             loading="lazy"
+                           />
+                         </div>
+                       ))}
                      </div>
                   </div>
 
