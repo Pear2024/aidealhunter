@@ -191,94 +191,98 @@ function StudioPageContent() {
               disabled={loading}
               className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-lg py-4 rounded-xl shadow-lg shadow-emerald-200 transition-all flex items-center justify-center gap-2"
             >
-              {loading ? <><Loader2 className="animate-spin" size={24}/> Brainstorming Cinematic Ad...</> : <><Sparkles size={24}/> Generate Hollywood Ad</>}
+              {loading && <Loader2 className="animate-spin" size={24}/>}
+              {!loading && <Sparkles size={24}/>}
+              <span>{loading ? "Brainstorming Cinematic Ad..." : "Generate Hollywood Ad"}</span>
             </button>
           </div>
         </div>
 
-        {result && (
-          <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6">
-              <h2 className="text-2xl font-black text-emerald-900">{result.title}</h2>
-              <p className="text-emerald-700 mt-2"><strong>Viral Rationale:</strong> {result.rationale}</p>
-            </div>
-
-            {result.scenes?.map((scene, i) => (
-              <div key={i} className="bg-white border text-slate-800 border-slate-200 overflow-hidden shadow-sm rounded-2xl">
-                <div className="bg-slate-100 px-6 py-3 border-b border-slate-200 flex justify-between items-center">
-                  <h3 className="font-bold text-slate-700">Scene {scene.scene}: {scene.concept}</h3>
-                </div>
-                
-                <div className="p-6 space-y-4">
-                  {/* --- AI STORYBOARD VISUAL MOCKUP (4 VARIATIONS) --- */}
-                   <div className="w-full relative rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shadow-sm">
-                     <div className="absolute top-3 left-3 z-10 bg-black/60 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-2">
-                        <Sparkles size={14} className="text-purple-400" />
-                        AI Storyboard Mockup (4 Variations)
-                     </div>
-                     <div className="grid grid-cols-2 gap-1 p-1">
-                       {[1, 2, 3, 4].map(idx => {
-                         const safePrompt = (scene.video_prompt || scene.concept).substring(0, 200).replace(/[^a-zA-Z0-9 ]/g, ' ').trim().replace(/\s+/g, ' ');
-                         return (
-                           <div key={idx} className="aspect-video relative overflow-hidden rounded-lg bg-slate-200">
-                             <img 
-                               src={`https://image.pollinations.ai/prompt/${encodeURIComponent(safePrompt + " photorealistic 8k cinematic lighting")}?width=400&height=225&nologo=true&seed=${(scene.scene || 1) * 100 + idx}`} 
-                               alt={`${scene.concept} variation ${idx}`}
-                               className="w-full h-full object-cover"
-                               loading="lazy"
-                             />
-                           </div>
-                         );
-                       })}
-                     </div>
-                  </div>
-
-                  {/* Video Prompt */}
-                  <div className="relative group">
-                    <p className="text-xs font-bold text-emerald-600 uppercase mb-1">📹 Video Prompt (Paste in Google Flow)</p>
-                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-slate-700 font-medium pr-12">
-                      {scene.video_prompt}
-                    </div>
-                    <button 
-                      onClick={() => copyToClipboard(scene.video_prompt, `video_${i}`)}
-                      className="absolute top-8 right-2 p-2 bg-white rounded-lg shadow-sm border border-slate-200 hover:bg-emerald-50 text-slate-500 hover:text-emerald-600 transition"
-                    >
-                      {copied === `video_${i}` ? <Check size={16} /> : <Copy size={16} />}
-                    </button>
-                  </div>
-
-                  {/* Audio Prompt */}
-                  <div className="relative group">
-                    <p className="text-xs font-bold text-blue-600 uppercase mb-1">🎵 Audio Prompt (Sound Fx & Music)</p>
-                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 text-blue-800 font-medium pr-12">
-                      {scene.audio_prompt}
-                    </div>
-                    <button 
-                      onClick={() => copyToClipboard(scene.audio_prompt, `audio_${i}`)}
-                      className="absolute top-8 right-2 p-2 bg-white rounded-lg shadow-sm border border-blue-200 hover:bg-blue-100 text-blue-600 transition"
-                    >
-                      {copied === `audio_${i}` ? <Check size={16} /> : <Copy size={16} />}
-                    </button>
-                  </div>
-
-                  {/* Voiceover */}
-                  <div className="relative group">
-                    <p className="text-xs font-bold text-purple-600 uppercase mb-1">🎤 Voiceover Script (Speech)</p>
-                    <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 text-purple-800 font-bold italic pr-12">
-                      "{scene.voiceover}"
-                    </div>
-                    <button 
-                      onClick={() => copyToClipboard(scene.voiceover, `vo_${i}`)}
-                      className="absolute top-8 right-2 p-2 bg-white rounded-lg shadow-sm border border-purple-200 hover:bg-purple-100 text-purple-600 transition"
-                    >
-                      {copied === `vo_${i}` ? <Check size={16} /> : <Copy size={16} />}
-                    </button>
-                  </div>
-                </div>
+        <div className="dynamic-result-wrapper">
+          {result && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6">
+                <h2 className="text-2xl font-black text-emerald-900">{result.title}</h2>
+                <p className="text-emerald-700 mt-2"><strong>Viral Rationale:</strong> <span>{result.rationale}</span></p>
               </div>
-            ))}
-          </div>
-        )}
+
+              {result.scenes?.map((scene, i) => (
+                <div key={i} className="bg-white border text-slate-800 border-slate-200 overflow-hidden shadow-sm rounded-2xl">
+                  <div className="bg-slate-100 px-6 py-3 border-b border-slate-200 flex justify-between items-center">
+                    <h3 className="font-bold text-slate-700"><span>Scene {scene.scene}: {scene.concept}</span></h3>
+                  </div>
+                  
+                  <div className="p-6 space-y-4">
+                    {/* --- AI STORYBOARD VISUAL MOCKUP (4 VARIATIONS) --- */}
+                     <div className="w-full relative rounded-xl overflow-hidden border border-slate-200 bg-slate-100 shadow-sm">
+                       <div className="absolute top-3 left-3 z-10 bg-black/60 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-2">
+                          <Sparkles size={14} className="text-purple-400" />
+                          <span>AI Storyboard Mockup (4 Variations)</span>
+                       </div>
+                       <div className="grid grid-cols-2 gap-1 p-1">
+                         {[1, 2, 3, 4].map(idx => {
+                           const safePrompt = (scene.video_prompt || scene.concept).substring(0, 200).replace(/[^a-zA-Z0-9 ]/g, ' ').trim().replace(/\s+/g, ' ');
+                           return (
+                             <div key={idx} className="aspect-video relative overflow-hidden rounded-lg bg-slate-200">
+                               <img 
+                                 src={`https://image.pollinations.ai/prompt/${encodeURIComponent(safePrompt + " photorealistic 8k cinematic lighting")}?width=400&height=225&nologo=true&seed=${(scene.scene || 1) * 100 + idx}`} 
+                                 alt={`${scene.concept} variation ${idx}`}
+                                 className="w-full h-full object-cover"
+                                 loading="lazy"
+                               />
+                             </div>
+                           );
+                         })}
+                       </div>
+                    </div>
+
+                    {/* Video Prompt */}
+                    <div className="relative group">
+                      <p className="text-xs font-bold text-emerald-600 uppercase mb-1"><span>📹 Video Prompt (Paste in Google Flow)</span></p>
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 text-slate-700 font-medium pr-12">
+                        <span>{scene.video_prompt}</span>
+                      </div>
+                      <button 
+                        onClick={() => copyToClipboard(scene.video_prompt, `video_${i}`)}
+                        className="absolute top-8 right-2 p-2 bg-white rounded-lg shadow-sm border border-slate-200 hover:bg-emerald-50 text-slate-500 hover:text-emerald-600 transition"
+                      >
+                        {copied === `video_${i}` ? <Check size={16} /> : <Copy size={16} />}
+                      </button>
+                    </div>
+
+                    {/* Audio Prompt */}
+                    <div className="relative group">
+                      <p className="text-xs font-bold text-blue-600 uppercase mb-1"><span>🎵 Audio Prompt (Sound Fx & Music)</span></p>
+                      <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 text-blue-800 font-medium pr-12">
+                        <span>{scene.audio_prompt}</span>
+                      </div>
+                      <button 
+                        onClick={() => copyToClipboard(scene.audio_prompt, `audio_${i}`)}
+                        className="absolute top-8 right-2 p-2 bg-white rounded-lg shadow-sm border border-blue-200 hover:bg-blue-100 text-blue-600 transition"
+                      >
+                        {copied === `audio_${i}` ? <Check size={16} /> : <Copy size={16} />}
+                      </button>
+                    </div>
+
+                    {/* Voiceover */}
+                    <div className="relative group">
+                      <p className="text-xs font-bold text-purple-600 uppercase mb-1"><span>🎤 Voiceover Script (Speech)</span></p>
+                      <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 text-purple-800 font-bold italic pr-12">
+                        <span>"{scene.voiceover}"</span>
+                      </div>
+                      <button 
+                        onClick={() => copyToClipboard(scene.voiceover, `vo_${i}`)}
+                        className="absolute top-8 right-2 p-2 bg-white rounded-lg shadow-sm border border-purple-200 hover:bg-purple-100 text-purple-600 transition"
+                      >
+                        {copied === `vo_${i}` ? <Check size={16} /> : <Copy size={16} />}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
       {/* --- INJECTED STORYBOARD GENERATOR --- */}
       <h2 className="text-xl font-bold mb-4 text-slate-900 mt-12 border-t border-slate-200 pt-8">Custom AI Storyboard Generator</h2>
@@ -315,18 +319,22 @@ function StoryboardGenerator() {
            <textarea required rows={3} placeholder="e.g. A confident woman glowing with health, cinematic lighting, photorealistic." className="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-lg px-4 py-2 focus:border-blue-500 focus:outline-none"></textarea>
         </div>
         <button type="submit" disabled={status === 'loading'} className="mt-2 w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg transition-colors">
-          {status === 'loading' ? '⏳ Generating Custom Scenes...' : '✨ Generate Mockup Grid'}
+          {status === 'loading' && <span>⏳</span>}
+          {status !== 'loading' && <span>✨</span>}
+          <span>{status === 'loading' ? ' Generating Custom Scenes...' : ' Generate Mockup Grid'}</span>
         </button>
       </form>
 
-      {images && (
+      <div className="dynamic-images-wrapper">
+        {images && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
            <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-center"><img src="https://image.pollinations.ai/prompt/Hook%20cinematic%20lighting" className="w-full aspect-video object-cover rounded mb-2" /><span className="text-xs text-slate-600 font-bold">1: Hook (0-3s)</span></div>
            <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-center"><img src="https://image.pollinations.ai/prompt/Problem%20cinematic%20lighting" className="w-full aspect-video object-cover rounded mb-2" /><span className="text-xs text-slate-600 font-bold">2: Problem (3-6s)</span></div>
            <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-center"><img src="https://image.pollinations.ai/prompt/Solution%20product%20cinematic%20lighting" className="w-full aspect-video object-cover rounded mb-2" /><span className="text-xs text-slate-600 font-bold">3: Solution (6-10s)</span></div>
            <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-center"><img src="https://image.pollinations.ai/prompt/Call%20to%20action%20cinematic%20lighting" className="w-full aspect-video object-cover rounded mb-2" /><span className="text-xs text-slate-600 font-bold">4: Call To Action</span></div>
         </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
