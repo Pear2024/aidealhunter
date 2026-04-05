@@ -224,11 +224,10 @@ function StudioPageContent() {
                            const safePrompt = (scene.video_prompt || scene.concept).substring(0, 200).replace(/[^a-zA-Z0-9 ]/g, ' ').trim().replace(/\s+/g, ' ');
                            return (
                              <div key={idx} className="aspect-video relative overflow-hidden rounded-lg bg-slate-200">
-                               <img 
+                               <StoryboardImage 
                                  src={`https://image.pollinations.ai/prompt/${encodeURIComponent(safePrompt + " photorealistic 8k cinematic lighting")}?width=400&height=225&nologo=true&seed=${(scene.scene || 1) * 100 + idx}`} 
                                  alt={`${scene.concept} variation ${idx}`}
                                  className="w-full h-full object-cover"
-                                 loading="lazy"
                                />
                              </div>
                            );
@@ -328,13 +327,37 @@ function StoryboardGenerator() {
       <div className="dynamic-images-wrapper">
         {images && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-           <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-center"><img src="https://image.pollinations.ai/prompt/Hook%20cinematic%20lighting" className="w-full aspect-video object-cover rounded mb-2" /><span className="text-xs text-slate-600 font-bold">1: Hook (0-3s)</span></div>
-           <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-center"><img src="https://image.pollinations.ai/prompt/Problem%20cinematic%20lighting" className="w-full aspect-video object-cover rounded mb-2" /><span className="text-xs text-slate-600 font-bold">2: Problem (3-6s)</span></div>
-           <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-center"><img src="https://image.pollinations.ai/prompt/Solution%20product%20cinematic%20lighting" className="w-full aspect-video object-cover rounded mb-2" /><span className="text-xs text-slate-600 font-bold">3: Solution (6-10s)</span></div>
-           <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-center"><img src="https://image.pollinations.ai/prompt/Call%20to%20action%20cinematic%20lighting" className="w-full aspect-video object-cover rounded mb-2" /><span className="text-xs text-slate-600 font-bold">4: Call To Action</span></div>
+           <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-center"><div className="w-full aspect-video overflow-hidden rounded mb-2"><StoryboardImage src="https://image.pollinations.ai/prompt/Hook%20cinematic%20lighting" className="w-full h-full object-cover" alt="hook" /></div><span className="text-xs text-slate-600 font-bold">1: Hook (0-3s)</span></div>
+           <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-center"><div className="w-full aspect-video overflow-hidden rounded mb-2"><StoryboardImage src="https://image.pollinations.ai/prompt/Problem%20cinematic%20lighting" className="w-full h-full object-cover" alt="problem" /></div><span className="text-xs text-slate-600 font-bold">2: Problem (3-6s)</span></div>
+           <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-center"><div className="w-full aspect-video overflow-hidden rounded mb-2"><StoryboardImage src="https://image.pollinations.ai/prompt/Solution%20product%20cinematic%20lighting" className="w-full h-full object-cover" alt="solution" /></div><span className="text-xs text-slate-600 font-bold">3: Solution (6-10s)</span></div>
+           <div className="bg-slate-100 border border-slate-200 p-2 rounded-lg text-center"><div className="w-full aspect-video overflow-hidden rounded mb-2"><StoryboardImage src="https://image.pollinations.ai/prompt/Call%20to%20action%20cinematic%20lighting" className="w-full h-full object-cover" alt="cta" /></div><span className="text-xs text-slate-600 font-bold">4: Call To Action</span></div>
         </div>
         )}
       </div>
     </div>
+  );
+}
+
+function StoryboardImage({ src, alt, className }) {
+  const [imgSrc, setImgSrc] = useState(src);
+  const [retries, setRetries] = useState(0);
+
+  return (
+    <img 
+      src={imgSrc} 
+      alt={alt}
+      className={className}
+      loading="lazy"
+      onError={() => {
+        if (retries < 10) {
+          // Jitter the retry randomly between 1s to 5s to avoid hitting the API all at once!
+          const jitter = Math.floor(Math.random() * 4000) + 1000;
+          setTimeout(() => {
+            setRetries(r => r + 1);
+            setImgSrc(`${src}&retryAttempt=${retries + 1}`);
+          }, jitter);
+        }
+      }}
+    />
   );
 }
