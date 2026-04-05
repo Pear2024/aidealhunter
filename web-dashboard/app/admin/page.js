@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Activity, Users, Film, HeartPulse, Calculator } from 'lucide-react';
+import { Activity, Users, Film, HeartPulse, Calculator, LayoutTemplate } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
@@ -96,6 +96,17 @@ export default function AdminDashboard() {
                       <h3 className="font-bold text-xl text-white m-0 p-0 border-none">Age Calculator</h3>
                   </div>
                   <p className="text-gray-400 text-sm">Access the Clinical Cellular Age verification assessment tool.</p>
+              </div>
+          </Link>
+          <Link href="/prompt-builder" style={{ textDecoration: 'none' }}>
+              <div className="p-6 rounded-2xl bg-[#111] border border-[#222] hover:border-[#ec4899] transition-all cursor-pointer h-full">
+                  <div className="flex items-center gap-4 mb-4">
+                      <div className="p-3 rounded-full bg-[#ec4899]/20 text-[#ec4899]">
+                          <LayoutTemplate size={24} />
+                      </div>
+                      <h3 className="font-bold text-xl text-white m-0 p-0 border-none">Prompt Builder</h3>
+                  </div>
+                  <p className="text-gray-400 text-sm">Construct flawless AI prompts using the ultimate 6-pillar framework.</p>
               </div>
           </Link>
       </div>
