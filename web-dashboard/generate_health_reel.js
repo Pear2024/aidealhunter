@@ -82,7 +82,7 @@ async function main() {
             type: SchemaType.OBJECT,
             properties: {
                 script: { type: SchemaType.STRING, description: "The spoken voiceover script. Must sound like a professional, intelligent doctor sharing a 'mind-blowing' cell science fact or AI health tech news. Max 20 seconds." },
-                caption: { type: SchemaType.STRING, description: "A highly engaging, deeply educational 3-paragraph Facebook post caption that elaborates on the news topic in detail. MUST INCLUDE 2-3 highly actionable, easy-to-follow daily health/wellness tips at the end (e.g., specific foods to eat, habits to change). Write in an inspiring, medical-journalistic tone." },
+                caption: { type: SchemaType.STRING, description: "A highly engaging, short, snappy English Facebook post. Use 'Dark Cinematic Drama' tone focusing on a 'Curiosity Gap' regarding chronic fatigue (e.g. 'You call it burnout. Science calls it cellular decay.'). Max 3 short paragraphs. Include emojis. DO NOT write an academic essay." },
                 image_prompt: { type: SchemaType.STRING, description: "A highly safe, generic video prompt. Extremely important: NO needles, NO blood, NO raw biology, NO medical gore! Just safe things like a doctor smiling, healthy family eating, or abstract bright glowing particles flowing." }
             },
             required: ["script", "caption", "image_prompt"]
@@ -148,7 +148,7 @@ async function main() {
             const token = process.env.FB_PAGE_ACCESS_TOKEN;
             if (!pageId || !token) throw new Error("Missing FB API keys!");
 
-            const fullCaption = `🔬 ${selectedTopic}\n\n${aiResponse.caption}\n\nOur modern lifestyle is constantly testing our cells. Are you protecting yours?\n\nFollow us for daily Medical AI health updates! #HealthTech #MedicalAI #CellularNutrition #NadaniaWellness`;
+            const fullCaption = `🛑 ${selectedTopic}\n\n${aiResponse.caption}\n\n👉 Take your Free Cellular AI Assessment: https://bit.ly/nadaniawellness\n\n#NadaniaWellness #CellularHealth #Biohacking`;
             
             const form = new FormData();
             form.append('access_token', token);
@@ -163,7 +163,7 @@ async function main() {
             if (response.data && response.data.id) {
                     try {
                         await axios.post(`https://graph.facebook.com/v19.0/${response.data.id}/comments`, {
-                            message: `🩺 Stop guessing and let clinical AI analyze your actual cellular needs for FREE. Try our Medical AI assessment here: https://nadaniadigitalllc.com/wellness`,
+                            message: `🩺 Stop guessing and let clinical AI analyze your actual cellular needs for FREE. Take the 2-minute assessment here: https://bit.ly/nadaniawellness`,
                             access_token: token
                         });
                         console.log(`✅ Assessment CTA Comment Injected Successfully!`);
