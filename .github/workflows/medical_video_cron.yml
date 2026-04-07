@@ -2,13 +2,8 @@ name: 🧬 Medical AI Daily Video Generator
 
 on:
   schedule:
-    # Staggered runs throughout the day at non-zero minutes to bypass heavy GitHub queue delays
-    - cron: '7 0 * * *'
-    - cron: '17 4 * * *'
-    - cron: '27 8 * * *'
+    # Runs 1 time a day (Evening Prime Time 19:37 in Asia/Bangkok -> 12:37 UTC)
     - cron: '37 12 * * *'
-    - cron: '47 16 * * *'
-    - cron: '57 20 * * *'
   # Allows triggering manually from the Actions tab
   workflow_dispatch:
 

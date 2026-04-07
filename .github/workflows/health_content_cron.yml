@@ -2,8 +2,8 @@ name: 🩺 Medical AI Health Content Cron
 
 on:
   schedule:
-    # Runs every 2 hours (offset slightly by 15 mins to avoid clashing with other tasks)
-    - cron: '15 */2 * * *'
+    # Runs 2 times a day (Morning 07:15 and Evening 18:15 in Asia/Bangkok -> 00:15 UTC and 11:15 UTC)
+    - cron: '15 0,11 * * *'
   # Allows manual triggering
   workflow_dispatch:
 
