@@ -5,7 +5,7 @@ const os = require('os');
 const axios = require('axios');
 const FormData = require('form-data');
 const mysql = require('mysql2/promise');
-const { GoogleGenerativeAI, SchemaType } = require('@google/generative-ai');
+const { OpenAI } = require('openai');
 const ffmpeg = require('fluent-ffmpeg');
 
 async function fetchHealthNews() {
@@ -76,24 +76,35 @@ async function main() {
         console.log(`🎯 Selected Topic from Queue (ID ${topicId}): ${selectedTopic}`);
         await conn.end();
 
-        console.log("✍️ Generating 15s Educational Health Script via Gemini...");
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        console.log("✍️ Generating 15s Educational Health Script via OpenAI...");
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
         const schema = {
-            type: SchemaType.OBJECT,
+            type: "object",
             properties: {
-                script: { type: SchemaType.STRING, description: "The spoken voiceover script. Must sound like a professional, intelligent doctor sharing a 'mind-blowing' cell science fact or AI health tech news. Max 20 seconds." },
-                caption: { type: SchemaType.STRING, description: "A highly engaging, short, snappy English Facebook post. Use 'Dark Cinematic Drama' tone focusing on a 'Curiosity Gap' regarding chronic fatigue (e.g. 'You call it burnout. Science calls it cellular decay.'). Max 3 short paragraphs. Include emojis. DO NOT write an academic essay." },
-                image_prompt: { type: SchemaType.STRING, description: "A highly safe, generic video prompt. Extremely important: NO needles, NO blood, NO raw biology, NO medical gore! Just safe things like a doctor smiling, healthy family eating, or abstract bright glowing particles flowing." }
+                script: { type: "string", description: "The spoken voiceover script. Must sound like a professional, intelligent doctor sharing a 'mind-blowing' cell science fact or AI health tech news. Max 20 seconds." },
+                caption: { type: "string", description: "A highly engaging, short, snappy English Facebook post. Use 'Dark Cinematic Drama' tone focusing on a 'Curiosity Gap' regarding chronic fatigue (e.g. 'You call it burnout. Science calls it cellular decay.'). Max 3 short paragraphs. Include emojis. DO NOT write an academic essay." },
+                image_prompt: { type: "string", description: "A highly safe, generic video prompt. Extremely important: NO needles, NO blood, NO raw biology, NO medical gore! Just safe things like a doctor smiling, healthy family eating, or abstract bright glowing particles flowing." }
             },
-            required: ["script", "caption", "image_prompt"]
+            required: ["script", "caption", "image_prompt"],
+            additionalProperties: false
         };
-        const textModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash", generationConfig: { responseMimeType: "application/json", responseSchema: schema } });
         
         const todayStr = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
         const aiPrompt = `Today's date is ${todayStr}. Title: ${selectedTopic}. Write a viral 15-second educational Reels script and an in-depth 3-paragraph social media caption based on this. VERY IMPORTANT: If today is a major US holiday, seasonal shift (like Spring/Winter), or global health awareness day, cleverly and naturally tie the medical/cellular nutrition fact into the holiday/seasonal theme! If not, just write normally.`;
         
-        const result = await textModel.generateContent(aiPrompt);
-        const aiResponse = JSON.parse(result.response.text());
+        const completion = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [{ role: "user", content: aiPrompt }],
+            response_format: {
+                type: "json_schema",
+                json_schema: {
+                    name: "scriptResponseObject",
+                    schema: schema,
+                    strict: true
+                }
+            }
+        });
+        const aiResponse = JSON.parse(completion.choices[0].message.content);
         
         let cleanScript = aiResponse.script.slice(0, 190);
         console.log(`📜 Script: "${cleanScript}"`);
@@ -106,24 +117,27 @@ async function main() {
         const audioBase64 = await googleTTS.getAudioBase64(cleanScript, { lang: 'en', slow: false, host: 'https://translate.google.com' });
         fs.writeFileSync(audioPath, Buffer.from(audioBase64, 'base64'));
 
-        // Background Image Generation (Switched to Official Google Imagen 4.0 API)
-        console.log("🎨 Generating Cinematic AI Background via Official Google Imagen 4.0...");
+        // Background Image Generation 
+        console.log("🎨 Generating Cinematic AI Background via DALL-E 3...");
 
         const imgPath = path.join(tempDir, 'health_bg.png');
         try {
-            if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY is completely missing from environment / secrets!");
+            if (!process.env.OPENAI_API_KEY) throw new Error("OPENAI_API_KEY is completely missing from environment / secrets!");
             
-            const bgRes = await axios.post(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${process.env.GEMINI_API_KEY}`, {
-                instances: [{ prompt: aiResponse.image_prompt }],
-                parameters: { sampleCount: 1, aspectRatio: '1:1' }
-            }, { headers: { 'Content-Type': 'application/json' } });
+            const imageResponse = await openai.images.generate({
+                model: "dall-e-3",
+                prompt: aiResponse.image_prompt,
+                n: 1,
+                size: "1024x1024",
+                response_format: "b64_json"
+            });
             
-            const b64 = bgRes.data.predictions[0].bytesBase64Encoded;
+            const b64 = imageResponse.data[0].b64_json;
             fs.writeFileSync(imgPath, Buffer.from(b64, 'base64'));
-            console.log("🎞️ Background Image Generated Successfully via Google Imagen!");
+            console.log("🎞️ Background Image Generated Successfully via DALL-E!");
         } catch (imgErr) {
             console.error("\n❌ Image Gen Failed:", imgErr.response ? JSON.stringify(imgErr.response.data) : imgErr.message);
-            throw new Error("Image generation failed on Google Imagen. Aborting reel creation to prevent blank/green screen uploads.");
+            throw new Error("Image generation failed on DALL-E. Aborting reel creation to prevent blank/green screen uploads.");
         }
 
         // FFMPEG Assembly (Without Hardcoded Subtitles)
