@@ -295,7 +295,7 @@ async function main() {
             if (provider.startsWith('gemini-1.5-flash')) {
                 if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY missing");
                 const model = new GoogleGenerativeAI(process.env.GEMINI_API_KEY).getGenerativeModel({
-                    model: "gemini-1.5-flash",
+                    model: "gemini-1.5-flash-latest",
                     generationConfig: {
                         responseMimeType: "application/json",
                         responseSchema: {
