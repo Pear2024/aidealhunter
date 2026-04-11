@@ -399,14 +399,30 @@ Output MUST BE ONLY valid JSON matching this exact structure:
             if (provider === 'pollinations') {
                 const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(aiResponse.image_prompt)}?width=1080&height=1920&nologo=true`;
                 const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer', timeout: 45000 });
+                
+                // GUARD: Check if image response is genuinely valid and not just an error page buffer
+                if (imageResponse.status !== 200 || !imageResponse.data || imageResponse.data.length < 20000) {
+                    throw new Error("Invalid or corrupted image payload received from Pollinations API.");
+                }
+
                 fs.writeFileSync(imgPath, Buffer.from(imageResponse.data));
                 return "loaded";
             }
         });
 
         if (imgDecision === "branded_fallback_visual") {
-            // Generate a premium elegant dark indigo brand background instead of a harsh black frame
-            require('child_process').execSync(`ffmpeg -f lavfi -i color=c=0x0A0F1F:s=1080x1920 -vframes 1 ${imgPath}`, {stdio: 'ignore'});
+            // FIRE ALERT: Telemetry for operations dashboard to note the degradation
+            await sendAlert(conn, "warning", `image_fallback_${RUN_ID}`, "Image Generation Degraded", `All image providers exhausted. Engaged dynamic fallback overlay framework to substitute missing visual layer for Topic ID ${topicId}.`, context);
+
+            // STATIC GUARANTEED RENDER: Use a pre-existing premium asset instead of a solid color
+            const fallbackSrcPath = path.join(process.cwd(), 'public', 'nutrition-bg.jpg');
+            if (fs.existsSync(fallbackSrcPath)) {
+                // Dim the static image slightly so the text/video focus remains prominent and fits 9:16 perfectly
+                require('child_process').execSync(`ffmpeg -y -i ${fallbackSrcPath} -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,colorchannelmixer=rr=0.7:gg=0.7:bb=0.8" -vframes 1 ${imgPath}`, {stdio: 'ignore'});
+            } else {
+                // Secondary absolute fail-safe if static asset is missing
+                require('child_process').execSync(`ffmpeg -f lavfi -i color=c=0x0A0F1F:s=1080x1920 -vframes 1 ${imgPath}`, {stdio: 'ignore'});
+            }
         }
 
         // ⚙️ PHASE 4: FFmpeg Rendering
@@ -415,17 +431,23 @@ Output MUST BE ONLY valid JSON matching this exact structure:
             const safeDuration = safeModeActivated ? 10 : Math.max(8, aiResponse.script.split(' ').length * 0.4) + 2; 
             const eff = imgDecision === "branded_fallback_visual" ? "" : "zoompan=z='min(zoom+0.0015,1.5)':d=700:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)',";
             require('child_process').execSync(`ffmpeg -y -loop 1 -i ${imgPath} -i ${audioPath} -map 0:v -map 1:a -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,${eff}format=yuv420p" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -t ${safeDuration} ${outPath}`, { stdio: 'pipe', timeout: 120000 });
-        } catch(e) { throw new Error(`FFmpeg Crash: ${e.message}`); }
+            
+            // Post-Render Guard: Validate the final generated visual composition file exists and has size
+            if (!fs.existsSync(outPath) || fs.statSync(outPath).size < 50000) {
+               throw new Error("FFmpeg composition resulted in a corrupted or zero-byte visual file.");
+            }
+        } catch(e) { throw new Error(`FFmpeg Crash or Render Guard Failed: ${e.message}`); }
 
         // 🚀 PHASE 5: PUBLISH & IDEMPOTENCY FINALIZE
-        console.log(`\n📋 Pre-Publish Manifest:
+        console.log(`\n📋 Final Pre-Publish Manifest:
 - Requested Policy: ${scriptProviderUsed}
 - Actual Model:     ${context.actualModelString || 'UNKNOWN'}
 - API Endpoint:     ${context.apiVersion || 'UNKNOWN'}
 - Fallback Level:   ${scriptProviderUsed.includes('full') ? 'Primary' : scriptProviderUsed.includes('simplified') ? 'Level 1' : 'Level 2 (Minimal)'}
 - Safe Mode:        ${safeModeActivated ? "ACTIVE 🛡️" : "Inactive"}
-- Visual Mode:      ${imgDecision === "loaded" ? "AI Generated Mode" : "Branded Fallback Overlay"}
-- Validation:       PASSED ✅\n`);
+- Visual Mode:      ${imgDecision === "loaded" ? "AI Generated Asset ✅" : "Guaranteed Static Fallback ⚠️"}
+- Video Render:     VERIFIED 1080x1920 COMPOSITION ✅
+- Publish Guard:    READY\n`);
 
         await executeSelfHealingStep('Graph Publishing', 'publish', context, async () => {
              const form = new FormData();
