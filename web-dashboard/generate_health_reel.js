@@ -87,22 +87,54 @@ async function main() {
                 responseSchema: {
                     type: SchemaType.OBJECT,
                     properties: {
-                        script: { type: SchemaType.STRING, description: "The spoken voiceover script. Must sound like a professional, intelligent doctor sharing a 'mind-blowing' cell science fact or AI health tech news. Max 20 seconds." },
-                        caption: { type: SchemaType.STRING, description: "A highly engaging, short, snappy English Facebook post. Use 'Dark Cinematic Drama' tone focusing on a 'Curiosity Gap' regarding chronic fatigue (e.g. 'You call it burnout. Science calls it cellular decay.'). Max 3 short paragraphs. Include emojis. DO NOT write an academic essay." },
-                        image_prompt: { type: SchemaType.STRING, description: "A highly safe, generic video prompt. Extremely important: NO needles, NO blood, NO raw biology, NO medical gore! Just safe things like a doctor smiling, healthy family eating, or abstract bright glowing particles flowing." }
+                        script: { type: SchemaType.STRING, description: "The spoken voiceover script using the H.I.S.T framework. Must contain a 3-second extremely powerful hook. Max 30 seconds." },
+                        caption: { type: SchemaType.STRING, description: "A premium, intelligent Facebook post summarizing the science. No cheap clickbait. 3 short paragraphs. Ends with instructions to comment the keyword." },
+                        image_prompt: { type: SchemaType.STRING, description: "A highly safe, cinematic video prompt. Focus on 'Premium Futuristic Clinical' or 'High-End Wellness'. NO raw biology or gore." },
+                        comment_cta: { type: SchemaType.STRING, description: "A tailored pinned comment providing the actual assessment link (https://bit.ly/nadaniawellness) acting as the next step." }
                     },
-                    required: ["script", "caption", "image_prompt"]
+                    required: ["script", "caption", "image_prompt", "comment_cta"]
                 }
             }
         });
         
         const todayStr = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric' });
-        const aiPrompt = `Today's date is ${todayStr}. Title: ${selectedTopic}. Write a viral 15-second educational Reels script and an in-depth 3-paragraph social media caption based on this. VERY IMPORTANT: If today is a major US holiday, seasonal shift (like Spring/Winter), or global health awareness day, cleverly and naturally tie the medical/cellular nutrition fact into the holiday/seasonal theme! If not, just write normally.`;
+        
+        // 1. Dynamic CTA Rotation & Viral Hook Engine
+        const ctaStyles = [
+            "SOFT_SELL: Empathy driven. Ask them to drop a keyword 'CELL' to get their free cellular baseline sent via DM.",
+            "EDUCATIONAL: Curiosity/Quiz driven. Ask them to comment 'SCORE' to discover their true medical biological age.",
+            "ACTION_DIRECT: Value driven. Tell them to comment 'REPORT' immediately to access the clinical assessment."
+        ];
+        const selectedCta = ctaStyles[Math.floor(Math.random() * ctaStyles.length)];
+        
+        const aiPrompt = `
+You are 'Dr. Nadania AI', an elite Medical & Longevity Consultant. 
+Topic: ${selectedTopic}
+Date Context: ${todayStr} (If a major holiday, weave it in subtly to remain topical).
+
+TASK:
+Write a viral 20-30 second educational Reels script and an engaging social media caption.
+
+BRAND VOICE & COMPLIANCE (CRITICAL):
+- Tone: Premium, calm, modern, trustworthy. Oxford-level intellect simplified for the public. DO NOT sound salesy or cheap.
+- COMPLIANCE: NO risky medical claims. Do NOT diagnose, guarantee outcomes, or use cheap fear-based manipulation. Focus purely on sharing established cellular science and AI tech.
+
+STRUCTURE (The H.I.S.T Model):
+1. H (Hook): 0-3 seconds. Start with a pattern-interrupt or contrarian statement (e.g. "You think [X] is normal aging, but..."). NEVER start with "Hello" or "Today's news". Must stop the scroll.
+2. I (Invalidate): Briefly explain why common knowledge is slightly wrong.
+3. S (Science): Explain the medical breakthrough simply.
+4. T (Transition): Seamlessly transition to the CTA without being jarring.
+
+CTA REQUIREMENT & COMMENT:
+Instruct the user in the video/caption to COMMENT a specific keyword according to this style: [${selectedCta}].
+Do NOT put the link in the caption. Instead, generate 'comment_cta' which will be posted as the first comment containing the link: https://bit.ly/nadaniawellness.
+`;
         
         const completion = await model.generateContent(aiPrompt);
         const aiResponse = JSON.parse(completion.response.text());
         
-        let cleanScript = aiResponse.script.slice(0, 190);
+        // Expanded string boundary slightly to support higher quality H.I.S.T pacing
+        let cleanScript = aiResponse.script.slice(0, 300);
         console.log(`📜 Script: "${cleanScript}"`);
 
         // Google Free TTS
@@ -153,7 +185,8 @@ async function main() {
             const token = process.env.FB_PAGE_ACCESS_TOKEN;
             if (!pageId || !token) throw new Error("Missing FB API keys!");
 
-            const fullCaption = `🛑 ${selectedTopic}\n\n${aiResponse.caption}\n\n👉 Take your Free Cellular AI Assessment: https://bit.ly/nadaniawellness\n\n#NadaniaWellness #CellularHealth #Biohacking`;
+            // Use the dynamically generated caption natively (avoiding hardcoded spam strings)
+            const fullCaption = `🚨 New Discovery: ${selectedTopic}\n\n${aiResponse.caption}\n\n#NadaniaWellness #CellularHealth #Biohacking`;
             
             const form = new FormData();
             form.append('access_token', token);
@@ -168,7 +201,7 @@ async function main() {
             if (response.data && response.data.id) {
                     try {
                         await axios.post(`https://graph.facebook.com/v19.0/${response.data.id}/comments`, {
-                            message: `🩺 Stop guessing and let clinical AI analyze your actual cellular needs for FREE. Take the 2-minute assessment here: https://bit.ly/nadaniawellness`,
+                            message: aiResponse.comment_cta || `🩺 Stop guessing. Let clinical AI analyze your cellular needs for FREE: https://bit.ly/nadaniawellness`,
                             access_token: token
                         });
                         console.log(`✅ Assessment CTA Comment Injected Successfully!`);
