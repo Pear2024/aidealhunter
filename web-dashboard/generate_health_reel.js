@@ -303,9 +303,31 @@ async function main() {
 
                 let aiPrompt = "";
                 if (provider === 'gemini-2.5-flash-full') {
-                    const ctaStyles = ["SOFT_SELL: Drop keyword 'CELL'", "EDUCATIONAL: Comment 'SCORE'", "ACTION_DIRECT: Comment 'REPORT'"];
-                    const hookCategories = ["CURIOSITY", "MYTH_BUSTING", "FUTURE_TREND", "SURPRISING_SCIENCE", "PREMIUM_INSIGHT"];
-                    aiPrompt = `You are 'Dr. Nadania AI', an elite Wellness Guide. Topic: ${selectedTopic}. Context: ${new Date().toLocaleDateString('en-US')}. TASK: Write script, caption, image_prompt, comment_cta. Protect Meta compliance: NO "medical biological age", NO diagnoses. Use safer phrases like "wellness baseline". Use hook: ${hookCategories[Math.floor(Math.random() * hookCategories.length)]}. Use CTA: ${ctaStyles[Math.floor(Math.random() * ctaStyles.length)]}. Ensure comment_cta contains the link https://bit.ly/nadaniawellness. Keep script under 300 chars. JSON only.`;
+                    aiPrompt = `You are a viral short-form video script expert for Facebook Reels in the health & anti-aging niche.
+Your goal is to create a HIGH-RETENTION, SCROLL-STOPPING script that drives users to COMMENT a keyword.
+
+Topic: ${selectedTopic}
+Target Audience: Women 25-55, interested in health, anti-aging, and wellness
+Tone: Conversational, Curious, Slightly shocking but credible, Easy to understand
+
+Structure (STRICT):
+1. HOOK (first 1-2 seconds): Max 8 words. Must create curiosity or fear.
+2. INSIGHT: 1 short sentence explaining science simply.
+3. PAIN POINT: 1 short sentence relatable problem.
+4. CTA (MANDATORY): Ask user to comment ONE keyword. Rotate between: CELL, SCORE, REPORT. Ensure the comment_cta returns the link https://bit.ly/nadaniawellness
+
+Constraints:
+- TOTAL script length: 120-180 CHARACTERS (NOT words).
+- Short, punchy sentences only. No emojis, no hashtags in script.
+- Protect Meta compliance: NO "medical biological age", NO diagnoses.
+
+Output MUST BE ONLY valid JSON matching this exact structure:
+{
+  "script": "the 120-180 char script string",
+  "caption": "A short engaging facebook caption with emojis",
+  "image_prompt": "Cinematic 8k glowing cellular nutrition visual for background",
+  "comment_cta": "The auto-reply comment containing https://bit.ly/nadaniawellness"
+}`;
                 } else if (provider === 'gemini-2.5-flash-simplified') {
                     aiPrompt = `Topic: ${selectedTopic}. Write a brief 300-character educational wellness script, a short Facebook caption, a safe glowing particles image_prompt, and a comment_cta containing the assessment link https://bit.ly/nadaniawellness. Make tone calm. Return ONLY perfectly valid JSON with keys: script, caption, image_prompt, comment_cta.`;
                 } else if (provider === 'gemini-2.5-flash-minimal') {
