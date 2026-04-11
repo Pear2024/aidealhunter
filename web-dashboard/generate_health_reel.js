@@ -210,45 +210,53 @@ async function main() {
         // Ensure Schema Supports Locking (Idempotency)
         await conn.execute("CREATE TABLE IF NOT EXISTS health_reels_queue (id INT AUTO_INCREMENT PRIMARY KEY, topic VARCHAR(255) UNIQUE, status VARCHAR(50) DEFAULT 'pending', locked_by VARCHAR(100), recovery_attempts INT DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP, posted_at TIMESTAMP NULL)");
         
-        // 🔄 Safe Auto-Migration & Schema Alignment (Comprehensive)
-        const schemaMigrations = [
-            // Ensure core tracking fields exist
-            "ALTER TABLE health_reels_queue ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
-            "ALTER TABLE health_reels_queue ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
-            // Ensure Idempotency lock tracking exists
-            "ALTER TABLE health_reels_queue ADD COLUMN locked_by VARCHAR(100)",
-            "ALTER TABLE health_reels_queue ADD COLUMN recovery_attempts INT DEFAULT 0",
-            // Ensure Completion tracking exists
-            "ALTER TABLE health_reels_queue ADD COLUMN posted_at TIMESTAMP NULL",
-            // Expand legacy column sizes to support modern idempotency flags (e.g. 'processing_lock')
-            "ALTER TABLE health_reels_queue MODIFY COLUMN status VARCHAR(50) DEFAULT 'pending'",
-            // Indexes for optimizing the lock query & orphan cleanup
-            "ALTER TABLE health_reels_queue ADD INDEX idx_status_created (status, created_at)",
-            "ALTER TABLE health_reels_queue ADD INDEX idx_locked (locked_by, updated_at)"
-        ];
+        // 🛡️ Intelligent Pre-Flight Schema Alignment & Validation
+        const expectedCols = {
+            'id': { type: 'INT', def: 'AUTO_INCREMENT PRIMARY KEY' },
+            'topic': { type: 'VARCHAR(255)', def: 'UNIQUE' },
+            'status': { type: 'VARCHAR(50)', def: "DEFAULT 'pending'" }, // expected states: pending, processing_lock, posted, posted_no_comment, failed
+            'locked_by': { type: 'VARCHAR(100)', def: "NULL" },
+            'recovery_attempts': { type: 'INT', def: "DEFAULT 0" },
+            'created_at': { type: 'TIMESTAMP', def: "DEFAULT CURRENT_TIMESTAMP" },
+            'updated_at': { type: 'TIMESTAMP', def: "DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" },
+            'posted_at': { type: 'TIMESTAMP', def: "NULL" }
+        };
 
-        for (const query of schemaMigrations) {
-            try { await conn.execute(query); } 
-            catch(e) {
-                // Ignore safe existing state errors (Duplicate Field, Duplicate Key/Index)
-                if (e.code !== 'ER_DUP_FIELDNAME' && e.code !== 'ER_DUP_KEYNAME') {
-                    console.log(`[SCHEMA WARN] Ignored non-fatal migration error: ${e.message}`);
-                }
+        const [dbSchema] = await conn.execute("SHOW COLUMNS FROM health_reels_queue");
+        const existingColumns = {}; 
+        dbSchema.forEach(col => { existingColumns[col.Field] = col.Type.toLowerCase(); });
+
+        for (const [colName, colMeta] of Object.entries(expectedCols)) {
+            if (!existingColumns[colName]) {
+                console.log(`[SCHEMA AUTO-ALIGN] Injecting missing column: ${colName}`);
+                try { await conn.execute(`ALTER TABLE health_reels_queue ADD COLUMN ${colName} ${colMeta.type} ${colMeta.def}`); } 
+                catch(e) { if (e.code !== 'ER_DUP_FIELDNAME') console.error("Migration Error:", e.message); }
             }
         }
 
-        // 🛡️ Pre-Flight Schema Validation (Fails Fast)
-        const [dbSchema] = await conn.execute("SHOW COLUMNS FROM health_reels_queue");
-        const existingColumns = dbSchema.map(col => col.Field);
-        const expectedColumns = ['id', 'topic', 'status', 'locked_by', 'recovery_attempts', 'created_at', 'updated_at', 'posted_at'];
-        const missingColumns = expectedColumns.filter(col => !existingColumns.includes(col));
+        // 🩺 Critical: Expand severely restricted legacy columns (ENUMs or narrow VARCHARs)
+        const currentStatusType = existingColumns['status'] || "";
+        if (currentStatusType.includes('enum') || (currentStatusType.includes('varchar') && parseInt(currentStatusType.match(/\d+/) || [0]) < 50)) {
+            console.log(`[SCHEMA AUTO-ALIGN] Upgrading restricted status column from ${currentStatusType} to VARCHAR(50)`);
+            try { await conn.execute("ALTER TABLE health_reels_queue MODIFY COLUMN status VARCHAR(50) DEFAULT 'pending'"); }
+            catch(err) { console.error(`[FATAL] Failed to expand status column: ${err.message}`); }
+        }
 
-        if (missingColumns.length > 0) {
-            const errMsg = `Pre-Flight Fatal: Missing required columns: ${missingColumns.join(', ')}`;
+        // 🛡️ Pre-Flight Validation Check (Fails Fast)
+        const [postDbSchema] = await conn.execute("SHOW COLUMNS FROM health_reels_queue");
+        const postExisting = postDbSchema.map(col => col.Field);
+        const missing = Object.keys(expectedCols).filter(col => !postExisting.includes(col));
+        
+        if (missing.length > 0) {
+            const errMsg = `Pre-Flight Fatal: Database Schema Alignment Failed. Missing: ${missing.join(', ')}`;
             console.error(`🚨 ${errMsg}`);
             await sendAlert(conn, "critical", "schema_mismatch", "Database Schema Incomplete", errMsg, { ...context, cooldownHrs: 0 });
             throw new Error(errMsg);
         }
+
+        // Safely add Indexes
+        try { await conn.execute("ALTER TABLE health_reels_queue ADD INDEX idx_status_created (status, created_at)"); } catch(e){}
+        try { await conn.execute("ALTER TABLE health_reels_queue ADD INDEX idx_locked (locked_by, updated_at)"); } catch(e){}
 
         await conn.execute(`CREATE TABLE IF NOT EXISTS system_run_logs (run_id VARCHAR(50) PRIMARY KEY, started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, completed_at TIMESTAMP NULL, status VARCHAR(20), current_step VARCHAR(50), retry_count INT DEFAULT 0, provider_used VARCHAR(50), selected_topic VARCHAR(255), error_summary TEXT, duration_ms INT)`);
         await conn.execute("INSERT INTO system_run_logs (run_id, status, current_step) VALUES (?, 'running', 'init')", [RUN_ID]);
