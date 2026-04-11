@@ -6,7 +6,7 @@ const crypto = require('crypto');
 const axios = require('axios');
 const FormData = require('form-data');
 const mysql = require('mysql2/promise');
-const { GoogleGenerativeAI, SchemaType } = require('@google/generative-ai');
+const { GoogleGenAI, Type } = require('@google/genai');
 
 // ============================================
 // 🚨 ALERT SYSTEM & OBSERVABILITY (PRESERVED)
@@ -292,26 +292,12 @@ async function main() {
 
         // 🧠 PHASE 1: SCRIPT GEN (Self-Healing)
         const aiResponse = await executeSelfHealingStep('AI Script', 'script', context, async (provider) => {
-            // Evaluate mapped generic provider strings natively
             if (provider.startsWith('gemini-2.5-flash')) {
                 if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY missing");
                 
-                // Enforce direct API V1 standard endpoints globally to circumvent v1beta deprecations
-                const model = new GoogleGenerativeAI(process.env.GEMINI_API_KEY).getGenerativeModel({
-                    model: "gemini-2.5-flash",
-                    generationConfig: {
-                        responseMimeType: "application/json",
-                        responseSchema: {
-                            type: SchemaType.OBJECT,
-                            properties: {
-                                script: { type: SchemaType.STRING, description: "Voiceover script." },
-                                caption: { type: SchemaType.STRING, description: "Facebook caption." },
-                                image_prompt: { type: SchemaType.STRING, description: "Cinematic visual prompt." },
-                                comment_cta: { type: SchemaType.STRING, description: "CTA comment string." }
-                            }, required: ["script", "caption", "image_prompt", "comment_cta"]
-                        }
-                    }
-                }, { apiVersion: 'v1' });
+                // Pure compliant initialization of standard endpoints globally
+                const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY, apiVersion: 'v1' });
+                const actualModelString = "gemini-2.5-flash";
 
                 let aiPrompt = "";
                 if (provider === 'gemini-2.5-flash-full') {
@@ -324,8 +310,26 @@ async function main() {
                     aiPrompt = `You are 'Dr. Nadania AI', a premium wellness brand. Topic: ${selectedTopic}. Return ONLY perfectly valid JSON with these EXACT keys: {"script": "3-sentence safe wellness script.", "caption": "short Facebook summary.", "image_prompt": "calming visual prompt", "comment_cta": "🌱 Start your health awareness check-in here: https://bit.ly/nadaniawellness"}. No markdown, no extra text.`;
                 }
 
-                const completion = await model.generateContent(aiPrompt);
-                const parsedResult = JSON.parse(completion.response.text().replace(/```json/i, '').replace(/```/i, '').trim());
+                console.log(`[SDK ALIGNMENT] Dispatching internal policy [${provider}] to Google GenAI framework -> ${actualModelString} (v1 apiVersion)`);
+                const completion = await aiClient.models.generateContent({
+                    model: actualModelString,
+                    contents: aiPrompt,
+                    config: {
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: Type.OBJECT,
+                            properties: {
+                                script: { type: Type.STRING, description: "Voiceover script." },
+                                caption: { type: Type.STRING, description: "Facebook caption." },
+                                image_prompt: { type: Type.STRING, description: "Cinematic visual prompt." },
+                                comment_cta: { type: Type.STRING, description: "CTA comment string." }
+                            }, required: ["script", "caption", "image_prompt", "comment_cta"]
+                        }
+                    }
+                });
+
+                const rawResponseText = completion.text;
+                const parsedResult = JSON.parse(rawResponseText.replace(/```json/i, '').replace(/```/i, '').trim());
                 
                 // 🛡️ Output Validation Layer
                 if (!parsedResult.script || parsedResult.script.length < 30) throw new Error("Script is suspiciously short or empty.");
