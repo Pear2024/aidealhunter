@@ -312,13 +312,14 @@ async function main() {
                     aiPrompt = `You are 'Dr. Nadania AI', a premium wellness brand. Topic: ${selectedTopic}. Return ONLY perfectly valid JSON with these EXACT keys: {"script": "3-sentence safe wellness script.", "caption": "short Facebook summary.", "image_prompt": "calming visual prompt", "comment_cta": "🌱 Start your health awareness check-in here: https://bit.ly/nadaniawellness"}. No markdown, no extra text.`;
                 }
 
+                // Payload parameters must be formatted strictly in snake_case mapped to the V1 REST JSON specifications under @google/genai
                 console.log(`[SDK ALIGNMENT] Dispatching internal policy [${provider}] to Google GenAI framework -> ${actualModelString} (v1 apiVersion)`);
                 const completion = await aiClient.models.generateContent({
                     model: actualModelString,
                     contents: aiPrompt,
                     config: {
-                        responseMimeType: "application/json",
-                        responseSchema: {
+                        response_mime_type: "application/json",
+                        response_schema: {
                             type: Type.OBJECT,
                             properties: {
                                 script: { type: Type.STRING, description: "Voiceover script." },
