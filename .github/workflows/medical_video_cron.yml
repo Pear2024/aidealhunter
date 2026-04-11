@@ -6,6 +6,9 @@ on:
     - cron: '37 12 * * *'
   # Allows triggering manually from the Actions tab
   workflow_dispatch:
+  # Added a push trigger so we can immediately trigger this workflow to test video generation
+  push:
+    branches: [ "main" ]
 
 jobs:
   generate-medical-video:
