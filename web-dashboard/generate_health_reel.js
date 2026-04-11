@@ -102,7 +102,7 @@ const POLICIES = {
         })
     },
     audio: { retries: 2, timeoutMs: 30000, primary: "google-tts", fallbacks: [], safeDowngrade: null },
-    image: { retries: 2, timeoutMs: 30000, primary: "pollinations", fallbacks: [], safeDowngrade: (topic) => "branded_fallback_visual" },
+    image: { retries: 1, timeoutMs: 45000, primary: "pollinations", fallbacks: [], safeDowngrade: (topic) => "branded_fallback_visual" },
     publish: { retries: 3, timeoutMs: 90000, primary: "facebook-graph", fallbacks: [], safeDowngrade: null }
 };
 
@@ -365,7 +365,7 @@ async function main() {
         const imgDecision = await executeSelfHealingStep('Image Generation', 'image', context, async (provider) => {
             if (provider === 'pollinations') {
                 const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(aiResponse.image_prompt)}?width=1080&height=1920&nologo=true`;
-                const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+                const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer', timeout: 45000 });
                 fs.writeFileSync(imgPath, Buffer.from(imageResponse.data));
                 return "loaded";
             }
