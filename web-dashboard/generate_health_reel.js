@@ -269,22 +269,34 @@ async function main() {
                 } else if (provider === 'gemini-1.5-flash-simplified') {
                     aiPrompt = `Topic: ${selectedTopic}. Write a brief 20-second educational wellness script, a short Facebook caption, a safe glowing particles image prompt, and a comment containing the assessment link https://bit.ly/nadaniawellness. Make tone calm. Return JSON.`;
                 } else if (provider === 'gemini-1.5-flash-minimal') {
-                    aiPrompt = `You are 'Dr. Nadania AI', a premium wellness brand. Topic: ${selectedTopic}. Provide a minimal JSON response. script: A 3-sentence safe, elegant, actionable wellness script. caption: A brief Facebook post summary. image_prompt: A beautiful, safe, calming visual prompt. comment_cta: "🌱 Start your health awareness check-in here: https://bit.ly/nadaniawellness"`;
+                    aiPrompt = `You are 'Dr. Nadania AI', a premium wellness brand. Topic: ${selectedTopic}. Return ONLY perfectly valid JSON with these EXACT keys: {"script": "3-sentence safe wellness script.", "caption": "short Facebook summary.", "image_prompt": "calming visual prompt", "comment_cta": "🌱 Start your health awareness check-in here: https://bit.ly/nadaniawellness"}. No markdown, no extra text.`;
                 }
 
                 const completion = await model.generateContent(aiPrompt);
-                const parsedResult = JSON.parse(completion.response.text());
+                const parsedResult = JSON.parse(completion.response.text().replace(/```json/i, '').replace(/```/i, '').trim());
                 
                 // 🛡️ Output Validation Layer
                 if (!parsedResult.script || parsedResult.script.length < 30) throw new Error("Script is suspiciously short or empty.");
                 if (parsedResult.script.length > 1500) throw new Error("Script exceeds max limits for a short Reel.");
-                if (parsedResult.script.includes("[") || parsedResult.script.includes("]")) throw new Error("Script contains unresolved blank placeholders.");
+                
+                const placeholders = /\[insert.*?\]|\[topic\]|\[cta\]|\{\{.*?\}\}/i;
+                if (placeholders.test(parsedResult.script) || placeholders.test(parsedResult.caption)) {
+                    throw new Error("Content contains unresolved template placeholders.");
+                }
+
+                // 🛑 Compliance Sanitation Layer
+                const riskyPhrases = /(cure|diagnose|guaranteed|reverse aging|clinical result|true biological age)/i;
+                if (riskyPhrases.test(parsedResult.script) || riskyPhrases.test(parsedResult.caption)) {
+                    throw new Error("Content blocked by meta compliance sanitation layer (risky medical claim detected).");
+                }
+
                 if (!parsedResult.caption || parsedResult.caption.length < 10) throw new Error("Caption is empty or invalid.");
                 if (!parsedResult.comment_cta || !parsedResult.comment_cta.includes("http")) throw new Error("Missing correct link in CTA.");
                 
                 return parsedResult;
             }
         });
+        const scriptProviderUsed = context.provider;
 
         // 🎙️ PHASE 2: AUDIO (Self-Healing)
         const tempDir = os.tmpdir();
@@ -324,6 +336,13 @@ async function main() {
         } catch(e) { throw new Error(`FFmpeg Crash: ${e.message}`); }
 
         // 🚀 PHASE 5: PUBLISH & IDEMPOTENCY FINALIZE
+        console.log(`\n📋 Pre-Publish Manifest:
+- Provider Used:   ${scriptProviderUsed}
+- Fallback Level:  ${scriptProviderUsed.includes('full') ? 'Primary' : scriptProviderUsed.includes('simplified') ? 'Level 1' : 'Level 2 (Minimal)'}
+- Safe Mode:       ${safeModeActivated ? "ACTIVE 🛡️" : "Inactive"}
+- Visual Mode:     ${imgDecision === "loaded" ? "AI Generated Mode" : "Branded Fallback Overlay"}
+- Validation:      PASSED ✅\n`);
+
         await executeSelfHealingStep('Graph Publishing', 'publish', context, async () => {
              const form = new FormData();
              form.append('access_token', process.env.FB_PAGE_ACCESS_TOKEN);
