@@ -93,7 +93,7 @@ let safeModeActivated = false;
 
 const POLICIES = {
     script: {
-        retries: 2, timeoutMs: 30000, primary: "gemini-1.5-flash-full", fallbacks: ["gemini-1.5-flash-simplified", "gemini-1.5-flash-minimal"],
+        retries: 2, timeoutMs: 30000, primary: "gemini-2.5-flash-full", fallbacks: ["gemini-2.5-flash-simplified", "gemini-2.5-flash-minimal"],
         safeDowngrade: (topic) => ({
             script: `A massive breakthrough in cellular wellness has been uncovered regarding ${topic.substring(0,20)}. Experts agree, your cellular awareness defines your aging process. Stay proactive.`,
             caption: `A critical update on ${topic.substring(0, 50)}. Never ignore your cellular health.`,
@@ -292,10 +292,13 @@ async function main() {
 
         // 🧠 PHASE 1: SCRIPT GEN (Self-Healing)
         const aiResponse = await executeSelfHealingStep('AI Script', 'script', context, async (provider) => {
-            if (provider.startsWith('gemini-1.5-flash')) {
+            // Evaluate mapped generic provider strings natively
+            if (provider.startsWith('gemini-2.5-flash')) {
                 if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY missing");
+                
+                // Enforce direct API V1 standard endpoints globally to circumvent v1beta deprecations
                 const model = new GoogleGenerativeAI(process.env.GEMINI_API_KEY).getGenerativeModel({
-                    model: "gemini-1.5-flash-latest",
+                    model: "gemini-2.5-flash",
                     generationConfig: {
                         responseMimeType: "application/json",
                         responseSchema: {
@@ -308,16 +311,16 @@ async function main() {
                             }, required: ["script", "caption", "image_prompt", "comment_cta"]
                         }
                     }
-                });
+                }, { apiVersion: 'v1' });
 
                 let aiPrompt = "";
-                if (provider === 'gemini-1.5-flash-full') {
+                if (provider === 'gemini-2.5-flash-full') {
                     const ctaStyles = ["SOFT_SELL: Drop keyword 'CELL'", "EDUCATIONAL: Comment 'SCORE'", "ACTION_DIRECT: Comment 'REPORT'"];
                     const hookCategories = ["CURIOSITY", "MYTH_BUSTING", "FUTURE_TREND", "SURPRISING_SCIENCE", "PREMIUM_INSIGHT"];
                     aiPrompt = `You are 'Dr. Nadania AI', an elite Wellness Guide. Topic: ${selectedTopic}. Context: ${new Date().toLocaleDateString('en-US')}. TASK: Write script, caption, image_prompt, comment_cta. Protect Meta compliance: NO "medical biological age", NO diagnoses. Use safer phrases like "wellness baseline". Use hook: ${hookCategories[Math.floor(Math.random() * hookCategories.length)]}. Use CTA: ${ctaStyles[Math.floor(Math.random() * ctaStyles.length)]}. JSON only.`;
-                } else if (provider === 'gemini-1.5-flash-simplified') {
+                } else if (provider === 'gemini-2.5-flash-simplified') {
                     aiPrompt = `Topic: ${selectedTopic}. Write a brief 20-second educational wellness script, a short Facebook caption, a safe glowing particles image prompt, and a comment containing the assessment link https://bit.ly/nadaniawellness. Make tone calm. Return JSON.`;
-                } else if (provider === 'gemini-1.5-flash-minimal') {
+                } else if (provider === 'gemini-2.5-flash-minimal') {
                     aiPrompt = `You are 'Dr. Nadania AI', a premium wellness brand. Topic: ${selectedTopic}. Return ONLY perfectly valid JSON with these EXACT keys: {"script": "3-sentence safe wellness script.", "caption": "short Facebook summary.", "image_prompt": "calming visual prompt", "comment_cta": "🌱 Start your health awareness check-in here: https://bit.ly/nadaniawellness"}. No markdown, no extra text.`;
                 }
 
