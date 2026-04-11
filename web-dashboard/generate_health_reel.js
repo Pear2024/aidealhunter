@@ -102,7 +102,7 @@ const POLICIES = {
         })
     },
     audio: { retries: 2, timeoutMs: 30000, primary: "google-tts", fallbacks: [], safeDowngrade: null },
-    image: { retries: 2, timeoutMs: 30000, primary: "pollinations", fallbacks: [], safeDowngrade: (topic) => "static_black_frame" },
+    image: { retries: 2, timeoutMs: 30000, primary: "pollinations", fallbacks: [], safeDowngrade: (topic) => "branded_fallback_visual" },
     publish: { retries: 3, timeoutMs: 90000, primary: "facebook-graph", fallbacks: [], safeDowngrade: null }
 };
 
@@ -269,11 +269,20 @@ async function main() {
                 } else if (provider === 'gemini-1.5-flash-simplified') {
                     aiPrompt = `Topic: ${selectedTopic}. Write a brief 20-second educational wellness script, a short Facebook caption, a safe glowing particles image prompt, and a comment containing the assessment link https://bit.ly/nadaniawellness. Make tone calm. Return JSON.`;
                 } else if (provider === 'gemini-1.5-flash-minimal') {
-                    aiPrompt = `Summarize this topic into 3 sentences: ${selectedTopic}. Format it as JSON containing keys: script, caption, image_prompt, comment_cta. Keep it extremely safe, general wellness advice.`;
+                    aiPrompt = `You are 'Dr. Nadania AI', a premium wellness brand. Topic: ${selectedTopic}. Provide a minimal JSON response. script: A 3-sentence safe, elegant, actionable wellness script. caption: A brief Facebook post summary. image_prompt: A beautiful, safe, calming visual prompt. comment_cta: "🌱 Start your health awareness check-in here: https://bit.ly/nadaniawellness"`;
                 }
 
                 const completion = await model.generateContent(aiPrompt);
-                return JSON.parse(completion.response.text());
+                const parsedResult = JSON.parse(completion.response.text());
+                
+                // 🛡️ Output Validation Layer
+                if (!parsedResult.script || parsedResult.script.length < 30) throw new Error("Script is suspiciously short or empty.");
+                if (parsedResult.script.length > 1500) throw new Error("Script exceeds max limits for a short Reel.");
+                if (parsedResult.script.includes("[") || parsedResult.script.includes("]")) throw new Error("Script contains unresolved blank placeholders.");
+                if (!parsedResult.caption || parsedResult.caption.length < 10) throw new Error("Caption is empty or invalid.");
+                if (!parsedResult.comment_cta || !parsedResult.comment_cta.includes("http")) throw new Error("Missing correct link in CTA.");
+                
+                return parsedResult;
             }
         });
 
@@ -301,15 +310,16 @@ async function main() {
             }
         });
 
-        if (imgDecision === "static_black_frame") {
-            require('child_process').execSync(`ffmpeg -f lavfi -i color=c=black:s=1080x1920 -vframes 1 ${imgPath}`, {stdio: 'ignore'});
+        if (imgDecision === "branded_fallback_visual") {
+            // Generate a premium elegant dark indigo brand background instead of a harsh black frame
+            require('child_process').execSync(`ffmpeg -f lavfi -i color=c=0x0A0F1F:s=1080x1920 -vframes 1 ${imgPath}`, {stdio: 'ignore'});
         }
 
         // ⚙️ PHASE 4: FFmpeg Rendering
         await updateRunLog(conn, { current_step: 'ffmpeg_rendering' });
         try {
             const safeDuration = safeModeActivated ? 10 : Math.max(8, aiResponse.script.split(' ').length * 0.4) + 2; 
-            const eff = imgDecision === "static_black_frame" ? "" : "zoompan=z='min(zoom+0.0015,1.5)':d=700:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)',";
+            const eff = imgDecision === "branded_fallback_visual" ? "" : "zoompan=z='min(zoom+0.0015,1.5)':d=700:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)',";
             require('child_process').execSync(`ffmpeg -y -loop 1 -i ${imgPath} -i ${audioPath} -map 0:v -map 1:a -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,${eff}format=yuv420p" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -t ${safeDuration} ${outPath}`, { stdio: 'pipe', timeout: 120000 });
         } catch(e) { throw new Error(`FFmpeg Crash: ${e.message}`); }
 
