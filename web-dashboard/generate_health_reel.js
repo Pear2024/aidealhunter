@@ -93,7 +93,7 @@ let safeModeActivated = false;
 
 const POLICIES = {
     script: {
-        retries: 3, timeoutMs: 30000, primary: "gemini-1.5-flash", fallbacks: ["aimlapi-gpt-4o"],
+        retries: 2, timeoutMs: 30000, primary: "gemini-1.5-flash-full", fallbacks: ["gemini-1.5-flash-simplified", "gemini-1.5-flash-minimal"],
         safeDowngrade: (topic) => ({
             script: `A massive breakthrough in cellular wellness has been uncovered regarding ${topic.substring(0,20)}. Experts agree, your cellular awareness defines your aging process. Stay proactive.`,
             caption: `A critical update on ${topic.substring(0, 50)}. Never ignore your cellular health.`,
@@ -101,8 +101,8 @@ const POLICIES = {
             comment_cta: `🌱 Start your health awareness check-in here: https://bit.ly/nadaniawellness`
         })
     },
-    audio: { retries: 2, timeoutMs: 30000, primary: "google-tts", fallbacks: ["elevenlabs"], safeDowngrade: null /* Cannot fake audio easily */ },
-    image: { retries: 2, timeoutMs: 30000, primary: "pollinations", fallbacks: ["aimlapi-dall-e"], safeDowngrade: (topic) => "static_black_frame" },
+    audio: { retries: 2, timeoutMs: 30000, primary: "google-tts", fallbacks: [], safeDowngrade: null },
+    image: { retries: 2, timeoutMs: 30000, primary: "pollinations", fallbacks: [], safeDowngrade: (topic) => "static_black_frame" },
     publish: { retries: 3, timeoutMs: 90000, primary: "facebook-graph", fallbacks: [], safeDowngrade: null }
 };
 
@@ -243,7 +243,8 @@ async function main() {
 
         // 🧠 PHASE 1: SCRIPT GEN (Self-Healing)
         const aiResponse = await executeSelfHealingStep('AI Script', 'script', context, async (provider) => {
-            if (provider === 'gemini-1.5-flash') {
+            if (provider.startsWith('gemini-1.5-flash')) {
+                if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY missing");
                 const model = new GoogleGenerativeAI(process.env.GEMINI_API_KEY).getGenerativeModel({
                     model: "gemini-1.5-flash",
                     generationConfig: {
@@ -251,24 +252,28 @@ async function main() {
                         responseSchema: {
                             type: SchemaType.OBJECT,
                             properties: {
-                                script: { type: SchemaType.STRING, description: "Max 30s voiceover script." },
-                                caption: { type: SchemaType.STRING, description: "Facebook caption without links." },
-                                image_prompt: { type: SchemaType.STRING, description: "Cinematic wellness visual prompt." },
+                                script: { type: SchemaType.STRING, description: "Voiceover script." },
+                                caption: { type: SchemaType.STRING, description: "Facebook caption." },
+                                image_prompt: { type: SchemaType.STRING, description: "Cinematic visual prompt." },
                                 comment_cta: { type: SchemaType.STRING, description: "CTA comment string." }
                             }, required: ["script", "caption", "image_prompt", "comment_cta"]
                         }
                     }
                 });
-                const aiPrompt = `You are 'Dr. Nadania AI', an elite Wellness Guide. Topic: ${selectedTopic}. TASK: Write script, caption, image_prompt, comment_cta. Protect Meta compliance: NO "medical biological age", NO diagnoses. Use safer phrases like "wellness baseline". JSON only.`;
+
+                let aiPrompt = "";
+                if (provider === 'gemini-1.5-flash-full') {
+                    const ctaStyles = ["SOFT_SELL: Drop keyword 'CELL'", "EDUCATIONAL: Comment 'SCORE'", "ACTION_DIRECT: Comment 'REPORT'"];
+                    const hookCategories = ["CURIOSITY", "MYTH_BUSTING", "FUTURE_TREND", "SURPRISING_SCIENCE", "PREMIUM_INSIGHT"];
+                    aiPrompt = `You are 'Dr. Nadania AI', an elite Wellness Guide. Topic: ${selectedTopic}. Context: ${new Date().toLocaleDateString('en-US')}. TASK: Write script, caption, image_prompt, comment_cta. Protect Meta compliance: NO "medical biological age", NO diagnoses. Use safer phrases like "wellness baseline". Use hook: ${hookCategories[Math.floor(Math.random() * hookCategories.length)]}. Use CTA: ${ctaStyles[Math.floor(Math.random() * ctaStyles.length)]}. JSON only.`;
+                } else if (provider === 'gemini-1.5-flash-simplified') {
+                    aiPrompt = `Topic: ${selectedTopic}. Write a brief 20-second educational wellness script, a short Facebook caption, a safe glowing particles image prompt, and a comment containing the assessment link https://bit.ly/nadaniawellness. Make tone calm. Return JSON.`;
+                } else if (provider === 'gemini-1.5-flash-minimal') {
+                    aiPrompt = `Summarize this topic into 3 sentences: ${selectedTopic}. Format it as JSON containing keys: script, caption, image_prompt, comment_cta. Keep it extremely safe, general wellness advice.`;
+                }
+
                 const completion = await model.generateContent(aiPrompt);
                 return JSON.parse(completion.response.text());
-            } else if (provider === 'aimlapi-gpt-4o') {
-                if (!process.env.AIMLAPI_KEY) throw new Error("No AIMLAPI Key for Fallback");
-                const res = await axios.post('https://api.aimlapi.com/v1/chat/completions', {
-                    model: "gpt-4o",
-                    messages: [{ role: "user", content: `Write JSON for Topic: ${selectedTopic}. Keys: script, caption, image_prompt, comment_cta. Keep it safe and premium wellness focused.`}]
-                }, { headers: { 'Authorization': `Bearer ${process.env.AIMLAPI_KEY}` } });
-                return JSON.parse(res.data.choices[0].message.content.match(/\{[\s\S]*\}/)[0]);
             }
         });
 
@@ -283,11 +288,6 @@ async function main() {
                 const googleTTS = require('google-tts-api');
                 const audioBase64 = await googleTTS.getAudioBase64(aiResponse.script.slice(0, 300), { lang: 'en', slow: false });
                 fs.writeFileSync(audioPath, Buffer.from(audioBase64, 'base64'));
-            } else if (provider === 'elevenlabs') {
-                const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
-                if (!ELEVENLABS_API_KEY) throw new Error("Missing ElevenLabs Key");
-                const res = await axios.post(`https://api.elevenlabs.io/v1/text-to-speech/EXAVITQu4vr4xnSDxMaL`, { text: aiResponse.script.slice(0, 300) }, { headers: { 'xi-api-key': ELEVENLABS_API_KEY }, responseType: 'arraybuffer' });
-                fs.writeFileSync(audioPath, res.data);
             }
         });
 
@@ -297,12 +297,6 @@ async function main() {
                 const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(aiResponse.image_prompt)}?width=1080&height=1920&nologo=true`;
                 const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
                 fs.writeFileSync(imgPath, Buffer.from(imageResponse.data));
-                return "loaded";
-            } else if (provider === 'aimlapi-dall-e') {
-                if (!process.env.AIMLAPI_KEY) throw new Error("No AIMLAPI Key for DALL-E Fallback");
-                const res = await axios.post('https://api.aimlapi.com/images/generations', { model: "dall-e-3", prompt: aiResponse.image_prompt, size: "1024x1024" }, { headers: { 'Authorization': `Bearer ${process.env.AIMLAPI_KEY}` } });
-                const imgBuffer = await axios.get(res.data.data[0].url, { responseType: 'arraybuffer' });
-                fs.writeFileSync(imgPath, imgBuffer.data);
                 return "loaded";
             }
         });
