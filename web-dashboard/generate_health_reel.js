@@ -305,9 +305,9 @@ async function main() {
                 if (provider === 'gemini-2.5-flash-full') {
                     const ctaStyles = ["SOFT_SELL: Drop keyword 'CELL'", "EDUCATIONAL: Comment 'SCORE'", "ACTION_DIRECT: Comment 'REPORT'"];
                     const hookCategories = ["CURIOSITY", "MYTH_BUSTING", "FUTURE_TREND", "SURPRISING_SCIENCE", "PREMIUM_INSIGHT"];
-                    aiPrompt = `You are 'Dr. Nadania AI', an elite Wellness Guide. Topic: ${selectedTopic}. Context: ${new Date().toLocaleDateString('en-US')}. TASK: Write script, caption, image_prompt, comment_cta. Protect Meta compliance: NO "medical biological age", NO diagnoses. Use safer phrases like "wellness baseline". Use hook: ${hookCategories[Math.floor(Math.random() * hookCategories.length)]}. Use CTA: ${ctaStyles[Math.floor(Math.random() * ctaStyles.length)]}. JSON only.`;
+                    aiPrompt = `You are 'Dr. Nadania AI', an elite Wellness Guide. Topic: ${selectedTopic}. Context: ${new Date().toLocaleDateString('en-US')}. TASK: Write script, caption, image_prompt, comment_cta. Protect Meta compliance: NO "medical biological age", NO diagnoses. Use safer phrases like "wellness baseline". Use hook: ${hookCategories[Math.floor(Math.random() * hookCategories.length)]}. Use CTA: ${ctaStyles[Math.floor(Math.random() * ctaStyles.length)]}. Ensure comment_cta contains the link https://bit.ly/nadaniawellness. Keep script under 300 chars. JSON only.`;
                 } else if (provider === 'gemini-2.5-flash-simplified') {
-                    aiPrompt = `Topic: ${selectedTopic}. Write a brief 20-second educational wellness script, a short Facebook caption, a safe glowing particles image prompt, and a comment containing the assessment link https://bit.ly/nadaniawellness. Make tone calm. Return JSON.`;
+                    aiPrompt = `Topic: ${selectedTopic}. Write a brief 300-character educational wellness script, a short Facebook caption, a safe glowing particles image_prompt, and a comment_cta containing the assessment link https://bit.ly/nadaniawellness. Make tone calm. Return ONLY perfectly valid JSON with keys: script, caption, image_prompt, comment_cta.`;
                 } else if (provider === 'gemini-2.5-flash-minimal') {
                     aiPrompt = `You are 'Dr. Nadania AI', a premium wellness brand. Topic: ${selectedTopic}. Return ONLY perfectly valid JSON with these EXACT keys: {"script": "3-sentence safe wellness script.", "caption": "short Facebook summary.", "image_prompt": "calming visual prompt", "comment_cta": "🌱 Start your health awareness check-in here: https://bit.ly/nadaniawellness"}. No markdown, no extra text.`;
                 }
@@ -366,8 +366,9 @@ async function main() {
         await executeSelfHealingStep('Audio TTS', 'audio', context, async (provider) => {
             if (provider === 'google-tts') {
                 const googleTTS = require('google-tts-api');
-                const audioBase64 = await googleTTS.getAudioBase64(aiResponse.script.slice(0, 300), { lang: 'en', slow: false });
-                fs.writeFileSync(audioPath, Buffer.from(audioBase64, 'base64'));
+                const results = await googleTTS.getAllAudioBase64(aiResponse.script.slice(0, 800), { lang: 'en', slow: false, splitPunct: ',.?' });
+                const base64Buffers = results.map(r => Buffer.from(r.base64, 'base64'));
+                fs.writeFileSync(audioPath, Buffer.concat(base64Buffers));
             }
         });
 
