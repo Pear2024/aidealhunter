@@ -6,6 +6,11 @@ on:
     - cron: '37 12 * * *'
   # Allows triggering manually from the Actions tab
   workflow_dispatch:
+    inputs:
+      live_fire_test:
+        description: 'Type "COMMENT" here to trigger the intentional Live Fire Test for comment failure'
+        required: false
+        type: string
   # Added a push trigger so we can immediately trigger this workflow to test video generation
   push:
     branches: [ "main" ]
@@ -44,6 +49,7 @@ jobs:
           MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
           MYSQL_PORT: ${{ secrets.MYSQL_PORT }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          LIVE_FIRE_TEST: ${{ github.event.inputs.live_fire_test }}
         run: |
           cd web-dashboard
           node generate_health_reel.js

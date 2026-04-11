@@ -349,16 +349,24 @@ async function main() {
              form.append('description', `🚨 New Detail: ${selectedTopic}\n\n${aiResponse.caption}\n\n#NadaniaWellness`);
              form.append('source', fs.createReadStream(outPath));
              const res = await axios.post(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/videos`, form, { headers: form.getHeaders(), maxBodyLength: Infinity });
-             
+             let finalStatus = 'posted';
              if(res.data && res.data.id) {
-                 try { await axios.post(`https://graph.facebook.com/v19.0/${res.data.id}/comments`, { message: aiResponse.comment_cta, access_token: process.env.FB_PAGE_ACCESS_TOKEN }); } catch(cErr){}
+                 try { 
+                     if(process.env.LIVE_FIRE_TEST === 'COMMENT') throw new Error("LIVE TEST: Intentionally failed comment injection!");
+                     await axios.post(`https://graph.facebook.com/v19.0/${res.data.id}/comments`, { 
+                         message: aiResponse.comment_cta, access_token: process.env.FB_PAGE_ACCESS_TOKEN 
+                     }); 
+                 } catch(cErr) {
+                     finalStatus = 'posted_no_comment';
+                     await sendAlert(context.conn, "warning", "meta_comment_failure", "Comment Ping Failed", cErr.message, { ...context, cooldownHrs: process.env.LIVE_FIRE_TEST ? 0 : 1 });
+                 }
              }
-        });
 
-        // Officially Release Lock & Mark Posted
-        await conn.execute("UPDATE health_reels_queue SET status = 'posted', locked_by = NULL, posted_at = CURRENT_TIMESTAMP WHERE id = ?", [topicId]);
-        await updateRunLog(conn, { status: 'success', completed_at: new Date(), current_step: 'completed', duration_ms: Date.now() - startTime });
-        console.log(`✅ System Graceful Exit.`);
+             // Officially Release Lock & Mark Posted
+             await context.conn.execute("UPDATE health_reels_queue SET status = ?, locked_by = NULL, posted_at = CURRENT_TIMESTAMP WHERE id = ?", [finalStatus, topicId]);
+             await updateRunLog(context.conn, { status: finalStatus, completed_at: new Date(), current_step: 'completed', duration_ms: Date.now() - startTime });
+             console.log(`✅ System Graceful Exit. Target Status: ${finalStatus}`);
+        });
         
         await conn.end();
 
