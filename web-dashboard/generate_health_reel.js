@@ -220,6 +220,8 @@ async function main() {
             "ALTER TABLE health_reels_queue ADD COLUMN recovery_attempts INT DEFAULT 0",
             // Ensure Completion tracking exists
             "ALTER TABLE health_reels_queue ADD COLUMN posted_at TIMESTAMP NULL",
+            // Expand legacy column sizes to support modern idempotency flags (e.g. 'processing_lock')
+            "ALTER TABLE health_reels_queue MODIFY COLUMN status VARCHAR(50) DEFAULT 'pending'",
             // Indexes for optimizing the lock query & orphan cleanup
             "ALTER TABLE health_reels_queue ADD INDEX idx_status_created (status, created_at)",
             "ALTER TABLE health_reels_queue ADD INDEX idx_locked (locked_by, updated_at)"
