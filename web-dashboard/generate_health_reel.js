@@ -210,11 +210,16 @@ async function main() {
         // Ensure Schema Supports Locking (Idempotency)
         await conn.execute("CREATE TABLE IF NOT EXISTS health_reels_queue (id INT AUTO_INCREMENT PRIMARY KEY, topic VARCHAR(255) UNIQUE, status VARCHAR(50) DEFAULT 'pending', locked_by VARCHAR(100), recovery_attempts INT DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP, posted_at TIMESTAMP NULL)");
         
-        // 🔄 Safe Auto-Migration: Inject missing updated_at column into legacy schema
-        try {
-            await conn.execute("ALTER TABLE health_reels_queue ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP");
-        } catch(e) {
-            if (e.code !== 'ER_DUP_FIELDNAME') throw e;
+        // 🔄 Safe Auto-Migration: Inject ALL missing schema columns gracefully into legacy tables
+        const colMigrations = [
+            "ALTER TABLE health_reels_queue ADD COLUMN locked_by VARCHAR(100)",
+            "ALTER TABLE health_reels_queue ADD COLUMN recovery_attempts INT DEFAULT 0",
+            "ALTER TABLE health_reels_queue ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+            "ALTER TABLE health_reels_queue ADD COLUMN posted_at TIMESTAMP NULL"
+        ];
+        for (const migration of colMigrations) {
+            try { await conn.execute(migration); } 
+            catch(e) { if (e.code !== 'ER_DUP_FIELDNAME') throw e; }
         }
 
         await conn.execute(`CREATE TABLE IF NOT EXISTS system_run_logs (run_id VARCHAR(50) PRIMARY KEY, started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, completed_at TIMESTAMP NULL, status VARCHAR(20), current_step VARCHAR(50), retry_count INT DEFAULT 0, provider_used VARCHAR(50), selected_topic VARCHAR(255), error_summary TEXT, duration_ms INT)`);
