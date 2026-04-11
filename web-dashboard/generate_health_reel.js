@@ -101,28 +101,39 @@ async function main() {
         
         // 1. Dynamic CTA Rotation & Viral Hook Engine
         const ctaStyles = [
-            "SOFT_SELL: Empathy driven. Ask them to drop a keyword 'CELL' to get their free cellular baseline sent via DM.",
-            "EDUCATIONAL: Curiosity/Quiz driven. Ask them to comment 'SCORE' to discover their true medical biological age.",
-            "ACTION_DIRECT: Value driven. Tell them to comment 'REPORT' immediately to access the clinical assessment."
+            "SOFT_SELL: Empathy driven. Ask them to drop a keyword 'CELL' to get their free cellular wellness snapshot sent via DM.",
+            "EDUCATIONAL: Curiosity driven. Ask them to comment 'SCORE' to discover their personalized wellness insights.",
+            "ACTION_DIRECT: Value driven. Tell them to comment 'REPORT' immediately to access their health awareness check-in."
         ];
         const selectedCta = ctaStyles[Math.floor(Math.random() * ctaStyles.length)];
         
+        const hookCategories = [
+            "CURIOSITY: e.g., 'There is a hidden reason why...' (Spark intense intrigue without fearmongering)",
+            "MYTH_BUSTING: e.g., 'You've been told [X] is normal aging, but...' (Challenge commonplace beliefs gently)",
+            "FUTURE_TREND: e.g., 'The next decade of wellness isn't about a diet, it's about...' (Aspirational and visionary)",
+            "SURPRISING_SCIENCE: e.g., 'Researchers just unlocked a new way to look at...' (Fascinating, data-backed realization)",
+            "PREMIUM_INSIGHT: e.g., 'Top wellness pioneers are quietly shifting their focus entirely to...' (Exclusive, high-end authority)"
+        ];
+        const selectedHook = hookCategories[Math.floor(Math.random() * hookCategories.length)];
+        
         const aiPrompt = `
-You are 'Dr. Nadania AI', an elite Medical & Longevity Consultant. 
+You are 'Dr. Nadania AI', an elite Longevity & Wellness Guide. 
 Topic: ${selectedTopic}
 Date Context: ${todayStr} (If a major holiday, weave it in subtly to remain topical).
 
 TASK:
 Write a viral 20-30 second educational Reels script and an engaging social media caption.
 
-BRAND VOICE & COMPLIANCE (CRITICAL):
-- Tone: Premium, calm, modern, trustworthy. Oxford-level intellect simplified for the public. DO NOT sound salesy or cheap.
-- COMPLIANCE: NO risky medical claims. Do NOT diagnose, guarantee outcomes, or use cheap fear-based manipulation. Focus purely on sharing established cellular science and AI tech.
+BRAND VOICE & COMPLIANCE (CRITICAL FOR META GUIDELINES):
+- Tone: Premium, calm, modern, trustworthy. High-end wellness consultant simplified for the public. DO NOT sound salesy or cheap.
+- COMPLIANCE: NEVER use terms like "medical biological age", "clinical assessment", "cure", or "actual cellular needs". 
+- SAFER LANGUAGE: Use phrases like "wellness baseline", "personalized wellness insights", "cellular wellness snapshot", "wellness report", or "health awareness check-in".
+- DO NOT diagnose, guarantee outcomes, or use cheap fear-based manipulation. Focus purely on sharing established cellular wellness and proactive science.
 
 STRUCTURE (The H.I.S.T Model):
-1. H (Hook): 0-3 seconds. Start with a pattern-interrupt or contrarian statement (e.g. "You think [X] is normal aging, but..."). NEVER start with "Hello" or "Today's news". Must stop the scroll.
-2. I (Invalidate): Briefly explain why common knowledge is slightly wrong.
-3. S (Science): Explain the medical breakthrough simply.
+1. H (Hook): 0-3 seconds. Start with this specific hook style: [${selectedHook}]. NEVER start with "Hello" or "Today's news". Must stop the scroll immediately.
+2. I (Invalidate/Intrigue): Briefly reframe why common knowledge about this topic is slightly outdated.
+3. S (Science): Explain the wellness breakthrough simply and elegantly.
 4. T (Transition): Seamlessly transition to the CTA without being jarring.
 
 CTA REQUIREMENT & COMMENT:
@@ -186,7 +197,7 @@ Do NOT put the link in the caption. Instead, generate 'comment_cta' which will b
             if (!pageId || !token) throw new Error("Missing FB API keys!");
 
             // Use the dynamically generated caption natively (avoiding hardcoded spam strings)
-            const fullCaption = `🚨 New Discovery: ${selectedTopic}\n\n${aiResponse.caption}\n\n#NadaniaWellness #CellularHealth #Biohacking`;
+            const fullCaption = `🚨 New Insight: ${selectedTopic}\n\n${aiResponse.caption}\n\n#NadaniaWellness #CellularHealth #Biohacking`;
             
             const form = new FormData();
             form.append('access_token', token);
@@ -201,7 +212,7 @@ Do NOT put the link in the caption. Instead, generate 'comment_cta' which will b
             if (response.data && response.data.id) {
                     try {
                         await axios.post(`https://graph.facebook.com/v19.0/${response.data.id}/comments`, {
-                            message: aiResponse.comment_cta || `🩺 Stop guessing. Let clinical AI analyze your cellular needs for FREE: https://bit.ly/nadaniawellness`,
+                            message: aiResponse.comment_cta || `🌱 Discover your personalized cellular wellness snapshot for FREE. Start your health awareness check-in here: https://bit.ly/nadaniawellness`,
                             access_token: token
                         });
                         console.log(`✅ Assessment CTA Comment Injected Successfully!`);
