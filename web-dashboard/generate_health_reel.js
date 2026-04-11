@@ -114,26 +114,21 @@ async function main() {
         fs.writeFileSync(audioPath, Buffer.from(audioBase64, 'base64'));
 
         // Background Image Generation 
-        console.log("🎨 Generating Cinematic AI Background via Gemini (Imagen 3)...");
+        console.log("🎨 Generating Cinematic AI Background...");
 
         const imgPath = path.join(tempDir, 'health_bg.png');
         try {
-            const imagenUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-001:predict?key=${process.env.GEMINI_API_KEY}`;
-            const imageResponse = await axios.post(imagenUrl, {
-                instances: [{ prompt: aiResponse.image_prompt }],
-                parameters: { sampleCount: 1, aspectRatio: "9:16" }
-            }, { headers: { 'Content-Type': 'application/json' } });
-
-            if (!imageResponse.data.predictions || !imageResponse.data.predictions[0]) {
-                throw new Error("Imagen API returned empty predictions");
-            }
-
-            const b64 = imageResponse.data.predictions[0].bytesBase64Encoded;
-            fs.writeFileSync(imgPath, Buffer.from(b64, 'base64'));
-            console.log("🎞️ Background Image Generated Successfully via Gemini (Imagen 3)!");
+            // Using Pollinations Image AI (Free) so it won't crash GitHub Action
+            const promptEncoded = encodeURIComponent(aiResponse.image_prompt);
+            const imageUrl = `https://image.pollinations.ai/prompt/${promptEncoded}?width=1080&height=1920&nologo=true`;
+            const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+            
+            fs.writeFileSync(imgPath, Buffer.from(imageResponse.data));
+            console.log("🎞️ Background Image Generated Successfully!");
         } catch (imgErr) {
-            console.error("\n❌ Image Gen Failed:", imgErr.response ? JSON.stringify(imgErr.response.data) : imgErr.message);
-            throw new Error("Image generation failed on Imagen. Aborting reel creation to prevent blank/green screen uploads.");
+            console.error("\n❌ Image Gen Failed but continuing without background:", imgErr.message);
+            // DO NOT THROW. Use a fallback blank image to ensure the FB post goes through!!
+            execSync(`ffmpeg -f lavfi -i color=c=black:s=1080x1920 -vframes 1 ${imgPath}`, {stdio: 'ignore'});
         }
 
         // FFMPEG Assembly (Without Hardcoded Subtitles)
