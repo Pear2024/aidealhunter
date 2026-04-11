@@ -298,6 +298,8 @@ async function main() {
                 // Pure compliant initialization of standard endpoints globally
                 const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY, apiVersion: 'v1' });
                 const actualModelString = "gemini-2.5-flash";
+                context.actualModelString = actualModelString;
+                context.apiVersion = 'v1';
 
                 let aiPrompt = "";
                 if (provider === 'gemini-2.5-flash-full') {
@@ -393,11 +395,13 @@ async function main() {
 
         // 🚀 PHASE 5: PUBLISH & IDEMPOTENCY FINALIZE
         console.log(`\n📋 Pre-Publish Manifest:
-- Provider Used:   ${scriptProviderUsed}
-- Fallback Level:  ${scriptProviderUsed.includes('full') ? 'Primary' : scriptProviderUsed.includes('simplified') ? 'Level 1' : 'Level 2 (Minimal)'}
-- Safe Mode:       ${safeModeActivated ? "ACTIVE 🛡️" : "Inactive"}
-- Visual Mode:     ${imgDecision === "loaded" ? "AI Generated Mode" : "Branded Fallback Overlay"}
-- Validation:      PASSED ✅\n`);
+- Requested Policy: ${scriptProviderUsed}
+- Actual Model:     ${context.actualModelString || 'UNKNOWN'}
+- API Endpoint:     ${context.apiVersion || 'UNKNOWN'}
+- Fallback Level:   ${scriptProviderUsed.includes('full') ? 'Primary' : scriptProviderUsed.includes('simplified') ? 'Level 1' : 'Level 2 (Minimal)'}
+- Safe Mode:        ${safeModeActivated ? "ACTIVE 🛡️" : "Inactive"}
+- Visual Mode:      ${imgDecision === "loaded" ? "AI Generated Mode" : "Branded Fallback Overlay"}
+- Validation:       PASSED ✅\n`);
 
         await executeSelfHealingStep('Graph Publishing', 'publish', context, async () => {
              const form = new FormData();
