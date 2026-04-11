@@ -2,6 +2,7 @@ require('dotenv').config({ path: '.env.local' });
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const crypto = require('crypto');
 const axios = require('axios');
 const FormData = require('form-data');
 const mysql = require('mysql2/promise');
@@ -9,101 +10,126 @@ const { GoogleGenerativeAI, SchemaType } = require('@google/generative-ai');
 const ffmpeg = require('fluent-ffmpeg');
 
 // ============================================
-// 🚨 ALERT SYSTEM (PRODUCTION-GRADE)
+// 🚨 ALERT SYSTEM & OBSERVABILITY (PRODUCTION VARIANTS)
 // ============================================
 const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
+const RUN_ID = crypto.randomUUID ? crypto.randomUUID() : crypto.randomBytes(16).toString("hex");
 
-async function sendAlert(stepName, errorSummary, context = {}) {
-    if (!DISCORD_WEBHOOK_URL) {
-        console.warn(`[WARNING] Webhook URL missing. Alert skipped: ${stepName} - ${errorSummary}`);
-        return;
+// Helper: Wrap promises with an explicit timeout mechanism
+function withTimeout(promise, ms, errorMsg) {
+    let timeoutId;
+    const timeoutPromise = new Promise((_, reject) => {
+        timeoutId = setTimeout(() => reject(new Error(`Timeout: ${errorMsg} exceeded ${ms}ms`)), ms);
+    });
+    return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeoutId));
+}
+
+// Helper: Exponential Backoff with Jitter (5s, 15s, 45s...)
+async function expBackoffDelay(attempt) {
+    const base = 5000;
+    const factor = Math.pow(3, attempt - 1);
+    const delay = (base * factor) + Math.floor(Math.random() * 1000);
+    console.log(`⏳ Exponential backoff retry triggered. Waiting ${Math.round(delay/1000)}s...`);
+    await new Promise(r => setTimeout(r, delay));
+}
+
+// Core Alert Dispatcher with Deduplication & Cooldown logic
+async function sendAlert(conn, severity, alertKey, stepName, errorSummary, context = {}) {
+    if (conn && alertKey) {
+        try {
+            await conn.execute(`CREATE TABLE IF NOT EXISTS system_alerts_state (alert_key VARCHAR(100) PRIMARY KEY, last_alert_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, resolved BOOLEAN DEFAULT FALSE)`);
+            const [rows] = await conn.execute("SELECT last_alert_at, resolved FROM system_alerts_state WHERE alert_key = ?", [alertKey]);
+            if (rows.length > 0 && !rows[0].resolved) {
+                const hoursSince = (Date.now() - new Date(rows[0].last_alert_at).getTime()) / 3600000;
+                const cooldownHrs = context.cooldownHrs || 4; 
+                if (hoursSince < cooldownHrs) {
+                    console.log(`🔇 Alert suppressed due to deduplication cooldown: ${alertKey}`);
+                    return; 
+                }
+            }
+            await conn.execute("INSERT INTO system_alerts_state (alert_key, last_alert_at, resolved) VALUES (?, CURRENT_TIMESTAMP, FALSE) ON DUPLICATE KEY UPDATE last_alert_at = CURRENT_TIMESTAMP, resolved = FALSE", [alertKey]);
+        } catch(e) { console.error("Alert DB State Error:", e.message); }
     }
-    
-    const envName = process.env.NODE_ENV || 'Production';
-    const workflow = process.env.GITHUB_WORKFLOW || 'Medical Reel Engine';
-    const runId = process.env.GITHUB_RUN_ID || 'Local Run';
+
+    if (!DISCORD_WEBHOOK_URL) return;
+
+    let color = 16711680; // Critical (Red)
+    let icon = "🚨";
+    if (severity === "warning") { color = 16776960; icon = "⚠️"; } // Yellow
+    if (severity === "recovery") { color = 65280; icon = "✅"; }    // Green
 
     const embed = {
-        title: `🚨 System Alert: ${stepName} Failure`,
-        color: 16711680, // Red
+        title: `${icon} System ${severity.toUpperCase()}: ${stepName}`,
+        color: color,
         description: `**Summary:** ${errorSummary}`,
         fields: [
-            { name: "Environment", value: envName, inline: true },
-            { name: "Workflow", value: workflow, inline: true },
-            { name: "Job/Run ID", value: runId, inline: true },
+            { name: "Environment", value: process.env.NODE_ENV || 'Production', inline: true },
+            { name: "Job/Run ID", value: RUN_ID, inline: true },
             { name: "Provider", value: context.provider || "N/A", inline: true },
             { name: "Retry Attempt", value: String(context.retryCount || 0), inline: true },
             { name: "Topic", value: context.topic ? context.topic.substring(0, 50) : "N/A", inline: false },
-            { name: "Last Post", value: context.lastPost || "Unknown", inline: false }
         ],
         timestamp: new Date().toISOString()
     };
+    if (context.lastPost) embed.fields.push({ name: "Last Successful Post", value: context.lastPost, inline: false });
 
+    try { await axios.post(DISCORD_WEBHOOK_URL, { embeds: [embed] }, { timeout: 10000 }); } catch (e) { console.error("Critical: Discord Webhook Failed!"); }
+}
+
+async function resolveAlert(conn, alertKey, message, context = {}) {
+    if (!conn) return;
     try {
-        await axios.post(DISCORD_WEBHOOK_URL, { embeds: [embed] });
-    } catch (e) {
-        console.error("Critical: Failed to deliver Discord webhook!", e.message);
-    }
+        const [rows] = await conn.execute("SELECT resolved FROM system_alerts_state WHERE alert_key = ?", [alertKey]);
+        if (rows.length > 0 && !rows[0].resolved) {
+            await conn.execute("UPDATE system_alerts_state SET resolved = TRUE WHERE alert_key = ?", [alertKey]);
+            await sendAlert(conn, "recovery", null, `RECOVERED: ${alertKey}`, message, context);
+        }
+    } catch(e) { console.error("Resolve Alert DB Error:", e.message); }
+}
+
+// Update runtime logs state centrally
+async function updateRunLog(conn, updates) {
+    if(!conn) return;
+    try {
+        const setQuery = Object.keys(updates).map(k => `${k} = ?`).join(", ");
+        const values = Object.values(updates);
+        values.push(RUN_ID);
+        await conn.execute(`UPDATE system_run_logs SET ${setQuery} WHERE run_id = ?`, values);
+    } catch(e) {}
 }
 
 async function runDeadManChecks(conn, context) {
     try {
-        // Ensure tracking table exists
-        await conn.execute("CREATE TABLE IF NOT EXISTS system_health_logs (id INT AUTO_INCREMENT PRIMARY KEY, status VARCHAR(20), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
-
-        // 1. 24-Hour Silence Check
+        // 1. Check 24-Hour Silence
         const [lastPostRows] = await conn.execute("SELECT posted_at FROM health_reels_queue WHERE status = 'posted' ORDER BY posted_at DESC LIMIT 1");
         if (lastPostRows.length > 0 && lastPostRows[0].posted_at) {
             const lastPost = new Date(lastPostRows[0].posted_at);
             context.lastPost = lastPost.toISOString();
-            const hoursSince = (Date.now() - lastPost.getTime()) / (1000 * 60 * 60);
-            if (hoursSince > 24) {
-                await sendAlert("Dead-Man: 24h Silence", `No successful posts in the last ${Math.round(hoursSince)} hours. The pipeline is failing silently!`, context);
+            if ((Date.now() - lastPost.getTime()) / 3600000 > 24) {
+                await sendAlert(conn, "critical", "deadman_silence", "Dead-Man 24h Silence", "No successful posts in over 24 hours.", { ...context, cooldownHrs: 12 });
+            } else {
+                await resolveAlert(conn, "deadman_silence", "Pipeline successfully posted within the last 24h cycle.", context);
             }
         }
 
         // 2. Queue Depletion Check
         const [pendingRows] = await conn.execute("SELECT COUNT(*) as c FROM health_reels_queue WHERE status = 'pending'");
         if (pendingRows[0].c === 0) {
-            await sendAlert("Dead-Man: Empty Queue", "The queue is completely empty. RSS ingestion failed or exhausted all topics.", context);
+            await sendAlert(conn, "warning", "deadman_empty_queue", "Queue Depletion", "Content queue exactly 0. RSS failed to fetch new topics.", { ...context, cooldownHrs: 8 });
+        } else {
+            await resolveAlert(conn, "deadman_empty_queue", "Queue has been replenished natively.", context);
         }
 
-        // 3. Consecutive Failures Check
-        const [healthRows] = await conn.execute("SELECT status FROM system_health_logs ORDER BY id DESC LIMIT 2");
-        if (healthRows.length === 2 && healthRows[0].status === 'failure' && healthRows[1].status === 'failure') {
-            await sendAlert("Dead-Man: Cascade Failure", "The last 2 consecutive runs have failed permanently.", context);
+        // 3. Consecutive Cascade Failures
+        const [healthRows] = await conn.execute("SELECT status FROM system_run_logs WHERE run_id != ? ORDER BY started_at DESC LIMIT 2", [RUN_ID]);
+        if (healthRows.length === 2 && healthRows[0].status === 'failed' && healthRows[1].status === 'failed') {
+            await sendAlert(conn, "critical", "deadman_cascade", "Cascade Failure", "Last 2 consecutive runs failed permanently.", { ...context, cooldownHrs: 4 });
+        } else if (healthRows.length > 0 && healthRows[0].status === 'success') {
+            await resolveAlert(conn, "deadman_cascade", "Cascade failure broken. Run succeeded.", context);
         }
     } catch (e) {
         context.provider = 'MySQL';
-        await sendAlert("Dead-Man Checks Failed", `Failed to run health checks: ${e.message}`, context);
-    }
-}
-
-async function markHealth(conn, status) {
-    try { await conn.execute("INSERT INTO system_health_logs (status) VALUES (?)", [status]); } catch (e) {}
-}
-
-async function fetchHealthNews(context) {
-    try {
-        const topics = [ "Medical AI", "Cellular Nutrition", "Anti-aging Science", "Gut-brain axis", "Precision medicine" ];
-        const randomQuery = encodeURIComponent(topics[Math.floor(Math.random() * topics.length)]);
-        const url = `https://news.google.com/rss/search?q=${randomQuery}&hl=en-US&gl=US&ceid=US:en`;
-        
-        const response = await fetch(url, { cache: 'no-store' });
-        const xmlText = await response.text();
-        const itemMatches = xmlText.match(/<item>([\s\S]*?)<\/item>/g) || [];
-        let items = [];
-        
-        for (let i = 0; i < Math.min(itemMatches.length, 20); i++) {
-            const itemXml = itemMatches[i];
-            const titleMatch = itemXml.match(/<title>([^<]+)<\/title>/);
-            if (titleMatch) items.push(titleMatch[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&'));
-        }
-        return items;
-    } catch(e) {
-        context.provider = "Google News RSS";
-        await sendAlert("RSS Fetch Failure", `Could not fetch health news: ${e.message}`, context);
-        throw e;
+        await sendAlert(conn, "critical", "deadman_db_error", "Dead-Man Check Failure", `Error reading health state: ${e.message}`, context);
     }
 }
 
@@ -111,9 +137,10 @@ async function fetchHealthNews(context) {
 // 🎬 CORE EXECUTION FLOW
 // ============================================
 async function main() {
-    console.log("🎬 Initiating Nadania Medical AI Auto-Reels Engine running with Safety Alerts...");
-    let context = { retryCount: 0, lastPost: "Unknown", topic: null, provider: "System" };
+    console.log(`🎬 Initiating Nadania Medical AI Auto-Reels System | Run ID: ${RUN_ID}`);
+    const context = { retryCount: 0, lastPost: "Unknown", topic: null, provider: "System" };
     let conn;
+    const startTime = Date.now();
 
     try {
         context.provider = "MySQL";
@@ -122,170 +149,180 @@ async function main() {
             database: process.env.MYSQL_DATABASE, port: parseInt(process.env.MYSQL_PORT || '3306'), ssl: { rejectUnauthorized: false }
         });
 
-        await runDeadManChecks(conn, context);
+        await conn.execute(`CREATE TABLE IF NOT EXISTS system_run_logs ( run_id VARCHAR(50) PRIMARY KEY, started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, completed_at TIMESTAMP NULL, status VARCHAR(20), current_step VARCHAR(50), retry_count INT DEFAULT 0, provider_used VARCHAR(50), selected_topic VARCHAR(255), error_summary TEXT, duration_ms INT )`);
+        await conn.execute("INSERT INTO system_run_logs (run_id, status, current_step) VALUES (?, 'running', 'init')", [RUN_ID]);
 
-        // Fetch DB Queue
+        await runDeadManChecks(conn, context);
+        await updateRunLog(conn, { current_step: 'ingestion' });
+
+        // Retrieve / Fetch Topic
         const [pendingRows] = await conn.execute("SELECT id, topic FROM health_reels_queue WHERE status = 'pending' ORDER BY created_at ASC LIMIT 1");
         let selectedTopic = ""; let topicId = null;
 
         if (pendingRows.length > 0) {
             selectedTopic = pendingRows[0].topic; topicId = pendingRows[0].id;
         } else {
-            const newsItems = await fetchHealthNews(context);
-            if (newsItems.length === 0) throw new Error("No news found.");
-            for (const item of newsItems) await conn.execute("INSERT IGNORE INTO health_reels_queue (topic, status) VALUES (?, 'pending')", [item]);
+            const controller = new AbortController();
+            setTimeout(() => controller.abort(), 15000); // 15s Explicit RSS Timeout
+
+            const topics = [ "Medical AI", "Cellular Nutrition", "Anti-aging Science", "Precision medicine" ];
+            const randomQuery = encodeURIComponent(topics[Math.floor(Math.random() * topics.length)]);
+            const response = await fetch(`https://news.google.com/rss/search?q=${randomQuery}&hl=en-US&gl=US&ceid=US:en`, { signal: controller.signal, cache: 'no-store' });
+            
+            const xmlText = await response.text();
+            const itemMatches = xmlText.match(/<item>([\s\S]*?)<\/item>/g) || [];
+            if (itemMatches.length === 0) throw new Error("No news found.");
+            
+            for (let i = 0; i < Math.min(itemMatches.length, 20); i++) {
+                const titleMatch = itemMatches[i].match(/<title>([^<]+)<\/title>/);
+                if (titleMatch) await conn.execute("INSERT IGNORE INTO health_reels_queue (topic, status) VALUES (?, 'pending')", [titleMatch[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&')]);
+            }
             
             const [newPendingRows] = await conn.execute("SELECT id, topic FROM health_reels_queue WHERE status = 'pending' ORDER BY created_at ASC LIMIT 1");
-            if (newPendingRows.length === 0) throw new Error("Database queue replenishment failed.");
+            if (newPendingRows.length === 0) throw new Error("Database queue replenishment failed completely.");
             selectedTopic = newPendingRows[0].topic; topicId = newPendingRows[0].id;
         }
 
         context.topic = selectedTopic;
-        console.log(`🎯 Selected Topic: ${selectedTopic}`);
+        await updateRunLog(conn, { selected_topic: selectedTopic });
+        console.log(`🎯 Target Topic: ${selectedTopic}`);
 
-        // Phase 1: AI Generation Retry Loop
+        // 🧠 Phase 1: Gemini AI Text Generation
+        await updateRunLog(conn, { current_step: 'ai_script_generation' });
+        context.provider = "Google Gemini 1.5 Flash";
         let aiResponse = null;
-        let generatedContent = false;
         
         for(let attempt = 1; attempt <= 3; attempt++) {
             context.retryCount = attempt;
-            context.provider = "Google Gemini 1.5 Flash";
+            await updateRunLog(conn, { retry_count: attempt });
             try {
-                if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY missing!");
-                const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-                const model = genAI.getGenerativeModel({
+                if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY Missing");
+                const model = new GoogleGenerativeAI(process.env.GEMINI_API_KEY).getGenerativeModel({
                     model: "gemini-1.5-flash",
                     generationConfig: {
                         responseMimeType: "application/json",
                         responseSchema: {
                             type: SchemaType.OBJECT,
                             properties: {
-                                script: { type: SchemaType.STRING, description: "The spoken voiceover script using the H.I.S.T framework. Must contain a 3-second extremely powerful hook. Max 30 seconds." },
-                                caption: { type: SchemaType.STRING, description: "A premium, intelligent Facebook post summarizing the science. No cheap clickbait. 3 short paragraphs. Ends with instructions to comment the keyword." },
-                                image_prompt: { type: SchemaType.STRING, description: "A highly safe, cinematic video prompt. Focus on 'Premium Futuristic Clinical' or 'High-End Wellness'. NO raw biology or gore." },
-                                comment_cta: { type: SchemaType.STRING, description: "A tailored pinned comment providing the actual assessment link (https://bit.ly/nadaniawellness) acting as the next step." }
-                            },
-                            required: ["script", "caption", "image_prompt", "comment_cta"]
+                                script: { type: SchemaType.STRING, description: "H.I.S.T voiceover script. Max 30 seconds." },
+                                caption: { type: SchemaType.STRING, description: "Premium Facebook post. 3 paragraphs." },
+                                image_prompt: { type: SchemaType.STRING, description: "Cinematic, Safe, High-End Wellness video prompt." },
+                                comment_cta: { type: SchemaType.STRING, description: "First pinned comment containing Link." }
+                            }, required: ["script", "caption", "image_prompt", "comment_cta"]
                         }
                     }
                 });
 
-                const todayStr = new Date().toLocaleDateString('en-US');
-                const ctaStyles = ["SOFT_SELL: Empathy driven. Ask them to drop a keyword 'CELL' to get their free cellular wellness snapshot sent via DM.", "EDUCATIONAL: Curiosity driven. Ask them to comment 'SCORE' to discover their personalized wellness insights.", "ACTION_DIRECT: Value driven. Tell them to comment 'REPORT' immediately to access their health awareness check-in."];
-                const selectedCta = ctaStyles[Math.floor(Math.random() * ctaStyles.length)];
-                const hookCategories = ["CURIOSITY", "MYTH_BUSTING", "FUTURE_TREND", "SURPRISING_SCIENCE", "PREMIUM_INSIGHT"];
-                const selectedHook = hookCategories[Math.floor(Math.random() * hookCategories.length)];
-                
-                const aiPrompt = `You are 'Dr. Nadania AI', an elite Longevity & Wellness Guide. Topic: ${selectedTopic}. Context: ${todayStr}.
-                TASK: Write a viral 20-30s Reels script, caption, image_prompt, and comment_cta. Protect Meta compliance: NO "medical biological age", NO diagnoses. 
-                Use safer phrases like "wellness baseline". Use hook: ${selectedHook}. Use CTA: ${selectedCta}. JSON only.`;
+                const aiPrompt = `You are 'Dr. Nadania AI', an elite Wellness Guide. Topic: ${selectedTopic}. Context: ${new Date().toLocaleDateString('en-US')}. TASK: Write script, caption, image_prompt, comment_cta. Protect Meta compliance: NO "medical biological age", NO diagnoses. Use safer phrases like "wellness baseline". JSON only.`;
 
-                const completion = await model.generateContent(aiPrompt);
+                const completion = await withTimeout(model.generateContent(aiPrompt), 30000, "Gemini Request");
                 aiResponse = JSON.parse(completion.response.text());
-                generatedContent = true;
-                break; // Break retry loop on success
+                await resolveAlert(conn, "gemini_api_failure", "Gemini AI generation restored", context);
+                break;
             } catch(geminiErr) {
                 if (attempt === 3) {
-                    await sendAlert("Gemini API Failure", `Max retries reached: ${geminiErr.message}`, context);
+                    await sendAlert(conn, "critical", "gemini_api_failure", "Gemini Exhaustion", geminiErr.message, context);
                     throw geminiErr;
                 }
-                await new Promise(r => setTimeout(r, 2000));
+                await expBackoffDelay(attempt);
             }
         }
 
-        // Phase 2: TTS
-        let cleanScript = aiResponse.script.slice(0, 300);
+        // 🎙️ Phase 2: Audio Synthesis
+        await updateRunLog(conn, { current_step: 'audio_synthesis' });
+        context.provider = "Google TTS";
         const tempDir = os.tmpdir();
         const audioPath = path.join(tempDir, 'health_reel_audio.mp3');
         const imgPath = path.join(tempDir, 'health_bg.png');
         const outPath = path.join(tempDir, 'auto_health_reel.mp4');
 
-        context.provider = "Google TTS";
         try {
             const googleTTS = require('google-tts-api');
-            const audioBase64 = await googleTTS.getAudioBase64(cleanScript, { lang: 'en', slow: false });
+            const audioBase64 = await withTimeout(googleTTS.getAudioBase64(aiResponse.script.slice(0, 300), { lang: 'en', slow: false }), 30000, "Google TTS Request");
             fs.writeFileSync(audioPath, Buffer.from(audioBase64, 'base64'));
+            await resolveAlert(conn, "tts_api_failure", "TTS Engine operating normally", context);
         } catch(ttsErr) {
-            await sendAlert("Audio Gen Failure", ttsErr.message, context);
+            await sendAlert(conn, "critical", "tts_api_failure", "TTS Generation Failed", ttsErr.message, context);
             throw ttsErr;
         }
 
-        // Phase 3: Image Generation with Fallback Alert
+        // 🎨 Phase 3: Visual Generation
+        await updateRunLog(conn, { current_step: 'visual_generation' });
         context.provider = "Pollinations.ai";
         try {
-            const promptEncoded = encodeURIComponent(aiResponse.image_prompt);
-            const imageUrl = `https://image.pollinations.ai/prompt/${promptEncoded}?width=1080&height=1920&nologo=true`;
-            const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(aiResponse.image_prompt)}?width=1080&height=1920&nologo=true`;
+            const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer', timeout: 30000 });
             fs.writeFileSync(imgPath, Buffer.from(imageResponse.data));
+            await resolveAlert(conn, "image_gen_failure", "Image Gen fully restored", context);
         } catch (imgErr) {
-            await sendAlert("Image Fallback Exhaustion", `Primary image failed, using black frame. Error: ${imgErr.message}`, context);
+            await sendAlert(conn, "warning", "image_gen_failure", "Image Fallback Engaged", `Generating black frame: ${imgErr.message}`, { ...context, cooldownHrs: 2 });
             require('child_process').execSync(`ffmpeg -f lavfi -i color=c=black:s=1080x1920 -vframes 1 ${imgPath}`, {stdio: 'ignore'});
         }
 
-        // Phase 4: FFmpeg Render
+        // ⚙️ Phase 4: FFmpeg Mixing
+        await updateRunLog(conn, { current_step: 'ffmpeg_mixing' });
         context.provider = "FFmpeg Local";
         try {
-            const audioDurationEstimate = Math.max(8, cleanScript.split(' ').length * 0.4); 
-            require('child_process').execSync(`ffmpeg -y -loop 1 -i ${imgPath} -i ${audioPath} -map 0:v -map 1:a -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -t ${audioDurationEstimate + 2} ${outPath}`, { stdio: 'pipe' });
+            const durEstimate = Math.max(8, aiResponse.script.split(' ').length * 0.4) + 2; 
+            require('child_process').execSync(`ffmpeg -y -loop 1 -i ${imgPath} -i ${audioPath} -map 0:v -map 1:a -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -t ${durEstimate} ${outPath}`, { stdio: 'pipe', timeout: 120000 });
+            await resolveAlert(conn, "ffmpeg_api_failure", "Video rendered correctly", context);
         } catch(ffmpegErr) {
-            await sendAlert("FFmpeg Render Failure", ffmpegErr.message, context);
+            await sendAlert(conn, "critical", "ffmpeg_api_failure", "FFmpeg Crash", ffmpegErr.message, context);
             throw ffmpegErr;
         }
 
-        // Phase 5: Facebook Upload & Comment Injection
-        context.provider = "Meta Graph API (Facebook)";
-        const pageId = process.env.FB_PAGE_ID;
-        const token = process.env.FB_PAGE_ACCESS_TOKEN;
-        if (!pageId || !token) throw new Error("Missing FB API keys!");
+        // 🚀 Phase 5: Publishing
+        await updateRunLog(conn, { current_step: 'facebook_publishing' });
+        context.provider = "Meta Graph API";
+        if (!process.env.FB_PAGE_ID || !process.env.FB_PAGE_ACCESS_TOKEN) throw new Error("Missing Meta Graph Credentials!");
 
-        const fullCaption = `🚨 New Insight: ${selectedTopic}\n\n${aiResponse.caption}\n\n#NadaniaWellness #CellularHealth`;
         const form = new FormData();
-        form.append('access_token', token);
-        form.append('description', fullCaption);
+        form.append('access_token', process.env.FB_PAGE_ACCESS_TOKEN);
+        form.append('description', `🚨 New Insight: ${selectedTopic}\n\n${aiResponse.caption}\n\n#NadaniaWellness #CellularHealth`);
         form.append('source', fs.createReadStream(outPath));
 
         let fbResponse;
-        let publishSuccess = false;
+        let pSuccess = false;
         
         for(let attempt = 1; attempt <= 3; attempt++) {
             context.retryCount = attempt;
+            await updateRunLog(conn, { retry_count: attempt });
             try {
-                fbResponse = await axios.post(`https://graph.facebook.com/v19.0/${pageId}/videos`, form, { headers: form.getHeaders(), maxBodyLength: Infinity, timeout: 60000 });
-                publishSuccess = true;
+                fbResponse = await axios.post(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/videos`, form, { headers: form.getHeaders(), maxBodyLength: Infinity, timeout: 90000 });
+                pSuccess = true;
+                await resolveAlert(conn, "meta_upload_failure", "Meta Graph API Upload working", context);
                 break;
             } catch(fbErr) {
                 if (attempt === 3) {
-                    await sendAlert("FB Upload Failed", `All retries exhausted. Status: ${fbErr.response ? fbErr.response.status : fbErr.message}`, context);
+                    await sendAlert(conn, "critical", "meta_upload_failure", "Meta Graph Exhaustion", fbErr.message, context);
                     throw fbErr;
                 }
-                await new Promise(r => setTimeout(r, 5000));
+                await expBackoffDelay(attempt); // Backoff for Facebook API limits
             }
         }
 
-        if (publishSuccess && fbResponse.data && fbResponse.data.id) {
+        if (pSuccess && fbResponse.data && fbResponse.data.id) {
+            await updateRunLog(conn, { current_step: 'comment_injection' });
             try {
                 await axios.post(`https://graph.facebook.com/v19.0/${fbResponse.data.id}/comments`, {
                     message: aiResponse.comment_cta || `🌱 Discover your personalized wellness snapshot for FREE: https://bit.ly/nadaniawellness`,
-                    access_token: token
-                });
+                    access_token: process.env.FB_PAGE_ACCESS_TOKEN
+                }, { timeout: 30000 });
             } catch(commentErr) {
-                await sendAlert("Meta Comment Injection Failed", commentErr.message, context);
+                await sendAlert(conn, "warning", "meta_comment_failure", "Comment Ping Failed", commentErr.message, { ...context, cooldownHrs: 1 });
             }
             
-            // Mark Successful
             await conn.execute("UPDATE health_reels_queue SET status = 'posted', posted_at = CURRENT_TIMESTAMP WHERE id = ?", [topicId]);
-            await markHealth(conn, 'success');
-            console.log(`✅ Success! Video Published. Response ID: ${fbResponse.data.id}`);
+            await updateRunLog(conn, { status: 'success', completed_at: new Date(), error_summary: null, current_step: 'completed', duration_ms: Date.now() - startTime });
+            console.log(`✅ Success! Video Published. ID: ${fbResponse.data.id}`);
         }
 
-        await conn.end();
+        if(conn) await conn.end();
 
     } catch (globalErr) {
-        context.provider = "System Crast";
-        console.error("🚨 FATAL CRASH:", globalErr.stack);
-        if(conn) await markHealth(conn, 'failure');
+        if(conn) await updateRunLog(conn, { status: 'failed', completed_at: new Date(), error_summary: globalErr.message, duration_ms: Date.now() - startTime });
+        console.error("🚨 FATAL STOP:", globalErr.message);
         process.exit(1);
     }
 }
-
 main();
