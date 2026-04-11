@@ -51,6 +51,18 @@ export default function AdminDashboard() {
               </div>
           </Link>
 
+          <Link href="/admin/engine-ops" style={{ textDecoration: 'none' }}>
+              <div className="p-6 rounded-2xl bg-[#111] border border-[#222] hover:border-[#00FF66] transition-all cursor-pointer h-full">
+                  <div className="flex items-center gap-4 mb-4">
+                      <div className="p-3 rounded-full bg-[#00FF66]/20 text-[#00FF66]">
+                          <Server size={24} />
+                      </div>
+                      <h3 className="font-bold text-xl text-white m-0 p-0 border-none">Engine Operations</h3>
+                  </div>
+                  <p className="text-gray-400 text-sm">Real-time telemetry, provider health, and execution logs for the AI engine.</p>
+              </div>
+          </Link>
+
           <Link href="/admin/reels-queue" style={{ textDecoration: 'none' }}>
               <div className="p-6 rounded-2xl bg-[#111] border border-[#222] hover:border-[#58A6FF] transition-all cursor-pointer h-full">
                   <div className="flex items-center gap-4 mb-4">
