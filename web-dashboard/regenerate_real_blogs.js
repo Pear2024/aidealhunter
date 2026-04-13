@@ -83,8 +83,8 @@ Formatting & Technical SEO Rules:
             // Generate clean slug
             const slug = blogData.slug.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '') + '-' + Math.floor(Math.random()*1000);
             
-            const encodedPrompt = encodeURIComponent(blogData.cover_image_prompt.trim());
-            const imageUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1200&height=630&nologo=true`;
+            // Use static fallback placeholder because pollinations is retired.
+            const imageUrl = `https://i.ibb.co/6P9m1gM/dealhunter-fallback.jpg`;
 
             await conn.execute(
                 `INSERT INTO ai_blog_posts (slug, title, content_html, image_url, created_at) VALUES (?, ?, ?, ?, NOW())`,

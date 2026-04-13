@@ -132,13 +132,13 @@ Formatting & Technical SEO Rules:
         const blogData = JSON.parse(rawJson);
         const slug = blogData.slug.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
         
-        // 3. Construct Semantic Cover Art utilizing Pollinations AI matching the native Amazon product title!
+        // 3. Visual Layer: Fetch Amazon Asset or Fallback
         let generatedImageUrl = deal.image_url;
         
-        // Failsafe: If the Amazon Database inherited a static PS5 placeholder from the legacy Slickdeals API, override it semantically!
+        // Failsafe: If the Amazon Database inherited a static PS5 placeholder or misses an image, trigger fallback!
         if (!generatedImageUrl || generatedImageUrl.includes('1606813907291') || generatedImageUrl.includes('unsplash')) {
-             const cleanTitle = deal.title.replace(/[^a-zA-Z0-9 ]/g, '').substring(0, 100);
-             generatedImageUrl = `https://image.pollinations.ai/prompt/Hyper-realistic%20product%20photography%20of%20${encodeURIComponent(cleanTitle)}%20high%20resolution%20commercial%20lighting?width=1200&height=630&nologo=true`;
+             console.log("[IMAGE PATH] Native item imagery missing. Entering degraded premium fallback branch.");
+             generatedImageUrl = "https://i.ibb.co/6P9m1gM/dealhunter-fallback.jpg"; // Approved Fallback Template
         }
 
         const [insertResult] = await connection.execute(

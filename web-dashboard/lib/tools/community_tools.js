@@ -1,3 +1,4 @@
+import { GoogleGenAI } from "@google/genai";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 
@@ -77,27 +78,44 @@ export const replyToFacebookCommentTool = tool(
 export const publishOrganicPostTool = tool(
     async ({ message, image_prompt }) => {
          try {
-             let imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(image_prompt)}?width=1080&height=1080&nologo=true`;
+             let imageUrl = "https://i.ibb.co/6P9m1gM/dealhunter-fallback.jpg"; // Default fallback
              
-             if (process.env.OPENAI_API_KEY) {
-                const aiRes = await fetch("https://api.openai.com/v1/images/generations", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-                    },
-                    body: JSON.stringify({
-                        model: "dall-e-3",
-                        prompt: image_prompt + " Style: High-quality engaging lifestyle image, hyper-realistic, beautiful lighting, no text.",
-                        n: 1,
-                        size: "1024x1024",
-                        response_format: "url"
-                    })
-                });
-                const imgData = await aiRes.json();
-                if (imgData.data && imgData.data[0]) {
-                    imageUrl = imgData.data[0].url; // For native FB photo posts, ephemeral URLs are fine since FB immediately downloads it.
-                }
+             if (process.env.GEMINI_API_KEY) {
+                 try {
+                     const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+                     const aiRes = await aiClient.models.generateImages({
+                         model: process.env.GEMINI_IMAGEN_MODEL || 'imagen-4.0-generate-001',
+                         prompt: image_prompt + " Style: High-quality engaging lifestyle image, hyper-realistic, beautiful lighting, no text.",
+                         config: {
+                             numberOfImages: 1,
+                             outputMimeType: 'image/jpeg',
+                             aspectRatio: '1:1'
+                         }
+                     });
+
+                     if (aiRes.generatedImages && aiRes.generatedImages.length > 0) {
+                         const base64Image = aiRes.generatedImages[0].image.imageBytes;
+                         
+                         if (process.env.IMGBB_API_KEY) {
+                             const imgFormData = new URLSearchParams();
+                             imgFormData.append("image", base64Image);
+
+                             const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=${process.env.IMGBB_API_KEY}`, {
+                                 method: "POST",
+                                 body: imgFormData
+                             });
+                             const imgbbData = await imgbbRes.json();
+                             
+                             if (imgbbData.success) {
+                                 imageUrl = imgbbData.data.url;
+                                 const activeModel = process.env.GEMINI_IMAGEN_MODEL || 'imagen-4.0-generate-001';
+                                 console.log(`✅ [${activeModel}] Community Image generated & uploaded:`, imageUrl);
+                             }
+                         }
+                     }
+                 } catch(genErr) {
+                     console.error("Gemini Imagen Generation failed in Community Tool:", genErr.message);
+                 }
              }
 
              if (!process.env.FB_PAGE_ID || !process.env.FB_PAGE_ACCESS_TOKEN) return "Simulation Mode: Pretending to publish organic post. Success!";

@@ -37,8 +37,15 @@ async function sendAlert(conn, severity, alertKey, stepName, errorSummary, conte
             const [rows] = await conn.execute("SELECT last_alert_at, resolved FROM system_alerts_state WHERE alert_key = ?", [alertKey]);
             if (rows.length > 0 && !rows[0].resolved) {
                 const hoursSince = (Date.now() - new Date(rows[0].last_alert_at).getTime()) / 3600000;
-                const cooldownHrs = context.cooldownHrs || 4; 
-                if (hoursSince < cooldownHrs) return; // Deduplication logic
+                // Focus on keeping noise low based on severity
+                let defaultCooldown = 12; // Base deduplication 12 hours
+                if (severity === 'warning') defaultCooldown = 24; // Warning deduplicates for 24 hours
+                if (severity === 'critical') defaultCooldown = 4; // Critical ping every 4 hours
+                const cooldownHrs = context.cooldownHrs !== undefined ? context.cooldownHrs : defaultCooldown; 
+                if (hoursSince < cooldownHrs) {
+                    console.log(`[ALERT MUTED] Deduplication active for ${alertKey}. (${Math.round(cooldownHrs - hoursSince)}h remaining)`);
+                    return; // Deduplication logic
+                }
             }
             await conn.execute("INSERT INTO system_alerts_state (alert_key, last_alert_at, resolved) VALUES (?, CURRENT_TIMESTAMP, FALSE) ON DUPLICATE KEY UPDATE last_alert_at = CURRENT_TIMESTAMP, resolved = FALSE", [alertKey]);
         } catch(e) {}
@@ -85,6 +92,38 @@ async function updateRunLog(conn, updates) {
     } catch(e) {}
 }
 
+function extractJsonObject(rawText) {
+  if (!rawText || typeof rawText !== "string") {
+    throw new Error("AGENT_EMPTY_RESPONSE");
+  }
+  const firstBrace = rawText.indexOf("{");
+  const lastBrace = rawText.lastIndexOf("}");
+  if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
+    throw new Error("AGENT_JSON_INVALID");
+  }
+  const candidate = rawText.slice(firstBrace, lastBrace + 1)
+    .replace(/,\s*}/g, "}")
+    .replace(/,\s*]/g, "]");
+  try {
+    return JSON.parse(candidate);
+  } catch (e) {
+    throw new Error("AGENT_JSON_INVALID");
+  }
+}
+
+function assertValidAgentResponse(parsed, agentName) {
+    if (!parsed || !parsed.data) {
+        throw new Error(`${agentName}_SCHEMA_MISMATCH`);
+    }
+    if (!parsed.agent || !parsed.status) {
+        throw new Error(`${agentName}_SCHEMA_MISMATCH`);
+    }
+    if (parsed.status === "FATAL_FAIL" && parsed.error_code === "FATAL_REJECTED") {
+        throw new Error("AGENT_FATAL_REJECTED");
+    }
+    return parsed;
+}
+
 // -----------------------------------------------------
 // 🛡️ SELF-HEALING ENGINE & RECOVERY POLICIES
 // -----------------------------------------------------
@@ -94,15 +133,28 @@ let safeModeActivated = false;
 const POLICIES = {
     script: {
         retries: 2, timeoutMs: 30000, primary: "gemini-2.5-flash-full", fallbacks: ["gemini-2.5-flash-simplified", "gemini-2.5-flash-minimal"],
-        safeDowngrade: (topic) => ({
-            script: `A massive breakthrough in cellular wellness has been uncovered regarding ${topic.substring(0,20)}. Experts agree, your cellular awareness defines your aging process. Stay proactive.`,
-            caption: `A critical update on ${topic.substring(0, 50)}. Never ignore your cellular health.`,
-            image_prompt: "Futuristic abstract glowing geometric particles, highly cinematic, premium wellness style, clean.",
-            comment_cta: `🌱 Start your health awareness check-in here: https://bit.ly/nadaniawellness`
+        safeDowngrade: (topic) => applySafeTemplateOverride("default", () => {})
+    },
+    repair: {
+        retries: 2, timeoutMs: 30000, primary: "gemini-2.5-flash-full", fallbacks: ["gemini-2.5-flash-simplified", "gemini-2.5-flash-minimal"],
+        safeDowngrade: () => ({
+            updated_fields: applySafeTemplateOverride("default", () => {}),
+            repair_summary: "Safe Mode Fallback Repair Applied"
+        })
+    },
+    reviewer: {
+        retries: 2, timeoutMs: 30000, primary: "gemini-2.5-flash-full", fallbacks: ["gemini-2.5-flash-simplified", "gemini-2.5-flash-minimal"],
+        safeDowngrade: () => ({
+            status: "FAIL",
+            failure_type: "REVIEWER_UNAVAILABLE",
+            failed_component: "FULL_PAYLOAD",
+            repair_instruction: "Re-evaluate entire payload due to reviewer failure",
+            scores: { overall: 0 },
+            reason: "Reviewer unavailable or invalid JSON"
         })
     },
     audio: { retries: 2, timeoutMs: 30000, primary: "google-tts", fallbacks: [], safeDowngrade: null },
-    image: { retries: 1, timeoutMs: 45000, primary: "pollinations", fallbacks: [], safeDowngrade: (topic) => "branded_fallback_visual" },
+    image: { retries: 2, timeoutMs: 60000, primary: "gemini-imagen", fallbacks: [], safeDowngrade: (topic) => "branded_fallback_visual" },
     publish: { retries: 3, timeoutMs: 90000, primary: "facebook-graph", fallbacks: [], safeDowngrade: null }
 };
 
@@ -129,6 +181,10 @@ async function executeSelfHealingStep(stepName, policyKey, context, executionLog
                 await resolveAlert(context.conn, `${stepName}_failure`, `${stepName} execution successful`, context);
                 return result; // Success!
             } catch (error) {
+                if (error.message.includes('[FATAL_REJECTED]')) {
+                    console.error(`💥 [EDITORIAL SAFETY] Blocked publish due to severe logic violation: ${error.message}`);
+                    throw error; // Bypass all retries/fallbacks and send to global crash handler
+                }
                 console.error(`❌ [${stepName}] Attempt ${attempt} failed on ${provider}: ${error.message}`);
                 if (attempt === policy.retries) {
                     await sendAlert(context.conn, "warning", `${stepName}_provider_failure`, "Provider Dead", `Exhausted retries on ${provider}. Error: ${error.message}`, context);
@@ -150,6 +206,7 @@ async function executeSelfHealingStep(stepName, policyKey, context, executionLog
 
     if (policy.safeDowngrade) {
         console.warn(`[DOWNGRADE] Falling back to Safe Default for [${stepName}]`);
+
         return typeof policy.safeDowngrade === 'function' ? policy.safeDowngrade(context.topic) : policy.safeDowngrade;
     }
 
@@ -193,298 +250,788 @@ async function triggerRecoveryRun(conn, topicId, errorContext) {
 // ============================================
 // 🎬 CORE MAIN WORKFLOW
 // ============================================
+
+function selectSafeTemplate(sourceType = "default") {
+  const templates = {
+    TEMPLATE_A: {
+      id: "TEMPLATE_A",
+      hook: "Cellular health is gaining global attention.",
+      script: "Cellular health is an important area of ongoing research. Understanding the body at a cellular level can support informed choices.",
+      caption: "Cellular health is an important part of overall wellness.\n\nExplore how research continues to evolve in this space.\n\nComment CELL to learn more 👇",
+      comment_cta: "Comment CELL to explore more about cellular wellness 👇",
+      image_prompt: "single clear subject, glowing cellular energy, dark background, soft lighting, high contrast, clean composition, no text, no collage, center focus",
+      visual_source: "APPROVED_FALLBACK_TEMPLATE",
+      copy_source: "STATIC_APPROVED",
+    },
+    TEMPLATE_B: {
+      id: "TEMPLATE_B",
+      hook: "A new focus on cellular wellness is emerging.",
+      script: "Companies around the world are exploring cellular wellness. This reflects growing interest in understanding health at a deeper level.",
+      caption: "More companies are exploring cellular wellness and research.\n\nStay informed as new developments continue to evolve.\n\nComment CELL to learn more 👇",
+      comment_cta: "Comment CELL to stay informed 👇",
+      image_prompt: "single clear subject, glowing cellular energy, dark background, soft lighting, high contrast, clean composition, no text, no collage, center focus",
+      visual_source: "APPROVED_FALLBACK_TEMPLATE",
+      copy_source: "STATIC_APPROVED",
+    },
+    TEMPLATE_C: {
+      id: "TEMPLATE_C",
+      hook: "What does cellular wellness really mean?",
+      script: "Cellular wellness is a topic being explored across many research fields. Learning the basics can help you better understand your body.",
+      caption: "Cellular wellness is becoming a key topic in health discussions.\n\nStart learning what it means and why it matters.\n\nComment CELL to explore 👇",
+      comment_cta: "Comment CELL to explore more 👇",
+      image_prompt: "single clear subject, glowing cellular energy, dark background, soft lighting, high contrast, clean composition, no text, no collage, center focus",
+      visual_source: "APPROVED_FALLBACK_TEMPLATE",
+      copy_source: "STATIC_APPROVED",
+    },
+  };
+  if (sourceType === "pr" || sourceType === "brand") return templates.TEMPLATE_B;
+  if (sourceType === "general") return templates.TEMPLATE_C;
+  return templates.TEMPLATE_A;
+}
+
+function applySafeTemplateOverride(sourceType, logger = console.log) {
+  const template = selectSafeTemplate(sourceType);
+  const safePayload = {
+    hook: template.hook,
+    script: template.script,
+    caption: template.caption,
+    comment_cta: template.comment_cta,
+    image_prompt: template.image_prompt,
+    __safe_template_mode: true,
+    __safe_template_id: template.id,
+    __copy_source: template.copy_source,
+    __visual_source: template.visual_source,
+  };
+  logger(`[SAFE TEMPLATE] Template ID: ${template.id}`);
+  logger(`[SAFE TEMPLATE] Copy Source: ${template.copy_source}`);
+  logger(`[SAFE TEMPLATE] Visual Source: ${template.visual_source}`);
+  return safePayload;
+}
+
+function assertSafeTemplateIntegrity(payload) {
+  if (!payload.__safe_template_mode) return;
+  const requiredFields = ["hook", "script", "caption", "comment_cta", "image_prompt", "__safe_template_id", "__copy_source", "__visual_source"];
+  for (const field of requiredFields) {
+    if (!payload[field]) throw new Error(`[SAFE_TEMPLATE_INTEGRITY] Missing required field: ${field}`);
+  }
+  if (payload.__copy_source !== "STATIC_APPROVED") throw new Error("[SAFE_TEMPLATE_INTEGRITY] Copy source is not STATIC_APPROVED");
+  if (payload.__visual_source !== "APPROVED_FALLBACK_TEMPLATE") throw new Error("[SAFE_TEMPLATE_INTEGRITY] Visual source is not APPROVED_FALLBACK_TEMPLATE");
+}
+
+
+function previewRaw(text, len = 200) {
+  if (!text) return "<empty>";
+  return text.slice(0, len).replace(/\s+/g, " ");
+}
+
+function validateCreatorPayload(payload) {
+  const required = ["hook", "script", "caption", "comment_cta", "image_prompt"];
+  if (!payload || typeof payload !== "object") {
+    throw new Error("CREATOR_SCHEMA_MISMATCH: payload is not object");
+  }
+  for (const key of required) {
+    if (typeof payload[key] !== "string" || !payload[key].trim()) {
+      throw new Error(`CREATOR_${key.toUpperCase()}_MISSING: missing or invalid field ${key}`);
+    }
+  }
+  return payload;
+}
+
 async function main() {
-    console.log(`🎬 Auto-Reels System | Run ID: ${RUN_ID} | Safe-Heal Mode Active`);
-    const context = { provider: "System", topic: null, conn: null };
+    console.log(`🎬 Auto-Reels System | Run ID: ${RUN_ID} | State Machine Mode Active`);
+    let currentState = "BOOT";
+    let nextState = "";
+    let globalErr = null;
+
+    const context = { provider: "System", topic: null, conn: null, actualModelString: "", apiVersion: "" };
     const startTime = Date.now();
     let topicId = null;
+    let selectedTopic = null;
+    let plannerStrategy = null;
+    
+    let attempt = 0;
+    let aiResponse = null;
+    let base64Image = null;
+    let imgDecision = null;
+    let reviewJson = null;
+    let finalStatus = 'posted';
 
-    try {
-        // 1. Initial DB Boot & Idempotency Prep
-        const conn = await mysql.createConnection({
-            host: process.env.MYSQL_HOST, user: process.env.MYSQL_USER, password: process.env.MYSQL_PASSWORD,
-            database: process.env.MYSQL_DATABASE, port: parseInt(process.env.MYSQL_PORT || '3306'), ssl: { rejectUnauthorized: false }
-        });
-        context.conn = conn;
+    const tempDir = os.tmpdir();
+    const audioPath = path.join(tempDir, `tts_${RUN_ID}.mp3`);
+    const imgPath = path.join(tempDir, `bg_${RUN_ID}.png`);
+    const outPath = path.join(tempDir, `final_${RUN_ID}.mp4`);
 
-        // Ensure Schema Supports Locking (Idempotency)
-        await conn.execute("CREATE TABLE IF NOT EXISTS health_reels_queue (id INT AUTO_INCREMENT PRIMARY KEY, topic VARCHAR(255) UNIQUE, status VARCHAR(50) DEFAULT 'pending', locked_by VARCHAR(100), recovery_attempts INT DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP, posted_at TIMESTAMP NULL)");
-        
-        // 🛡️ Intelligent Pre-Flight Schema Alignment & Validation
-        const expectedCols = {
-            'id': { type: 'INT', def: 'AUTO_INCREMENT PRIMARY KEY' },
-            'topic': { type: 'VARCHAR(255)', def: 'UNIQUE' },
-            'status': { type: 'VARCHAR(50)', def: "DEFAULT 'pending'" }, // expected states: pending, processing_lock, posted, posted_no_comment, failed
-            'locked_by': { type: 'VARCHAR(100)', def: "NULL" },
-            'recovery_attempts': { type: 'INT', def: "DEFAULT 0" },
-            'created_at': { type: 'TIMESTAMP', def: "DEFAULT CURRENT_TIMESTAMP" },
-            'updated_at': { type: 'TIMESTAMP', def: "DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" },
-            'posted_at': { type: 'TIMESTAMP', def: "NULL" }
-        };
+    while (currentState !== "COMPLETE" && currentState !== "FATAL_STOP") {
+        try {
+            switch (currentState) {
+                // -------------------------------------------------------------
+                case "BOOT":
+                    const conn = await mysql.createConnection({
+                        host: process.env.MYSQL_HOST, user: process.env.MYSQL_USER, password: process.env.MYSQL_PASSWORD,
+                        database: process.env.MYSQL_DATABASE, port: parseInt(process.env.MYSQL_PORT || '3306'), ssl: { rejectUnauthorized: false }
+                    });
+                    context.conn = conn;
 
-        const [dbSchema] = await conn.execute("SHOW COLUMNS FROM health_reels_queue");
-        const existingColumns = {}; 
-        dbSchema.forEach(col => { existingColumns[col.Field] = col.Type.toLowerCase(); });
+                    await conn.execute("CREATE TABLE IF NOT EXISTS health_reels_queue (id INT AUTO_INCREMENT PRIMARY KEY, topic VARCHAR(255) UNIQUE, status VARCHAR(50) DEFAULT 'pending', locked_by VARCHAR(100), recovery_attempts INT DEFAULT 0, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP, posted_at TIMESTAMP NULL, content_pillar VARCHAR(50), topic_angle VARCHAR(255))");
+                    await conn.execute(`CREATE TABLE IF NOT EXISTS system_run_logs (run_id VARCHAR(50) PRIMARY KEY, started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, completed_at TIMESTAMP NULL, status VARCHAR(20), current_step VARCHAR(50), retry_count INT DEFAULT 0, provider_used VARCHAR(50), selected_topic VARCHAR(255), error_summary TEXT, duration_ms INT)`);
+                    
+                    if (process.env.MAX_POSTS_PER_DAY) {
+                         const limit = parseInt(process.env.MAX_POSTS_PER_DAY) || 1;
+                         const [todayCount] = await conn.execute("SELECT count(*) as count FROM health_reels_queue WHERE DATE(posted_at) = CURDATE() AND status IN ('posted', 'posted_no_comment', 'published_safe_template_bypass')");
+                         if (todayCount[0].count >= limit) {
+                             console.log(`[PUBLISH GUARD] Daily limit of ${limit} posts already reached (${todayCount[0].count} actual). Halting pipeline.`);
+                             nextState = "COMPLETE";
+                             break;
+                         }
+                    }
 
-        for (const [colName, colMeta] of Object.entries(expectedCols)) {
-            if (!existingColumns[colName]) {
-                console.log(`[SCHEMA AUTO-ALIGN] Injecting missing column: ${colName}`);
-                try { await conn.execute(`ALTER TABLE health_reels_queue ADD COLUMN ${colName} ${colMeta.type} ${colMeta.def}`); } 
-                catch(e) { if (e.code !== 'ER_DUP_FIELDNAME') console.error("Migration Error:", e.message); }
-            }
-        }
+                    await conn.execute("INSERT INTO system_run_logs (run_id, status, current_step) VALUES (?, 'running', 'init')", [RUN_ID]);
 
-        // 🩺 Critical: Expand severely restricted legacy columns (ENUMs or narrow VARCHARs)
-        const currentStatusType = existingColumns['status'] || "";
-        if (currentStatusType.includes('enum') || (currentStatusType.includes('varchar') && parseInt(currentStatusType.match(/\d+/) || [0]) < 50)) {
-            console.log(`[SCHEMA AUTO-ALIGN] Upgrading restricted status column from ${currentStatusType} to VARCHAR(50)`);
-            try { await conn.execute("ALTER TABLE health_reels_queue MODIFY COLUMN status VARCHAR(50) DEFAULT 'pending'"); }
-            catch(err) { console.error(`[FATAL] Failed to expand status column: ${err.message}`); }
-        }
+                    nextState = "LOAD_TOPIC";
+                    break;
 
-        // 🛡️ Pre-Flight Validation Check (Fails Fast)
-        const [postDbSchema] = await conn.execute("SHOW COLUMNS FROM health_reels_queue");
-        const postExisting = postDbSchema.map(col => col.Field);
-        const missing = Object.keys(expectedCols).filter(col => !postExisting.includes(col));
-        
-        if (missing.length > 0) {
-            const errMsg = `Pre-Flight Fatal: Database Schema Alignment Failed. Missing: ${missing.join(', ')}`;
-            console.error(`🚨 ${errMsg}`);
-            await sendAlert(conn, "critical", "schema_mismatch", "Database Schema Incomplete", errMsg, { ...context, cooldownHrs: 0 });
-            throw new Error(errMsg);
-        }
+                // -------------------------------------------------------------
+                case "LOAD_TOPIC":
+                    await context.conn.execute("UPDATE health_reels_queue SET status = 'pending', locked_by = NULL WHERE status = 'processing_lock' AND updated_at < NOW() - INTERVAL 2 HOUR");
 
-        // Safely add Indexes
-        try { await conn.execute("ALTER TABLE health_reels_queue ADD INDEX idx_status_created (status, created_at)"); } catch(e){}
-        try { await conn.execute("ALTER TABLE health_reels_queue ADD INDEX idx_locked (locked_by, updated_at)"); } catch(e){}
+                    let [lockResult] = await context.conn.execute("UPDATE health_reels_queue SET status = 'processing_lock', locked_by = ?, updated_at = NOW() WHERE status = 'pending' ORDER BY created_at ASC LIMIT 1", [RUN_ID]);
+                    if (lockResult.affectedRows === 0) {
+                        const topics = [ "Medical AI", "Cellular Nutrition", "Anti-aging Science", "Precision medicine" ];
+                        const randomQuery = encodeURIComponent(topics[Math.floor(Math.random() * topics.length)]);
+                        const response = await fetch(`https://news.google.com/rss/search?q=${randomQuery}&hl=en-US&gl=US&ceid=US:en`, { cache: 'no-store' });
+                        const xmlText = await response.text();
+                        for (let match of xmlText.match(/<item>([\s\S]*?)<\/item>/g) || []) {
+                            const titleMatch = match.match(/<title>([^<]+)<\/title>/);
+                            if (titleMatch) await context.conn.execute("INSERT IGNORE INTO health_reels_queue (topic, status) VALUES (?, 'pending')", [titleMatch[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&')]);
+                        }
+                        await context.conn.execute("UPDATE health_reels_queue SET status = 'processing_lock', locked_by = ?, updated_at = NOW() WHERE status = 'pending' ORDER BY created_at ASC LIMIT 1", [RUN_ID]);
+                    }
 
-        await conn.execute(`CREATE TABLE IF NOT EXISTS system_run_logs (run_id VARCHAR(50) PRIMARY KEY, started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, completed_at TIMESTAMP NULL, status VARCHAR(20), current_step VARCHAR(50), retry_count INT DEFAULT 0, provider_used VARCHAR(50), selected_topic VARCHAR(255), error_summary TEXT, duration_ms INT)`);
-        await conn.execute("INSERT INTO system_run_logs (run_id, status, current_step) VALUES (?, 'running', 'init')", [RUN_ID]);
+                    const [rows] = await context.conn.execute("SELECT id, topic FROM health_reels_queue WHERE locked_by = ?", [RUN_ID]);
+                    if (rows.length === 0) throw new Error("Idempotency Lock Failed.");
+                    
+                    selectedTopic = rows[0].topic;
+                    topicId = rows[0].id;
+                    context.topic = selectedTopic;
+                    await updateRunLog(context.conn, { selected_topic: selectedTopic });
+                    console.log(`🔒 Acquired Idempotency Lock on Topic ID ${topicId}: ${selectedTopic}`);
+                    
+                    nextState = "PLAN_STRATEGY";
+                    break;
 
-        // Clean Dead Locks (Recover items stuck in processing > 2 hours)
-        await conn.execute("UPDATE health_reels_queue SET status = 'pending', locked_by = NULL WHERE status = 'processing_lock' AND updated_at < NOW() - INTERVAL 2 HOUR");
-
-        // 2. Fetch or Lock Topic (Idempotency Core)
-        const [lockResult] = await conn.execute("UPDATE health_reels_queue SET status = 'processing_lock', locked_by = ?, updated_at = NOW() WHERE status = 'pending' ORDER BY created_at ASC LIMIT 1", [RUN_ID]);
-        
-        if (lockResult.affectedRows === 0) {
-            // Queue is truly empty. Fetch fresh via API natively
-            const topics = [ "Medical AI", "Cellular Nutrition", "Anti-aging Science", "Precision medicine" ];
-            const randomQuery = encodeURIComponent(topics[Math.floor(Math.random() * topics.length)]);
-            const response = await fetch(`https://news.google.com/rss/search?q=${randomQuery}&hl=en-US&gl=US&ceid=US:en`, { cache: 'no-store' });
-            const xmlText = await response.text();
-            for (let match of xmlText.match(/<item>([\s\S]*?)<\/item>/g) || []) {
-                const titleMatch = match.match(/<title>([^<]+)<\/title>/);
-                if (titleMatch) await conn.execute("INSERT IGNORE INTO health_reels_queue (topic, status) VALUES (?, 'pending')", [titleMatch[1].replace(/&quot;/g, '"').replace(/&amp;/g, '&')]);
-            }
-            // Retry the lock
-            await conn.execute("UPDATE health_reels_queue SET status = 'processing_lock', locked_by = ?, updated_at = NOW() WHERE status = 'pending' ORDER BY created_at ASC LIMIT 1", [RUN_ID]);
-        }
-
-        const [rows] = await conn.execute("SELECT id, topic FROM health_reels_queue WHERE locked_by = ?", [RUN_ID]);
-        if (rows.length === 0) throw new Error("Idempotency Lock Failed. Cannot proceed safely.");
-        
-        selectedTopic = rows[0].topic;
-        topicId = rows[0].id;
-        context.topic = selectedTopic;
-        await updateRunLog(conn, { selected_topic: selectedTopic });
-        console.log(`🔒 Acquired Idempotency Lock on Topic ID ${topicId}: ${selectedTopic}`);
-
-        // 🧠 PHASE 1: SCRIPT GEN (Self-Healing)
-        const aiResponse = await executeSelfHealingStep('AI Script', 'script', context, async (provider) => {
-            if (provider.startsWith('gemini-2.5-flash')) {
-                if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY missing");
-                
-                // Pure compliant initialization of standard endpoints globally
-                const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY, apiVersion: 'v1' });
-                const actualModelString = "gemini-2.5-flash";
-                context.actualModelString = actualModelString;
-                context.apiVersion = 'v1';
-
-                let aiPrompt = "";
-                if (provider === 'gemini-2.5-flash-full') {
-                    aiPrompt = `You are a viral short-form video script expert for Facebook Reels in the health & anti-aging niche.
-Your goal is to create a HIGH-RETENTION, SCROLL-STOPPING script that drives users to COMMENT a keyword.
-
-Topic: ${selectedTopic}
-Target Audience: Women 25-55, interested in health, anti-aging, and wellness
-Tone: Conversational, Curious, Slightly shocking but credible, Easy to understand
-
-Structure (STRICT):
-1. HOOK (first 1-2 seconds): Max 8 words. Must create curiosity or fear.
-2. INSIGHT: 1 short sentence explaining science simply.
-3. PAIN POINT: 1 short sentence relatable problem.
-4. CTA (MANDATORY): Ask user to comment ONE keyword. Rotate between: CELL, SCORE, REPORT. Ensure the comment_cta returns the link https://bit.ly/nadaniawellness
-
-Constraints:
-- TOTAL script length: 120-180 CHARACTERS (NOT words).
-- Short, punchy sentences only. No emojis, no hashtags in script.
-- Protect Meta compliance: NO "medical biological age", NO diagnoses.
-
-Output MUST BE ONLY valid JSON matching this exact structure:
-{
-  "script": "the 120-180 char script string",
-  "caption": "A short engaging facebook caption with emojis",
-  "image_prompt": "Cinematic 8k glowing cellular nutrition visual for background",
-  "comment_cta": "The auto-reply comment containing https://bit.ly/nadaniawellness"
-}`;
-                } else if (provider === 'gemini-2.5-flash-simplified') {
-                    aiPrompt = `Topic: ${selectedTopic}. Write a brief 300-character educational wellness script, a short Facebook caption, a safe glowing particles image_prompt, and a comment_cta containing the assessment link https://bit.ly/nadaniawellness. Make tone calm. Return ONLY perfectly valid JSON with keys: script, caption, image_prompt, comment_cta.`;
-                } else if (provider === 'gemini-2.5-flash-minimal') {
-                    aiPrompt = `You are 'Dr. Nadania AI', a premium wellness brand. Topic: ${selectedTopic}. Return ONLY perfectly valid JSON with these EXACT keys: {"script": "3-sentence safe wellness script.", "caption": "short Facebook summary.", "image_prompt": "calming visual prompt", "comment_cta": "🌱 Start your health awareness check-in here: https://bit.ly/nadaniawellness"}. No markdown, no extra text.`;
-                }
-
-                // Payload parameters must be formatted strictly in snake_case mapped to the V1 REST JSON specifications under @google/genai
-                console.log(`[SDK ALIGNMENT] Dispatching internal policy [${provider}] to Google GenAI framework -> ${actualModelString} (v1 apiVersion)`);
-                const completion = await aiClient.models.generateContent({
-                    model: actualModelString,
-                    contents: aiPrompt,
-                    config: {
-                        response_mime_type: "application/json",
-                        response_schema: {
-                            type: Type.OBJECT,
-                            properties: {
-                                script: { type: Type.STRING, description: "Voiceover script." },
-                                caption: { type: Type.STRING, description: "Facebook caption." },
-                                image_prompt: { type: Type.STRING, description: "Cinematic visual prompt." },
-                                comment_cta: { type: Type.STRING, description: "CTA comment string." }
-                            }, required: ["script", "caption", "image_prompt", "comment_cta"]
+                // -------------------------------------------------------------
+                case "PLAN_STRATEGY":
+                    if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY missing");
+                    console.log(`[CONTENT PLANNER] Booting Strategic Content Planner Agent...`);
+                    const plannerClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+                    
+                    const [recentPosts] = await context.conn.execute("SELECT topic, content_pillar, topic_angle FROM health_reels_queue WHERE status IN ('posted', 'posted_no_comment') ORDER BY posted_at DESC LIMIT 20");
+                    const historyList = recentPosts.map(r => `[Pillar: ${r.content_pillar || 'N/A'}] Topic: ${r.topic} -> Angle: ${r.topic_angle || 'N/A'}`).join("\n");
+                    
+                    let memoryInjection = "No historical learning memory found yet.";
+                    const memPath = path.join(process.cwd(), 'historical_winner_patterns.json');
+                    if (fs.existsSync(memPath)) {
+                        try {
+                            const memoryTokens = JSON.parse(fs.readFileSync(memPath, 'utf8')).patterns;
+                            memoryInjection = `[BEST HOOK STYLES]: ${memoryTokens.best_hook_styles.join(", ")}
+[BEST CTA STYLES]: ${memoryTokens.best_cta_styles.join(", ")}
+[PATTERNS TO STRICTLY AVOID]: ${memoryTokens.patterns_to_avoid.join(", ")}`;
+                        } catch (e) {
+                            console.error("[MEMORY] Failed to load JSON memory:", e.message);
                         }
                     }
-                });
+                    
+                    const plannerPrompt = `[AGENT 1: PLANNER] You are a Chief Content Strategist for a viral health brand.
+Your job is to strategically decide the content plan for today's new post to maximize engagement, avoid repetition, and maintain audience rotation.
+1. RECENT PAST POSTS (AVOID REPEATING THESE ANGLES):
+${historyList || 'No recent posts.'}
+2. TODAY'S BASE EXTERNAL TOPIC:
+${selectedTopic}
+CRITICAL ROTATION POLICY:
+- strongly prefer rotating to a completely DIFFERENT pillar compared to the most recent historical post.
+- strictly FORBIDDEN to use the same pillar if it was used in both of the last 2 posts.
+- If you repeat a pillar, it must be because it is irrefutably the most explosive strategy for today's topic.
+3. STRATEGIC OPTIONS TO CHOOSE FROM:
+- PILLARS: PAIN, EDUCATION, MYTH, TRANSFORMATION, CTA
+- HOOK STYLES: question, warning, hidden truth, emotional pain, shock
+- VISUAL STYLES: pain portrait, glowing cells, body energy flow, food threat concept
+- CTA KEYWORDS: CELL, SCORE, REPORT
+4. AI LEARNING MEMORY (HIGH PRIORITY SUCCESS PATTERNS):
+Based on rigorous A/B tracking, you MUST prioritize generating strategies that conform to these proven rules:
+${memoryInjection}
 
-                const rawResponseText = completion.text;
-                const parsedResult = JSON.parse(rawResponseText.replace(/```json/i, '').replace(/```/i, '').trim());
+Output ONLY valid JSON:
+{
+  "pillar": "Selected pillar",
+  "topic_angle": "How you are adapting today's base topic creatively.",
+  "hook_style": "Selected hook style",
+  "visual_style": "Selected visual style",
+  "cta_keyword": "Selected CTA keyword",
+  "reason": "Brief justification for why this mix doesn't overlap with recent posts and fits the daily goal."
+}`;
+                    const plannerResult = await plannerClient.models.generateContent({
+                        model: "gemini-2.5-flash",
+                        contents: plannerPrompt,
+                        config: {
+                            response_mime_type: "application/json",
+                            response_schema: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    pillar: { type: Type.STRING },
+                                    topic_angle: { type: Type.STRING },
+                                    hook_style: { type: Type.STRING },
+                                    visual_style: { type: Type.STRING },
+                                    cta_keyword: { type: Type.STRING },
+                                    reason: { type: Type.STRING }
+                                }, required: ["pillar", "topic_angle", "hook_style", "visual_style", "cta_keyword", "reason"]
+                            }
+                        }
+                    });
+                    
+                    plannerStrategy = JSON.parse(plannerResult.text.replace(/```json/i, '').replace(/```/i, '').trim());
+                    console.log(`[CONTENT PLANNER] Decision Locked: Pillar: [${plannerStrategy.pillar}]`);
+                    
+                    nextState = "GENERATE_TEXT";
+                    break;
+
+                // -------------------------------------------------------------
+                case "GENERATE_TEXT":
+                    aiResponse = await executeSelfHealingStep('AI Script', 'script', context, async (provider) => {
+                        const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+                        const aiPrompt = `You are AGENT 2: CREATOR.
+Create a short Facebook Reel content payload.
+
+STRATEGIC DIRECTIVES:
+- Content Pillar: ${plannerStrategy.pillar}
+- Core Topic Angle: ${plannerStrategy.topic_angle} (Drawn from: ${selectedTopic})
+
+Requirements:
+- hook: max 8 words
+- script: max 150 characters
+- caption: short and clear
+- comment_cta: direct comment CTA
+- image_prompt: single subject, dark background, clean composition
+
+CRITICAL OUTPUT RULE:
+Return ONLY one valid JSON object.
+Do not add explanations.
+Do not add markdown.
+Do not add code fences.
+Do not add any text before or after the JSON.
+If you cannot comply, return:
+{"hook":"ERROR","script":"ERROR","caption":"ERROR","comment_cta":"ERROR","image_prompt":"ERROR"}`;
+
+                        let completion;
+                        try {
+                            completion = await aiClient.models.generateContent({
+                                model: "gemini-2.5-flash",
+                                contents: aiPrompt,
+                                config: {
+                                    response_mime_type: "application/json",
+                                    response_schema: {
+                                        type: Type.OBJECT,
+                                        properties: {
+                                            hook: { type: Type.STRING },
+                                            script: { type: Type.STRING },
+                                            caption: { type: Type.STRING },
+                                            image_prompt: { type: Type.STRING },
+                                            comment_cta: { type: Type.STRING }
+                                        }, required: ["hook", "script", "caption", "image_prompt", "comment_cta"]
+                                    }
+                                }
+                            });
+                            const parsed = extractJsonObject(completion.text);
+                            const payload = parsed.data || parsed;
+                            validateCreatorPayload(payload);
+                            return payload;
+                        } catch (err) {
+                            if (completion && completion.text) {
+                                console.error(`[CREATOR DEBUG] Raw preview: ${previewRaw(completion.text)}`);
+                            }
+                            throw err;
+                        }
+                    });
+                    console.log(`[AGENT 2: CREATOR] Generated Hook: "${aiResponse.hook}"`);
+                    
+                    nextState = "GENERATE_AUDIO";
+                    break;
+
+                // -------------------------------------------------------------
+                case "GENERATE_AUDIO":
+                    await executeSelfHealingStep('Audio TTS', 'audio', context, async (provider) => {
+                        if (provider === 'google-tts') {
+                            const googleTTS = require('google-tts-api');
+                            const results = await googleTTS.getAllAudioBase64(aiResponse.script.slice(0, 800), { lang: 'en', slow: false, splitPunct: ',.?' });
+                            const base64Buffers = results.map(r => Buffer.from(r.base64, 'base64'));
+                            fs.writeFileSync(audioPath, Buffer.concat(base64Buffers));
+                        }
+                    });
+                    
+                    if (base64Image) { nextState = "REVIEW_PAYLOAD"; } else { nextState = "GENERATE_IMAGE"; }
+                    break;
+
+                // -------------------------------------------------------------
+                case "GENERATE_IMAGE":
+                    imgDecision = await executeSelfHealingStep('Image Generation', 'image', context, async (provider) => {
+                        const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+                        const response = await aiClient.models.generateImages({
+                            model: process.env.GEMINI_IMAGEN_MODEL || 'imagen-4.0-generate-001',
+                            prompt: `Premium vertical health ad design: ${aiResponse.image_prompt}. STRICTLY: Emotional impact, single prominent subject, dark background, cinematic.`,
+                            config: { numberOfImages: 1, outputMimeType: 'image/jpeg', aspectRatio: '9:16' }
+                        });
+                        if (!response.generatedImages || response.generatedImages.length === 0) throw new Error("Empty image output.");
+                        base64Image = response.generatedImages[0].image.imageBytes;
+                        fs.writeFileSync(imgPath, Buffer.from(base64Image, 'base64'));
+                        return "loaded";
+                    });
+                    
+                    nextState = "REVIEW_PAYLOAD";
+                    break;
+
+                // -------------------------------------------------------------
+                case "REVIEW_PAYLOAD":
+                    console.log(`[SMART RETRY] Holistic review payload...`);
+                    let rawReviewJson = await executeSelfHealingStep('Reviewer Agent', 'reviewer', context, async (provider) => {
+                        const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+                        const reviewerPrompt = `You are AGENT 3: REVIEWER.
+You review the generated Reel payload against planner strategy, source topic, editorial safety, and visual clarity.
+STRATEGY:
+Pillar: ${plannerStrategy.pillar}
+Topic: ${selectedTopic}
+CREATED:
+Hook: ${aiResponse.hook}
+Script: ${aiResponse.script}
+Caption: ${aiResponse.caption}
+
+Critical rule:
+If the hook/caption/script makes stronger health claims than the source explicitly supports, return:
+- status: "FAIL"
+- failure_type: "CLAIM_OVERREACH"
+- failed_component: "SCRIPT"
+
+If the tone does not match the source type (for example a PR/news item is turned into fear-based medical alarm), return:
+- status: "FAIL"
+- failure_type: "SOURCE_TONE_MISMATCH"
+- failed_component: "SCRIPT"
+
+Output schema:
+{
+  "agent": "REVIEWER",
+  "status": "PASS", // or "RETRYABLE_FAIL" or "FATAL_FAIL"
+  "error_code": "NONE",
+  "retryable": false,
+  "message": "evaluation complete",
+  "data": {
+    "status": "PASS", // or "FAIL"
+    "failure_type": "CLAIM_OVERREACH, SOURCE_TONE_MISMATCH, HOOK_TOO_WEAK, VISUAL_NO_SUBJECT, VISUAL_DISTORTION, NONE",
+    "failed_component": "SCRIPT, HOOK, IMAGE, FULL_PAYLOAD, NONE",
+    "repair_instruction": "String",
+    "scores": {
+        "overall": 80
+    },
+    "reason": "String"
+  }
+}
+
+CRITICAL OUTPUT RULE:
+- You MUST return ONLY valid JSON
+- NO explanation
+- NO text outside JSON
+- If you fail -> your output is rejected`;
+                        const completion = await aiClient.models.generateContent({
+                            model: "gemini-2.5-flash",
+                            contents: [ { text: reviewerPrompt }, { inlineData: { data: base64Image, mimeType: "image/jpeg" } } ],
+                            config: {
+                                response_mime_type: "application/json",
+                                response_schema: {
+                                   type: Type.OBJECT,
+                                   properties: {
+                                        agent: { type: Type.STRING },
+                                        status: { type: Type.STRING, enum: ["PASS", "RETRYABLE_FAIL", "FATAL_FAIL"] },
+                                        error_code: { type: Type.STRING },
+                                        retryable: { type: Type.BOOLEAN },
+                                        message: { type: Type.STRING },
+                                        data: {
+                                            type: Type.OBJECT,
+                                            properties: {
+                                                status: { type: Type.STRING },
+                                                failure_type: { type: Type.STRING },
+                                                failed_component: { type: Type.STRING },
+                                                repair_instruction: { type: Type.STRING },
+                                                scores: { type: Type.OBJECT, properties: { overall: { type: Type.INTEGER } } },
+                                                reason: { type: Type.STRING }
+                                            }
+                                        },
+                                        meta: { type: Type.OBJECT }
+                                   }, required: ["agent", "status", "data"]
+                                }
+                            }
+                        });
+                        const parsed = extractJsonObject(completion.text);
+                        assertValidAgentResponse(parsed, "REVIEWER");
+                        if (!parsed.data) throw new Error("REVIEWER_SCHEMA_MISMATCH");
+                        return parsed.data;
+                    });
+                    reviewJson = rawReviewJson;
+
+                    console.log(`[AGENT 3: REVIEWER] Action: ${reviewJson.status} | Failure Type: ${reviewJson.failure_type || 'NONE'} | Component: ${reviewJson.failed_component || 'NONE'} | Reason: ${reviewJson.reason}`);
+
+                    if (context.conn) {
+                        await context.conn.execute(
+                            "INSERT INTO system_run_logs (run_id, topic_id, retry_sequence, failure_type, failed_component, attempt_status, reviewer_overall_score, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())",
+                            [RUN_ID, topicId, attempt, reviewJson?.failure_type || 'NONE', reviewJson?.failed_component || 'NONE', reviewJson?.status || 'FAIL', reviewJson?.scores?.overall || 0]
+                        ).catch(e => {}); 
+                    }
+
+                    if (reviewJson?.status === "PASS") {
+                        console.log(`[AGENT 3: REVIEWER] ✅ PASS - Payload verified high-quality.`);
+                        nextState = "COMPOSE_VIDEO";
+                    } else {
+                        if (attempt >= 2 || reviewJson?.failure_type === "FATAL_REJECTED") {
+                            const topicL = selectedTopic.toLowerCase();
+                            const isResearch = topicL.includes("research") || topicL.includes("frontiers") || topicL.includes("study") || topicL.includes("clinical") || topicL.includes("science") || topicL.includes("disease");
+                            
+                            if (isResearch && ["CLAIM_OVERREACH", "SOURCE_TONE_MISMATCH"].includes(reviewJson?.failure_type)) {
+                                console.warn(`[EDITORIAL SAFETY] High-risk topic failed editorial review: ${reviewJson?.failure_type}. Skipping topic.`);
+                                finalStatus = "skipped_editorial_failure";
+                                nextState = "SKIP_TOPIC";
+                            } else {
+                                console.warn(`[FATAL ERROR] Smart Retry exhausted. Marking topic as skipped high risk.`);
+                                finalStatus = "skipped_high_risk_topic";
+                                nextState = "SKIP_TOPIC";
+                            }
+                            break; 
+                        }
+                        attempt++;
+                        console.log(`[SMART RETRY] Triggered | Failure Type: ${reviewJson?.failure_type} | Component: ${reviewJson?.failed_component} | Attempt: ${attempt}`);
+                        
+                        
+                        const fType = reviewJson?.failure_type || "NONE";
+                        if (fType === "REVIEWER_UNAVAILABLE" || fType === "REVIEWER_JSON_INVALID" || fType === "REVIEWER_SCHEMA_MISMATCH") {
+                            const isSafeTemplate = aiResponse.__safe_template_mode === true;
+                            
+                            let policy = "STOP";
+                            const topicL = selectedTopic.toLowerCase();
+                            const isResearch = topicL.includes("research") || topicL.includes("frontiers") || topicL.includes("study") || topicL.includes("clinical") || topicL.includes("science") || topicL.includes("disease");
+                            const isBrandPr = topicL.includes("nestlé") || topicL.includes("brand") || topicL.includes("product") || topicL.includes("launch") || topicL.includes("partnership") || topicL.includes("company") || topicL.includes("supplement");
+
+                            if (isSafeTemplate) {
+                                policy = "SAFE_TEMPLATE_ONLY";
+                            } else if (isResearch) {
+                                policy = "STOP";
+                            } else if (isBrandPr) {
+                                policy = "MANUAL";
+                            } else {
+                                policy = "STOP"; // Default fallback for AI generated health claims
+                            }
+
+                            if (policy === "SAFE_TEMPLATE_ONLY") {
+                                console.log(`[REVIEW POLICY] REVIEWER_UNAVAILABLE -> SAFE_TEMPLATE_ONLY`);
+                                console.log(`[REVIEW POLICY] Reason: Using approved non-claim template with zero AI-generated health interpretation`);
+                                
+                                console.log("[SAFE BYPASS] Wiping AI payload entirely to guarantee format compliance...");
+                                aiResponse = { hook: null, script: null, caption: null, comment_cta: null, image_prompt: null };
+                                aiResponse = applySafeTemplateOverride(isBrandPr ? "brand" : "general", console.log);
+                                base64Image = null; // force image rebuild if not fallbacked
+                                imgDecision = "branded_fallback_visual";
+                                
+                                console.log("[SAFE BYPASS] Approved safe template payload fully substituted.");
+                                finalStatus = 'published_safe_template_bypass';
+                                nextState = "COMPOSE_VIDEO";
+                            } else if (policy === "MANUAL") {
+                                console.log(`[REVIEW POLICY] REVIEWER_UNAVAILABLE -> MANUAL`);
+                                console.log(`[REVIEW POLICY] Reason: Brand/PR content can be drafted but requires manual approval before publish`);
+                                finalStatus = 'ready_for_manual_review';
+                                nextState = "COMPOSE_VIDEO";
+                            } else {
+                                console.log(`[REVIEW POLICY] REVIEWER_UNAVAILABLE -> STOP`);
+                                console.log(`[REVIEW POLICY] Reason: High-risk health/science content requires reviewer approval`);
+                                finalStatus = "skipped_reviewer_unavailable";
+                                nextState = "SKIP_TOPIC";
+                            }
+                        } else if (["CLAIM_OVERREACH", "SOURCE_TONE_MISMATCH", "HOOK_TOO_WEAK", "SCRIPT_TOO_LONG", "CAPTION_TOO_GENERIC", "CTA_TOO_WEAK", "PLANNER_MISALIGNMENT"].includes(fType)) {
+                            nextState = "SMART_RETRY_TEXT";
+                        } else if (["VISUAL_NO_SUBJECT", "VISUAL_DISTORTION", "MULTI_LAYER", "GLITCH", "LOW_CLARITY"].includes(fType)) {
+                            nextState = "SMART_RETRY_IMAGE";
+                        } else if (fType === "FULL_PAYLOAD_MISMATCH") {
+                            nextState = "GENERATE_TEXT"; // FULL REGEN
+                        } else {
+                            nextState = "SMART_RETRY_TEXT"; // Safe fallback
+                        }
+
+                    }
+                    break;
                 
-                // 🛡️ Output Validation Layer
-                if (!parsedResult.script || parsedResult.script.length < 30) throw new Error("Script is suspiciously short or empty.");
-                if (parsedResult.script.length > 1500) throw new Error("Script exceeds max limits for a short Reel.");
-                
-                const placeholders = /\[insert.*?\]|\[topic\]|\[cta\]|\{\{.*?\}\}/i;
-                if (placeholders.test(parsedResult.script) || placeholders.test(parsedResult.caption)) {
-                    throw new Error("Content contains unresolved template placeholders.");
-                }
+                // -------------------------------------------------------------
+                case "SMART_RETRY_TEXT":
+                    console.log(`[SMART RETRY] Target Fields: ${reviewJson.failed_component}`);
+                    const aiResponseRepaired = await executeSelfHealingStep('AI Repair: Text', 'repair', context, async (provider) => {
+                        const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+                        const repairPrompt = `You are a targeted repair agent. Repair only the failed text component.
+Failure type: ${reviewJson.failure_type}
+Instruction: ${reviewJson.repair_instruction}
+Inputs:
+- pillar: ${plannerStrategy.pillar}
+- source topic: ${selectedTopic}
+- current hook: ${aiResponse.hook}
+- current script: ${aiResponse.script}
+- current caption: ${aiResponse.caption}
 
-                // 🛑 Compliance Sanitation Layer
-                const riskyPhrases = /(cure|diagnose|guaranteed|reverse aging|clinical result|true biological age)/i;
-                if (riskyPhrases.test(parsedResult.script) || riskyPhrases.test(parsedResult.caption)) {
-                    throw new Error("Content blocked by meta compliance sanitation layer (risky medical claim detected).");
-                }
+Output schema:
+{
+  "agent": "REPAIR_TEXT",
+  "status": "PASS",
+  "error_code": "NONE",
+  "retryable": false,
+  "message": "repair complete",
+  "data": {
+    "updated_fields": {
+      "hook": "String",
+      "script": "String",
+      "caption": "String",
+      "image_prompt": "String"
+    },
+    "repair_summary": "String"
+  }
+}
 
-                if (!parsedResult.caption || parsedResult.caption.length < 10) throw new Error("Caption is empty or invalid.");
-                if (!parsedResult.comment_cta || !parsedResult.comment_cta.includes("http")) throw new Error("Missing correct link in CTA.");
-                
-                return parsedResult;
+CRITICAL OUTPUT RULE:
+- You MUST return ONLY valid JSON
+- NO explanation
+- NO text outside JSON
+- If you fail -> your output is rejected`;
+                        const completion = await aiClient.models.generateContent({
+                            model: "gemini-2.5-flash",
+                            contents: repairPrompt,
+                            config: {
+                                response_mime_type: "application/json",
+                                response_schema: {
+                                    type: Type.OBJECT,
+                                    properties: {
+                                        agent: { type: Type.STRING },
+                                        status: { type: Type.STRING, enum: ["PASS", "RETRYABLE_FAIL", "FATAL_FAIL"] },
+                                        error_code: { type: Type.STRING },
+                                        retryable: { type: Type.BOOLEAN },
+                                        message: { type: Type.STRING },
+                                        data: {
+                                            type: Type.OBJECT,
+                                            properties: {
+                                                updated_fields: { type: Type.OBJECT, properties: { hook: { type: Type.STRING }, script: { type: Type.STRING }, caption: { type: Type.STRING }, image_prompt: { type: Type.STRING } } },
+                                                repair_summary: { type: Type.STRING }
+                                            }
+                                        },
+                                        meta: { type: Type.OBJECT }
+                                    }, required: ["agent", "status", "data"]
+                                }
+                            }
+                        });
+                        const parsed = extractJsonObject(completion.text);
+                        assertValidAgentResponse(parsed, "REPAIR_TEXT");
+                        if(!parsed.data) throw new Error("REPAIR_EMPTY_FIELDS");
+                        return parsed.data;
+                    });
+                    
+                    if (!aiResponseRepaired || !aiResponseRepaired.updated_fields) throw new Error("REPAIR_EMPTY_FIELDS");
+                    if (aiResponseRepaired.updated_fields.hook) aiResponse.hook = aiResponseRepaired.updated_fields.hook;
+                    if (aiResponseRepaired.updated_fields.script) aiResponse.script = aiResponseRepaired.updated_fields.script;
+                    if (aiResponseRepaired.updated_fields.caption) aiResponse.caption = aiResponseRepaired.updated_fields.caption;
+                    if (aiResponseRepaired.updated_fields.image_prompt) aiResponse.image_prompt = aiResponseRepaired.updated_fields.image_prompt;
+                    console.log(`[SMART RETRY] Repair applied: ${aiResponseRepaired.repair_summary}`);
+                    
+                    nextState = "GENERATE_AUDIO"; // Re-gen audio based on new script
+                    break;
+
+                // -------------------------------------------------------------
+                case "SMART_RETRY_IMAGE":
+                    console.log(`[SMART RETRY] Action: REGENERATE_IMAGE_ONLY`);
+                    const imgRepair = await executeSelfHealingStep('AI Repair: Image', 'repair', context, async (provider) => {
+                        const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+                        const completion = await aiClient.models.generateContent({
+                            model: "gemini-2.5-flash",
+                            contents: `You are a targeted visual repair agent. Failure type: ${reviewJson.failure_type}. Instruction: ${reviewJson.repair_instruction}. Current prompt: ${aiResponse.image_prompt}. Rewrite prompt for clarity.
+CRITICAL OUTPUT RULE:
+- You MUST return ONLY valid JSON
+- NO explanation
+- NO text outside JSON
+- If you fail -> your output is rejected`,
+                            config: {
+                                response_mime_type: "application/json",
+                                response_schema: { 
+                                     type: Type.OBJECT,
+                                     properties: {
+                                        agent: { type: Type.STRING },
+                                        status: { type: Type.STRING, enum: ["PASS", "RETRYABLE_FAIL", "FATAL_FAIL"] },
+                                        error_code: { type: Type.STRING },
+                                        retryable: { type: Type.BOOLEAN },
+                                        message: { type: Type.STRING },
+                                        data: {
+                                            type: Type.OBJECT,
+                                            properties: {
+                                                 updated_fields: { type: Type.OBJECT, properties: { image_prompt: { type: Type.STRING } } },
+                                                 repair_summary: { type: Type.STRING } 
+                                            }
+                                        },
+                                        meta: { type: Type.OBJECT }
+                                    }, required: ["agent", "status", "data"]
+                                }
+                            }
+                        });
+                        const parsed = extractJsonObject(completion.text);
+                        assertValidAgentResponse(parsed, "REPAIR_IMAGE");
+                        if(!parsed.data) throw new Error("REPAIR_EMPTY_FIELDS");
+                        return parsed.data;
+                    });
+                    if (imgRepair && imgRepair.updated_fields && imgRepair.updated_fields.image_prompt) {
+                        aiResponse.image_prompt = imgRepair.updated_fields.image_prompt;
+                    }
+                    nextState = "GENERATE_IMAGE"; // Re-gen image with new prompt
+                    break;
+
+                // -------------------------------------------------------------
+                case "COMPOSE_VIDEO":
+                    assertSafeTemplateIntegrity(aiResponse);
+                    if (imgDecision === "branded_fallback_visual") {
+                        await sendAlert(context.conn, "warning", `image_fallback_${RUN_ID}`, "Image Generation Degraded", `Fallback engaged`, context);
+                        const fallbackSrcPath = path.join(process.cwd(), 'public', 'nutrition-bg.jpg');
+                        if (!fs.existsSync(fallbackSrcPath)) {
+                            console.error(`[FFMPEG] Missing fallback image at: ${fallbackSrcPath}`);
+                            console.log(`[FFMPEG] Auto-generating solid colored fallback background to prevent pipeline crash.`);
+                            require('child_process').execSync(`ffmpeg -f lavfi -i color=c=0x0A0F1F:s=1080x1920 -vframes 1 "${imgPath}"`, {stdio: 'ignore'});
+                        } else {
+                            require('child_process').execSync(`ffmpeg -y -i "${fallbackSrcPath}" -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,colorchannelmixer=rr=0.7:gg=0.7:bb=0.8" -vframes 1 "${imgPath}"`, {stdio: 'ignore'});
+                        }
+                    }
+                    await updateRunLog(context.conn, { current_step: 'ffmpeg_rendering' });
+                    
+                    const safeDuration = safeModeActivated ? 10 : Math.max(8, aiResponse.script.split(' ').length * 0.4) + 2; 
+                    const eff = imgDecision === "branded_fallback_visual" ? "" : "zoompan=z='min(zoom+0.0015,1.5)':d=700:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920,";
+                    require('child_process').execSync(`ffmpeg -y -loop 1 -i "${imgPath}" -i "${audioPath}" -map 0:v -map 1:a -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,${eff}format=yuv420p" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -t ${safeDuration} "${outPath}"`, { stdio: 'pipe', timeout: 120000 });
+                    
+                    if (!fs.existsSync(outPath) || fs.statSync(outPath).size < 50000) {
+                       throw new Error("FFmpeg corrupted output");
+                    }
+                    
+                    nextState = "PUBLISH";
+                    break;
+
+                // -------------------------------------------------------------
+                case "PUBLISH":
+                    if (finalStatus === "ready_for_manual_review") {
+                        console.log(`[PUBLISH GUARD] Skipping publish phase. Content marked for manual review.`);
+                        nextState = "MEMORY_COMMIT";
+                        break;
+                    }
+                    await executeSelfHealingStep('Graph Publishing', 'publish', context, async () => {
+                         let publish_mode = "normal";
+                         if (aiResponse && aiResponse.__safe_template_mode === true) {
+                             publish_mode = "safe_template";
+                         } else if (attempt > 0) {
+                             publish_mode = "repaired";
+                         }
+
+                         if (process.env.PUBLISH_ENABLED !== 'true') {
+                             console.log(`[PUBLISH GUARD] PUBLISH_ENABLED is false. Simulating successful Graph API upload...`);
+                             console.log(`[LIVE POST] PostID=SIMULATED | RunID=${RUN_ID} | Mode=${publish_mode}`);
+                             return;
+                         }
+                         const form = new FormData();
+                         form.append('access_token', process.env.FB_PAGE_ACCESS_TOKEN);
+                         form.append('description', `🚨 New Detail: ${selectedTopic}\n\n${aiResponse.caption}\n\n#NadaniaWellness`);
+                         form.append('source', fs.createReadStream(outPath));
+                         const res = await axios.post(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/videos`, form, { headers: form.getHeaders(), maxBodyLength: Infinity });
+                         if(res.data && res.data.id) {
+                             console.log(`[LIVE POST] PostID=${res.data.id} | RunID=${RUN_ID} | Mode=${publish_mode}`);
+                             try { 
+                                 if(process.env.LIVE_FIRE_TEST === 'COMMENT') throw new Error("LIVE TEST: Intentionally failed comment injection!");
+                                 await axios.post(`https://graph.facebook.com/v19.0/${res.data.id}/comments`, { 
+                                     message: aiResponse.comment_cta, access_token: process.env.FB_PAGE_ACCESS_TOKEN 
+                                 }); 
+                             } catch(cErr) {
+                                 finalStatus = 'posted_no_comment';
+                                 await sendAlert(context.conn, "warning", "meta_comment_failure", "Comment Ping Failed", cErr.message, { ...context, cooldownHrs: process.env.LIVE_FIRE_TEST ? 0 : 1 });
+                             }
+                         }
+                    });
+                    
+                    nextState = "MEMORY_COMMIT";
+                    break;
+
+                // -------------------------------------------------------------
+                case "MEMORY_COMMIT":
+                    const finalPillar = plannerStrategy && plannerStrategy.pillar ? plannerStrategy.pillar : null;
+                    const finalAngle = plannerStrategy && plannerStrategy.topic_angle ? plannerStrategy.topic_angle : null;
+                    await context.conn.execute(
+                        "UPDATE health_reels_queue SET status = ?, locked_by = NULL, posted_at = CURRENT_TIMESTAMP, content_pillar = ?, topic_angle = ? WHERE id = ?", 
+                        [finalStatus, finalPillar, finalAngle, topicId]
+                    );
+                    await updateRunLog(context.conn, { status: finalStatus, completed_at: new Date(), current_step: 'completed', duration_ms: Date.now() - startTime });
+                    console.log(`✅ System Graceful Exit. Target Status: ${finalStatus}`);
+                    
+                    nextState = "COMPLETE";
+                    break;
+
+                // -------------------------------------------------------------
+                case "SKIP_TOPIC":
+                    await context.conn.execute("UPDATE health_reels_queue SET status = ?, locked_by = NULL, updated_at = NOW() WHERE id = ?", [finalStatus, topicId]);
+                    await updateRunLog(context.conn, { status: finalStatus, completed_at: new Date(), current_step: 'skipped', error_summary: 'Topic evaluated as extreme editorial risk and skipped.', duration_ms: Date.now() - startTime });
+                    console.log(`[STATE] Skipping high-risk topic. Marked as ${finalStatus} in database.`);
+                     
+                    // Clean memory for next
+                    aiResponse = null;
+                    base64Image = null;
+                    imgDecision = null;
+                    reviewJson = null;
+                    attempt = 0;
+                     
+                    nextState = "PICK_NEXT_TOPIC";
+                    break;
+                     
+                // -------------------------------------------------------------
+                case "PICK_NEXT_TOPIC":
+                    let [nextLock] = await context.conn.execute("UPDATE health_reels_queue SET status = 'processing_lock', locked_by = ?, updated_at = NOW() WHERE status = 'pending' ORDER BY created_at ASC LIMIT 1", [RUN_ID]);
+                    if (nextLock.affectedRows === 0) {
+                         console.log("No more pending topics available. Graceful system exit.");
+                         nextState = "COMPLETE";
+                         break;
+                    }
+                    const [nextRows] = await context.conn.execute("SELECT id, topic FROM health_reels_queue WHERE locked_by = ?", [RUN_ID]);
+                    if (nextRows.length === 0) {
+                         nextState = "COMPLETE";
+                         break;
+                    }
+                    selectedTopic = nextRows[0].topic;
+                    topicId = nextRows[0].id;
+                    context.topic = selectedTopic;
+                    console.log(`🔒 Acquired Next Idempotency Lock on Topic ID ${topicId}: ${selectedTopic}`);
+                    nextState = "PLAN_STRATEGY";
+                    break;
+
+                // -------------------------------------------------------------
+                default:
+                    throw new Error(`Invalid state transition identified: ${currentState}`);
             }
-        });
-        const scriptProviderUsed = context.provider;
 
-        // 🎙️ PHASE 2: AUDIO (Self-Healing)
-        const tempDir = os.tmpdir();
-        const audioPath = path.join(tempDir, `tts_${RUN_ID}.mp3`);
-        const imgPath = path.join(tempDir, `bg_${RUN_ID}.png`);
-        const outPath = path.join(tempDir, `final_${RUN_ID}.mp4`);
+            console.log(`[STATE] ${currentState} -> ${nextState} | Event: Transition successful`);
+            currentState = nextState;
 
-        await executeSelfHealingStep('Audio TTS', 'audio', context, async (provider) => {
-            if (provider === 'google-tts') {
-                const googleTTS = require('google-tts-api');
-                const results = await googleTTS.getAllAudioBase64(aiResponse.script.slice(0, 800), { lang: 'en', slow: false, splitPunct: ',.?' });
-                const base64Buffers = results.map(r => Buffer.from(r.base64, 'base64'));
-                fs.writeFileSync(audioPath, Buffer.concat(base64Buffers));
-            }
-        });
-
-        // 🎨 PHASE 3: VERBAL IMAGE (Self-Healing)
-        const imgDecision = await executeSelfHealingStep('Image Generation', 'image', context, async (provider) => {
-            if (provider === 'pollinations') {
-                const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(aiResponse.image_prompt)}?width=1080&height=1920&nologo=true`;
-                const imageResponse = await axios.get(imageUrl, { responseType: 'arraybuffer', timeout: 45000 });
-                
-                // GUARD: Check if image response is genuinely valid and not just an error page buffer
-                if (imageResponse.status !== 200 || !imageResponse.data || imageResponse.data.length < 20000) {
-                    throw new Error("Invalid or corrupted image payload received from Pollinations API.");
-                }
-
-                fs.writeFileSync(imgPath, Buffer.from(imageResponse.data));
-                return "loaded";
-            }
-        });
-
-        if (imgDecision === "branded_fallback_visual") {
-            // FIRE ALERT: Telemetry for operations dashboard to note the degradation
-            await sendAlert(conn, "warning", `image_fallback_${RUN_ID}`, "Image Generation Degraded", `All image providers exhausted. Engaged dynamic fallback overlay framework to substitute missing visual layer for Topic ID ${topicId}.`, context);
-
-            // STATIC GUARANTEED RENDER: Use a pre-existing premium asset instead of a solid color
-            const fallbackSrcPath = path.join(process.cwd(), 'public', 'nutrition-bg.jpg');
-            if (fs.existsSync(fallbackSrcPath)) {
-                // Dim the static image slightly so the text/video focus remains prominent and fits 9:16 perfectly
-                require('child_process').execSync(`ffmpeg -y -i ${fallbackSrcPath} -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,colorchannelmixer=rr=0.7:gg=0.7:bb=0.8" -vframes 1 ${imgPath}`, {stdio: 'ignore'});
-            } else {
-                // Secondary absolute fail-safe if static asset is missing
-                require('child_process').execSync(`ffmpeg -f lavfi -i color=c=0x0A0F1F:s=1080x1920 -vframes 1 ${imgPath}`, {stdio: 'ignore'});
-            }
+        } catch (err) {
+            console.error(`[STATE CRASH] Error encountered in state ${currentState}:`, err.message);
+            globalErr = err;
+            currentState = "FATAL_STOP";
         }
+    }
 
-        // ⚙️ PHASE 4: FFmpeg Rendering
-        await updateRunLog(conn, { current_step: 'ffmpeg_rendering' });
-        try {
-            const safeDuration = safeModeActivated ? 10 : Math.max(8, aiResponse.script.split(' ').length * 0.4) + 2; 
-            const eff = imgDecision === "branded_fallback_visual" ? "" : "zoompan=z='min(zoom+0.0015,1.5)':d=700:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)',";
-            require('child_process').execSync(`ffmpeg -y -loop 1 -i ${imgPath} -i ${audioPath} -map 0:v -map 1:a -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,${eff}format=yuv420p" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -t ${safeDuration} ${outPath}`, { stdio: 'pipe', timeout: 120000 });
-            
-            // Post-Render Guard: Validate the final generated visual composition file exists and has size
-            if (!fs.existsSync(outPath) || fs.statSync(outPath).size < 50000) {
-               throw new Error("FFmpeg composition resulted in a corrupted or zero-byte visual file.");
-            }
-        } catch(e) { throw new Error(`FFmpeg Crash or Render Guard Failed: ${e.message}`); }
-
-        // 🚀 PHASE 5: PUBLISH & IDEMPOTENCY FINALIZE
-        console.log(`\n📋 Final Pre-Publish Manifest:
-- Requested Policy: ${scriptProviderUsed}
-- Actual Model:     ${context.actualModelString || 'UNKNOWN'}
-- API Endpoint:     ${context.apiVersion || 'UNKNOWN'}
-- Fallback Level:   ${scriptProviderUsed.includes('full') ? 'Primary' : scriptProviderUsed.includes('simplified') ? 'Level 1' : 'Level 2 (Minimal)'}
-- Safe Mode:        ${safeModeActivated ? "ACTIVE 🛡️" : "Inactive"}
-- Visual Mode:      ${imgDecision === "loaded" ? "AI Generated Asset ✅" : "Guaranteed Static Fallback ⚠️"}
-- Video Render:     VERIFIED 1080x1920 COMPOSITION ✅
-- Publish Guard:    READY\n`);
-
-        await executeSelfHealingStep('Graph Publishing', 'publish', context, async () => {
-             const form = new FormData();
-             form.append('access_token', process.env.FB_PAGE_ACCESS_TOKEN);
-             form.append('description', `🚨 New Detail: ${selectedTopic}\n\n${aiResponse.caption}\n\n#NadaniaWellness`);
-             form.append('source', fs.createReadStream(outPath));
-             const res = await axios.post(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/videos`, form, { headers: form.getHeaders(), maxBodyLength: Infinity });
-             let finalStatus = 'posted';
-             if(res.data && res.data.id) {
-                 try { 
-                     if(process.env.LIVE_FIRE_TEST === 'COMMENT') throw new Error("LIVE TEST: Intentionally failed comment injection!");
-                     await axios.post(`https://graph.facebook.com/v19.0/${res.data.id}/comments`, { 
-                         message: aiResponse.comment_cta, access_token: process.env.FB_PAGE_ACCESS_TOKEN 
-                     }); 
-                 } catch(cErr) {
-                     finalStatus = 'posted_no_comment';
-                     await sendAlert(context.conn, "warning", "meta_comment_failure", "Comment Ping Failed", cErr.message, { ...context, cooldownHrs: process.env.LIVE_FIRE_TEST ? 0 : 1 });
-                 }
-             }
-
-             // Officially Release Lock & Mark Posted
-             await context.conn.execute("UPDATE health_reels_queue SET status = ?, locked_by = NULL, posted_at = CURRENT_TIMESTAMP WHERE id = ?", [finalStatus, topicId]);
-             await updateRunLog(context.conn, { status: finalStatus, completed_at: new Date(), current_step: 'completed', duration_ms: Date.now() - startTime });
-             console.log(`✅ System Graceful Exit. Target Status: ${finalStatus}`);
-        });
-        
-        await conn.end();
-
-    } catch (globalErr) {
-        if(context.conn) {
-            await updateRunLog(context.conn, { status: 'failed', completed_at: new Date(), error_summary: globalErr.message, duration_ms: Date.now() - startTime });
-            // Release Lock if crashed so it can be retried / healed
+    if (currentState === "FATAL_STOP") {
+        if (context.conn) {
+            await updateRunLog(context.conn, { status: 'failed', completed_at: new Date(), error_summary: globalErr?.message, duration_ms: Date.now() - startTime });
             if (topicId) await triggerRecoveryRun(context.conn, topicId, context);
             await context.conn.end();
         }
-        console.error("🚨 FATAL STOP:", globalErr.stack);
+        console.error("🚨 FATAL STOP:", globalErr?.stack || globalErr);
         process.exit(1);
+    } else {
+        if (context.conn) await context.conn.end();
     }
 }
 main();
+

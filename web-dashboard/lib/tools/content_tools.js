@@ -1,3 +1,4 @@
+import { GoogleGenAI } from "@google/genai";
 import { tool } from "@langchain/core/tools";
 import { z } from "zod";
 import { getConnection } from '@/lib/db';
@@ -67,32 +68,28 @@ export const publishSeoBlogTool = tool(
     let connection;
     try {
         connection = await getConnection();
-        let imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(generated_image_prompt)}?width=1200&height=630&nologo=true`;
+        let imageUrl = null;
 
-        // Use OpenAI DALL-E 3 if available
-        if (process.env.OPENAI_API_KEY) {
+        // Use Gemini Imagen exclusively
+        if (process.env.GEMINI_API_KEY) {
             try {
-                const aiRes = await fetch("https://api.openai.com/v1/images/generations", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`
-                    },
-                    body: JSON.stringify({
-                        model: "dall-e-3",
-                        prompt: generated_image_prompt + " Style: High-end lifestyle commercial photography, showing human interaction, ultra-realistic, highly detailed, beautiful lighting, engaging, no text.",
-                        n: 1,
-                        size: "1024x1024",
-                        response_format: "url"
-                    })
+                const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+                const aiRes = await aiClient.models.generateImages({
+                    model: process.env.GEMINI_IMAGEN_MODEL || 'imagen-4.0-generate-001',
+                    prompt: generated_image_prompt + " Style: High-end lifestyle commercial photography, showing human interaction, ultra-realistic, highly detailed, beautiful lighting, engaging, no text.",
+                    config: {
+                        numberOfImages: 1,
+                        outputMimeType: 'image/jpeg',
+                        aspectRatio: '16:9'
+                    }
                 });
-                const imgData = await aiRes.json();
-                if (imgData.data && imgData.data[0]) {
-                    const remoteUrl = imgData.data[0].url;
+                
+                if (aiRes.generatedImages && aiRes.generatedImages.length > 0) {
+                    const base64Image = aiRes.generatedImages[0].image.imageBytes;
                     
                     if (process.env.IMGBB_API_KEY) {
                         const imgFormData = new URLSearchParams();
-                        imgFormData.append("image", remoteUrl); // Pass the direct DALL-E URL to ImgBB
+                        imgFormData.append("image", base64Image);
 
                         const imgbbRes = await fetch(`https://api.imgbb.com/1/upload?key=${process.env.IMGBB_API_KEY}`, {
                             method: "POST",
@@ -102,23 +99,24 @@ export const publishSeoBlogTool = tool(
                         
                         if (imgbbData.success) {
                             imageUrl = imgbbData.data.url; // Database will store this permanent ImgBB direct URL
-                            console.log("✅ DALL-E Image successfully uploaded to ImgBB:", imageUrl);
+                            const activeModel = process.env.GEMINI_IMAGEN_MODEL || 'imagen-4.0-generate-001';
+                            console.log(`✅ [${activeModel}] Image successfully uploaded to ImgBB:`, imageUrl);
                         } else {
                             throw new Error("ImgBB Upload Failed: " + JSON.stringify(imgbbData));
                         }
                     } else {
-                         // Fallback mechanism if no ImgBB key
-                         console.warn("No IMGBB_API_KEY found! Using ephemeral DALL-E URL which will expire in 1 hour.");
-                         imageUrl = remoteUrl;
+                         throw new Error("Missing IMGBB_API_KEY, cannot upload Gemini base64 image.");
                     }
                 }
-            } catch (dalleErr) {
-                console.error("DALL-E 3 / ImgBB Generation Failed, falling back to free Pollinations:", dalleErr);
-                await logAgent('agent_3', 'Squad 3: Content Marketing', 'DALL-E 3 Subsystem Error', 'failed', dalleErr.message.substring(0, 150));
+            } catch (genErr) {
+                console.error("Gemini Imagen / ImgBB Generation Failed:", genErr);
+                await logAgent('agent_3', 'Squad 3: Content Marketing', 'Gemini Imagen Subsystem Error', 'failed', genErr.message.substring(0, 150));
+                imageUrl = "https://i.ibb.co/6P9m1gM/dealhunter-fallback.jpg"; // Static guaranteed fallback
             }
         } else {
             // Also log if they didn't set the key
-            await logAgent('agent_3', 'Squad 3: Content Marketing', 'Missing OpenAI Key in Vercel', 'failed', 'process.env.OPENAI_API_KEY is completely empty or undefined on the server.');
+            await logAgent('agent_3', 'Squad 3: Content Marketing', 'Missing Gemini Key in Vercel', 'failed', 'process.env.GEMINI_API_KEY is completely empty or undefined on the server.');
+            imageUrl = "https://i.ibb.co/6P9m1gM/dealhunter-fallback.jpg"; 
         }
 
         const [insertResult] = await connection.execute(
