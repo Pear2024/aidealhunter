@@ -1,0 +1,40 @@
+name: 📊 Graph Observer - Fetch FB Metrics
+
+on:
+  schedule:
+    # Runs every 4 hours to collect post metrics
+    - cron: '15 2,6,10,14,18,22 * * *'
+  # Allows manual triggering
+  workflow_dispatch:
+
+jobs:
+  observe-metrics:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⬇️ Checkout code
+        uses: actions/checkout@v3
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: 📦 Install Dependencies
+        run: |
+          cd web-dashboard
+          npm install
+
+      - name: 📊 Run Graph Observer + Revenue Predictor
+        env:
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+          MYSQL_PORT: ${{ secrets.MYSQL_PORT }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          cd web-dashboard
+          node cron_graph_observer.js

@@ -941,6 +941,18 @@ CRITICAL OUTPUT RULE:
                          const res = await axios.post(`https://graph.facebook.com/v19.0/${process.env.FB_PAGE_ID}/videos`, form, { headers: form.getHeaders(), maxBodyLength: Infinity });
                          if(res.data && res.data.id) {
                              console.log(`[LIVE POST] PostID=${res.data.id} | RunID=${RUN_ID} | Mode=${publish_mode}`);
+                             // Store post_id in reel_content_versions so Graph Observer can track metrics
+                             try {
+                                 await context.conn.execute(
+                                     `INSERT INTO reel_content_versions (run_id, post_id, publish_status, created_at)
+                                      VALUES (?, ?, 'published', NOW())
+                                      ON DUPLICATE KEY UPDATE post_id = VALUES(post_id), publish_status = 'published'`,
+                                     [RUN_ID, res.data.id]
+                                 );
+                                 console.log(`[OBSERVER BRIDGE] Stored post_id=${res.data.id} in reel_content_versions for metric tracking`);
+                             } catch (dbErr) {
+                                 console.error(`[OBSERVER BRIDGE] Failed to store post_id: ${dbErr.message}`);
+                             }
                              try { 
                                  if(process.env.LIVE_FIRE_TEST === 'COMMENT') throw new Error("LIVE TEST: Intentionally failed comment injection!");
                                  await axios.post(`https://graph.facebook.com/v19.0/${res.data.id}/comments`, { 
