@@ -78,9 +78,12 @@ async function runRevenuePredictor() {
             const wRatioFloat = avgWatchS / videoLenS;
 
             // Maturity & Integrity Checks
-            if (impressionsNum < 500) {
-                console.log(`[REVENUE PREDICTOR] NOT_ENOUGH_DATA: Post has only ${impressionsNum} impressions. Waiting for maturity to evaluate.`);
+            if (impressionsNum < 10) {
+                console.log(`[REVENUE PREDICTOR] NOT_ENOUGH_DATA: Post has only ${impressionsNum} impressions. Waiting for minimum 10 impressions to evaluate.`);
                 continue;
+            }
+            if (impressionsNum < 500) {
+                console.log(`[REVENUE PREDICTOR] EARLY_SCORING: Post has ${impressionsNum} impressions (ideal: 500+). Scoring with available data.`);
             }
 
             // 2. Normalize with Caps

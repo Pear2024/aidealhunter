@@ -23,15 +23,19 @@ export async function GET() {
         // 1. Fetch Top Matured Posts with Business Metrics
         const [performances] = await conn.execute(`
             SELECT v.post_id, v.hook, v.comment_cta, v.revenue_score, v.review_status as decision, v.is_winner,
+                   v.publish_status, v.created_at as version_created_at,
                    (SELECT impressions FROM reel_performance_snapshots s WHERE s.post_id = v.post_id ORDER BY snapshot_at DESC LIMIT 1) as impressions,
+                   (SELECT comments FROM reel_performance_snapshots s WHERE s.post_id = v.post_id ORDER BY snapshot_at DESC LIMIT 1) as comments,
                    (SELECT comment_rate FROM reel_performance_snapshots s WHERE s.post_id = v.post_id ORDER BY snapshot_at DESC LIMIT 1) as comment_rate,
                    (SELECT hold_rate FROM reel_performance_snapshots s WHERE s.post_id = v.post_id ORDER BY snapshot_at DESC LIMIT 1) as hold_rate,
                    p.boost_status
             FROM reel_content_versions v
             LEFT JOIN reel_promotion_jobs p ON v.post_id = p.post_id
-            WHERE v.post_id IS NOT NULL AND v.revenue_score IS NOT NULL
-            ORDER BY v.revenue_score DESC
-            LIMIT 15
+            WHERE v.post_id IS NOT NULL 
+              AND v.post_id NOT LIKE 'test_%'
+              AND v.publish_status = 'published'
+            ORDER BY v.revenue_score IS NULL ASC, v.revenue_score DESC, v.created_at DESC
+            LIMIT 20
         `);
         
         await conn.end();

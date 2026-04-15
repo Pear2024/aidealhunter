@@ -66,9 +66,9 @@ export default function AICommandCenter() {
                                 <tr>
                                     <th className="px-6 py-4">Post ID</th>
                                     <th className="px-6 py-4">Impressions</th>
+                                    <th className="px-6 py-4">Comments</th>
                                     <th className="px-6 py-4">CMT Rate</th>
                                     <th className="px-6 py-4">Hold Rate</th>
-                                    <th className="px-6 py-4">Share Rate</th>
                                     <th className="px-6 py-4">Rev Score</th>
                                     <th className="px-6 py-4 text-center">AI Decision</th>
                                 </tr>
@@ -76,18 +76,22 @@ export default function AICommandCenter() {
                             <tbody className="divide-y divide-gray-800 text-gray-300">
                                 {intelligence?.performances?.map((post, i) => (
                                     <tr key={i} className="hover:bg-gray-800/80 transition-colors group">
-                                        <td className="px-6 py-4 font-mono text-gray-400 text-xs truncate max-w-[120px]">{post.post_id || '-'}</td>
+                                        <td className="px-6 py-4 font-mono text-gray-400 text-xs truncate max-w-[160px]">
+                                            <a href={`https://www.facebook.com/${post.post_id}`} target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors">
+                                                {post.post_id || '-'}
+                                            </a>
+                                        </td>
                                         <td className="px-6 py-4 font-semibold text-gray-200">
                                             {post.impressions ? parseInt(post.impressions).toLocaleString() : '-'}
+                                        </td>
+                                        <td className="px-6 py-4 text-emerald-400 font-semibold">
+                                            {post.comments != null ? parseInt(post.comments).toLocaleString() : '-'}
                                         </td>
                                         <td className="px-6 py-4 text-cyan-400">
                                             {post.comment_rate ? (parseFloat(post.comment_rate) * 100).toFixed(2) + '%' : '-'}
                                         </td>
                                         <td className="px-6 py-4 text-blue-400">
                                             {post.hold_rate ? (parseFloat(post.hold_rate) * 100).toFixed(2) + '%' : '-'}
-                                        </td>
-                                        <td className="px-6 py-4 text-purple-400">
-                                            0.10% {/* Simulated */}
                                         </td>
                                         <td className="px-6 py-4">
                                             <MetricBadge score={post.revenue_score} />
@@ -98,7 +102,7 @@ export default function AICommandCenter() {
                                     </tr>
                                 ))}
                                 {(!intelligence?.performances || intelligence.performances.length === 0) && (
-                                    <tr><td colSpan="6" className="px-6 py-8 text-center text-gray-500">No matured posts evaluated yet.</td></tr>
+                                    <tr><td colSpan="7" className="px-6 py-8 text-center text-gray-500">No published posts with metrics yet.</td></tr>
                                 )}
                             </tbody>
                         </table>
