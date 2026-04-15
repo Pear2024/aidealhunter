@@ -64,45 +64,73 @@ export default function AICommandCenter() {
                         <table className="w-full text-left text-sm whitespace-nowrap">
                             <thead className="bg-black text-gray-400 uppercase text-[10px] tracking-wider">
                                 <tr>
-                                    <th className="px-6 py-4">Post ID</th>
-                                    <th className="px-6 py-4">Impressions</th>
-                                    <th className="px-6 py-4">Comments</th>
-                                    <th className="px-6 py-4">CMT Rate</th>
-                                    <th className="px-6 py-4">Hold Rate</th>
-                                    <th className="px-6 py-4">Rev Score</th>
-                                    <th className="px-6 py-4 text-center">AI Decision</th>
+                                    <th className="px-4 py-4" style={{minWidth: '220px'}}>หัวข้อ</th>
+                                    <th className="px-4 py-4">Impressions</th>
+                                    <th className="px-4 py-4">Comments</th>
+                                    <th className="px-4 py-4">CMT Rate</th>
+                                    <th className="px-4 py-4">Hold Rate</th>
+                                    <th className="px-4 py-4">Rev Score</th>
+                                    <th className="px-4 py-4 text-center">AI Decision</th>
+                                    <th className="px-4 py-4" style={{minWidth: '180px'}}>กลุ่มเป้าหมาย Boost</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-800 text-gray-300">
-                                {intelligence?.performances?.map((post, i) => (
+                                {intelligence?.performances?.map((post, i) => {
+                                    const topicLabel = post.topic_name || post.hook || post.run_id || post.post_id;
+                                    const pillar = post.content_pillar;
+                                    const audienceMap = {
+                                        'PAIN': '💊 คนมีปัญหาสุขภาพ 35-65 ปี',
+                                        'EDUCATION': '📚 คนรักสุขภาพ 25-55 ปี',
+                                        'MYTH': '🔬 คนชอบ fact-check 25-45 ปี',
+                                        'TRANSFORMATION': '✨ คนอยากเปลี่ยนแปลง 30-55 ปี',
+                                        'CTA': '🎯 คนพร้อมซื้อ 30-60 ปี'
+                                    };
+                                    const audience = pillar && audienceMap[pillar] 
+                                        ? audienceMap[pillar]
+                                        : post.decision === 'BOOST' ? '🎯 Health-conscious 25-55' : null;
+                                    
+                                    return (
                                     <tr key={i} className="hover:bg-gray-800/80 transition-colors group">
-                                        <td className="px-6 py-4 font-mono text-gray-400 text-xs truncate max-w-[160px]">
+                                        <td className="px-4 py-4 max-w-[260px]">
                                             <a href={`https://www.facebook.com/${post.post_id}`} target="_blank" rel="noopener noreferrer" className="hover:text-cyan-400 transition-colors">
-                                                {post.post_id || '-'}
+                                                <div className="text-sm font-medium text-gray-200 truncate">{topicLabel}</div>
+                                                {post.content_pillar && (
+                                                    <span className="text-[10px] text-gray-500 uppercase tracking-wider">{post.content_pillar}</span>
+                                                )}
                                             </a>
                                         </td>
-                                        <td className="px-6 py-4 font-semibold text-gray-200">
+                                        <td className="px-4 py-4 font-semibold text-gray-200">
                                             {post.impressions ? parseInt(post.impressions).toLocaleString() : '-'}
                                         </td>
-                                        <td className="px-6 py-4 text-emerald-400 font-semibold">
+                                        <td className="px-4 py-4 text-emerald-400 font-semibold">
                                             {post.comments != null ? parseInt(post.comments).toLocaleString() : '-'}
                                         </td>
-                                        <td className="px-6 py-4 text-cyan-400">
+                                        <td className="px-4 py-4 text-cyan-400">
                                             {post.comment_rate ? (parseFloat(post.comment_rate) * 100).toFixed(2) + '%' : '-'}
                                         </td>
-                                        <td className="px-6 py-4 text-blue-400">
+                                        <td className="px-4 py-4 text-blue-400">
                                             {post.hold_rate ? (parseFloat(post.hold_rate) * 100).toFixed(2) + '%' : '-'}
                                         </td>
-                                        <td className="px-6 py-4">
+                                        <td className="px-4 py-4">
                                             <MetricBadge score={post.revenue_score} />
                                         </td>
-                                        <td className="px-6 py-4 text-center">
+                                        <td className="px-4 py-4 text-center">
                                             <DecisionBadge decision={post.decision} />
                                         </td>
+                                        <td className="px-4 py-4 text-xs">
+                                            {audience ? (
+                                                <span className={`${post.decision === 'BOOST' ? 'text-yellow-400 font-semibold' : 'text-gray-500'}`}>
+                                                    {audience}
+                                                </span>
+                                            ) : (
+                                                <span className="text-gray-600">-</span>
+                                            )}
+                                        </td>
                                     </tr>
-                                ))}
+                                    );
+                                })}
                                 {(!intelligence?.performances || intelligence.performances.length === 0) && (
-                                    <tr><td colSpan="7" className="px-6 py-8 text-center text-gray-500">No published posts with metrics yet.</td></tr>
+                                    <tr><td colSpan="8" className="px-6 py-8 text-center text-gray-500">No published posts with metrics yet.</td></tr>
                                 )}
                             </tbody>
                         </table>

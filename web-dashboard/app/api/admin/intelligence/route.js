@@ -22,7 +22,7 @@ export async function GET() {
 
         // 1. Fetch Top Matured Posts with Business Metrics
         const [performances] = await conn.execute(`
-            SELECT v.post_id, v.hook, v.comment_cta, v.revenue_score, v.review_status as decision, v.is_winner,
+            SELECT v.post_id, v.run_id, v.hook, v.comment_cta, v.revenue_score, v.review_status as decision, v.is_winner,
                    v.publish_status, v.created_at as version_created_at,
                    (SELECT impressions FROM reel_performance_snapshots s WHERE s.post_id = v.post_id ORDER BY snapshot_at DESC LIMIT 1) as impressions,
                    (SELECT comments FROM reel_performance_snapshots s WHERE s.post_id = v.post_id ORDER BY snapshot_at DESC LIMIT 1) as comments,
@@ -37,7 +37,33 @@ export async function GET() {
             ORDER BY v.revenue_score IS NULL ASC, v.revenue_score DESC, v.created_at DESC
             LIMIT 20
         `);
-        
+
+        // 2. Enrich with topic names from health_reels_queue
+        const [postedTopics] = await conn.execute(`
+            SELECT id, topic, content_pillar, topic_angle 
+            FROM health_reels_queue 
+            WHERE status IN ('posted', 'posted_no_comment', 'published_safe_template_bypass')
+            ORDER BY id DESC LIMIT 50
+        `);
+
+        // Match run_id keywords to topics (e.g. "apr12-resveratrol" → topic containing "resveratrol")
+        for (const perf of performances) {
+            if (!perf.run_id) continue;
+            const keywords = perf.run_id.replace(/[^a-zA-Z]/g, ' ').split(/\s+/).filter(k => k.length > 3);
+            let bestMatch = null;
+            let bestScore = 0;
+            for (const t of postedTopics) {
+                const topicLower = t.topic.toLowerCase();
+                const score = keywords.filter(k => topicLower.includes(k.toLowerCase())).length;
+                if (score > bestScore) { bestScore = score; bestMatch = t; }
+            }
+            if (bestMatch) {
+                perf.topic_name = bestMatch.topic;
+                perf.content_pillar = bestMatch.content_pillar;
+                perf.topic_angle = bestMatch.topic_angle;
+            }
+        }
+
         await conn.end();
 
         // 2. Load Learning Memory
