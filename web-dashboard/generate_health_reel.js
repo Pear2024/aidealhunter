@@ -944,10 +944,9 @@ CRITICAL OUTPUT RULE:
                              // Store post_id in reel_content_versions so Graph Observer can track metrics
                              try {
                                  await context.conn.execute(
-                                     `INSERT INTO reel_content_versions (run_id, post_id, publish_status, created_at)
-                                      VALUES (?, ?, 'published', NOW())
-                                      ON DUPLICATE KEY UPDATE post_id = VALUES(post_id), publish_status = 'published'`,
-                                     [RUN_ID, res.data.id]
+                                     `INSERT INTO reel_content_versions (run_id, post_id, version_number, version_role, publish_status, hook, script, caption, comment_cta, image_prompt, created_at)
+                                      VALUES (?, ?, 1, 'base', 'published', ?, ?, ?, ?, ?, NOW())`,
+                                     [RUN_ID, res.data.id, aiResponse.hook, aiResponse.script, aiResponse.caption, aiResponse.comment_cta, aiResponse.image_prompt]
                                  );
                                  console.log(`[OBSERVER BRIDGE] Stored post_id=${res.data.id} in reel_content_versions for metric tracking`);
                              } catch (dbErr) {

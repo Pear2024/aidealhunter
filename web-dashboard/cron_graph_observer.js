@@ -87,8 +87,14 @@ async function fetchEligiblePublishedPosts(conn) {
 async function fetchGraphMetricsForPost(postId) {
   if (!FB_PAGE_ACCESS_TOKEN) return mockGraphFetch(postId);
 
+  // Video posts uploaded via /PAGE_ID/videos return a VIDEO ID.
+  // We fetch basic video fields that work with pages_read_engagement permission.
+  // Note: read_insights permission is NOT granted, so video_insights/post insights endpoints will fail.
   const baseUrl = `https://graph.facebook.com/${GRAPH_API_VERSION}/${encodeURIComponent(postId)}`;
-  const baseParams = { access_token: FB_PAGE_ACCESS_TOKEN, fields: "id,comments.summary(true),shares" };
+  const baseParams = {
+    access_token: FB_PAGE_ACCESS_TOKEN,
+    fields: "id,views,comments.summary(true),likes.summary(true),length"
+  };
 
   let baseData;
   try {
@@ -99,33 +105,49 @@ async function fetchGraphMetricsForPost(postId) {
     throw error;
   }
 
+  const views = safeNumber(baseData?.views, 0);
+  const comments = safeNumber(baseData?.comments?.summary?.total_count, 0);
+  const likes = safeNumber(baseData?.likes?.summary?.total_count, 0);
+  const videoLength = safeNumber(baseData?.length, 15);
+
+  // Try insights endpoint in case read_insights permission is granted in the future
   let insightsMap = {};
   try {
-    const insightsUrl = `https://graph.facebook.com/${GRAPH_API_VERSION}/${encodeURIComponent(postId)}/insights`;
+    const insightsUrl = `https://graph.facebook.com/${GRAPH_API_VERSION}/${encodeURIComponent(postId)}/video_insights`;
     const { data } = await axios.get(insightsUrl, {
       params: {
         access_token: FB_PAGE_ACCESS_TOKEN,
-        metric: ["post_impressions", "post_video_views", "post_video_view_time", "post_video_avg_time_watched"].join(","),
+        metric: ["total_video_impressions", "total_video_views", "total_video_view_total_time", "total_video_avg_time_watched"].join(","),
       },
       timeout: 30000,
     });
-
     const metrics = data?.data || [];
     for (const metric of metrics) {
       insightsMap[metric?.name] = Array.isArray(metric?.values) ? metric.values[0]?.value : null;
     }
+    log(`Insights available for post_id=${postId} (read_insights permission granted)`);
   } catch (error) {
-    warn(`Insights fetch partial failure for post_id=${postId}: ${error.message}`);
+    // Expected to fail if read_insights permission is not granted — use basic fields instead
+    if (error?.response?.data?.error?.message?.includes('read_insights')) {
+      log(`Using basic video fields for post_id=${postId} (read_insights not available)`);
+    } else {
+      warn(`Insights fetch note for post_id=${postId}: ${error.message}`);
+    }
   }
+
+  // Use insights data if available, otherwise fall back to basic video fields
+  const impressions = safeNumber(insightsMap.total_video_impressions, views);
+  const threeSecondViews = safeNumber(insightsMap.total_video_views, views);
 
   return {
     fetchStatus: "fetched",
-    impressions: safeNumber(insightsMap.post_impressions, 0),
-    comments: safeNumber(baseData?.comments?.summary?.total_count, 0),
-    shares: safeNumber(baseData?.shares?.count, 0),
-    totalWatchTimeSeconds: safeNumber(insightsMap.post_video_view_time, 0) / 1000,
-    avgWatchTimeSeconds: safeNumber(insightsMap.post_video_avg_time_watched, 0) / 1000,
-    threeSecondViews: safeNumber(insightsMap.post_video_views, 0),
+    impressions: impressions,
+    comments: comments,
+    likes: likes,
+    shares: 0, // shares not available on video objects without read_insights
+    totalWatchTimeSeconds: safeNumber(insightsMap.total_video_view_total_time, 0) / 1000,
+    avgWatchTimeSeconds: safeNumber(insightsMap.total_video_avg_time_watched, 0) / 1000,
+    threeSecondViews: threeSecondViews,
   };
 }
 
