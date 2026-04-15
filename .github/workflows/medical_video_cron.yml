@@ -50,6 +50,8 @@ jobs:
           MYSQL_PORT: ${{ secrets.MYSQL_PORT }}
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           LIVE_FIRE_TEST: ${{ github.event.inputs.live_fire_test }}
+          PUBLISH_ENABLED: 'true'
+          MAX_POSTS_PER_DAY: '1'
         run: |
           cd web-dashboard
           node generate_health_reel.js
