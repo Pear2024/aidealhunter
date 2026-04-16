@@ -958,7 +958,7 @@ CRITICAL OUTPUT RULE:
                              try { 
                                  if(process.env.LIVE_FIRE_TEST === 'COMMENT') throw new Error("LIVE TEST: Intentionally failed comment injection!");
                                  await axios.post(`https://graph.facebook.com/v19.0/${res.data.id}/comments`, { 
-                                     message: aiResponse.comment_cta + "\n\n👉 ตรวจสอบอาการและประเมินสุขภาพด้วย AI ฟรี ลิงก์นี้เลยครับ: https://nadaniadigitalllc.com/wellness", 
+                                     message: aiResponse.comment_cta + "\n\n👉 Check your symptoms & get a FREE AI health assessment here: https://nadaniadigitalllc.com/wellness", 
                                      access_token: process.env.FB_PAGE_ACCESS_TOKEN 
                                  }); 
                              } catch(cErr) {
