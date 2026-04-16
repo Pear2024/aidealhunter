@@ -896,16 +896,16 @@ CRITICAL OUTPUT RULE:
                         if (!fs.existsSync(fallbackSrcPath)) {
                             console.error(`[FFMPEG] Missing fallback image at: ${fallbackSrcPath}`);
                             console.log(`[FFMPEG] Auto-generating solid colored fallback background to prevent pipeline crash.`);
-                            require('child_process').execSync(`ffmpeg -f lavfi -i color=c=0x0A0F1F:s=1080x1920 -vframes 1 "${imgPath}"`, {stdio: 'ignore'});
+                            require('child_process').execSync(`/usr/local/bin/ffmpeg -f lavfi -i color=c=0x0A0F1F:s=1080x1920 -vframes 1 "${imgPath}"`, {stdio: 'ignore'});
                         } else {
-                            require('child_process').execSync(`ffmpeg -y -i "${fallbackSrcPath}" -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,colorchannelmixer=rr=0.7:gg=0.7:bb=0.8" -vframes 1 "${imgPath}"`, {stdio: 'ignore'});
+                            require('child_process').execSync(`/usr/local/bin/ffmpeg -y -i "${fallbackSrcPath}" -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,colorchannelmixer=rr=0.7:gg=0.7:bb=0.8" -vframes 1 "${imgPath}"`, {stdio: 'ignore'});
                         }
                     }
                     await updateRunLog(context.conn, { current_step: 'ffmpeg_rendering' });
                     
                     const safeDuration = safeModeActivated ? 10 : Math.max(8, aiResponse.script.split(' ').length * 0.4) + 2; 
                     const eff = imgDecision === "branded_fallback_visual" ? "" : "zoompan=z='min(zoom+0.0015,1.5)':d=700:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920,";
-                    require('child_process').execSync(`ffmpeg -y -loop 1 -i "${imgPath}" -i "${audioPath}" -map 0:v -map 1:a -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,${eff}format=yuv420p" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -t ${safeDuration} "${outPath}"`, { stdio: 'pipe', timeout: 120000 });
+                    require('child_process').execSync(`/usr/local/bin/ffmpeg -y -loop 1 -i "${imgPath}" -i "${audioPath}" -map 0:v -map 1:a -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,${eff}format=yuv420p" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -t ${safeDuration} "${outPath}"`, { stdio: 'pipe', timeout: 120000 });
                     
                     if (!fs.existsSync(outPath) || fs.statSync(outPath).size < 50000) {
                        throw new Error("FFmpeg corrupted output");
@@ -955,7 +955,8 @@ CRITICAL OUTPUT RULE:
                              try { 
                                  if(process.env.LIVE_FIRE_TEST === 'COMMENT') throw new Error("LIVE TEST: Intentionally failed comment injection!");
                                  await axios.post(`https://graph.facebook.com/v19.0/${res.data.id}/comments`, { 
-                                     message: aiResponse.comment_cta, access_token: process.env.FB_PAGE_ACCESS_TOKEN 
+                                     message: aiResponse.comment_cta + "\n\n👉 ตรวจสอบอาการและประเมินสุขภาพด้วย AI ฟรี ลิงก์นี้เลยครับ: https://nadaniadigitalllc.com/wellness", 
+                                     access_token: process.env.FB_PAGE_ACCESS_TOKEN 
                                  }); 
                              } catch(cErr) {
                                  finalStatus = 'posted_no_comment';
