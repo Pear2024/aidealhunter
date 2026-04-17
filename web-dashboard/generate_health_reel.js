@@ -259,7 +259,7 @@ function selectSafeTemplate(sourceType = "default") {
       script: "Cellular health is an important area of ongoing research. Understanding the body at a cellular level can support informed choices.",
       caption: "Cellular health is an important part of overall wellness.\n\nExplore how research continues to evolve in this space.\n\nComment CELL to learn more 👇",
       comment_cta: "Comment CELL to explore more about cellular wellness 👇",
-      image_prompt: "single clear subject, glowing cellular energy, dark background, soft lighting, high contrast, clean composition, no text, no collage, center focus",
+      image_prompt: "a vibrant colorful bowl of superfoods with berries, seeds, and green leaves, overhead shot, bright natural lighting, clean white background, fresh and healthy feel",
       visual_source: "APPROVED_FALLBACK_TEMPLATE",
       copy_source: "STATIC_APPROVED",
     },
@@ -269,7 +269,7 @@ function selectSafeTemplate(sourceType = "default") {
       script: "Companies around the world are exploring cellular wellness. This reflects growing interest in understanding health at a deeper level.",
       caption: "More companies are exploring cellular wellness and research.\n\nStay informed as new developments continue to evolve.\n\nComment CELL to learn more 👇",
       comment_cta: "Comment CELL to stay informed 👇",
-      image_prompt: "single clear subject, glowing cellular energy, dark background, soft lighting, high contrast, clean composition, no text, no collage, center focus",
+      image_prompt: "a modern wellness laboratory with glass test tubes containing colorful plant extracts, soft bokeh background, clean minimalist aesthetic, warm tones",
       visual_source: "APPROVED_FALLBACK_TEMPLATE",
       copy_source: "STATIC_APPROVED",
     },
@@ -279,7 +279,7 @@ function selectSafeTemplate(sourceType = "default") {
       script: "Cellular wellness is a topic being explored across many research fields. Learning the basics can help you better understand your body.",
       caption: "Cellular wellness is becoming a key topic in health discussions.\n\nStart learning what it means and why it matters.\n\nComment CELL to explore 👇",
       comment_cta: "Comment CELL to explore more 👇",
-      image_prompt: "single clear subject, glowing cellular energy, dark background, soft lighting, high contrast, clean composition, no text, no collage, center focus",
+      image_prompt: "a person in morning sunlight doing yoga stretches on a wooden deck surrounded by nature, golden hour warmth, peaceful and energetic mood, lifestyle photography",
       visual_source: "APPROVED_FALLBACK_TEMPLATE",
       copy_source: "STATIC_APPROVED",
     },
@@ -510,7 +510,16 @@ Requirements:
 - script: max 150 characters
 - caption: short and clear
 - comment_cta: direct comment CTA
-- image_prompt: single subject, dark background, clean composition
+- image_prompt: IMPORTANT: Create a UNIQUE, DIVERSE visual concept. Do NOT default to "glowing cells" or "dark background". Instead, choose from styles like:
+  * Lifestyle photography (person eating healthy, exercising, morning routine)
+  * Nature macro (fruits, vegetables, seeds, superfoods close-up)
+  * Medical/lab aesthetic (lab equipment, test tubes, modern clinic)
+  * Abstract art (geometric patterns, flowing gradients, light prisms)
+  * Infographic style (clean icons, data visualization feel)
+  * Kitchen/food scene (colorful ingredients, supplement bottles, smoothies)
+  * Human body illustration (organs, muscles, anatomy, NOT microscopic cells)
+  * Environmental (ocean, forest, sunrise, fresh air atmosphere)
+  Match the visual to the TOPIC, not always to "cells". Keep it single subject, clean composition, no text.
 
 CRITICAL OUTPUT RULE:
 Return ONLY one valid JSON object.
@@ -576,7 +585,7 @@ If you cannot comply, return:
                         const aiClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
                         const response = await aiClient.models.generateImages({
                             model: process.env.GEMINI_IMAGEN_MODEL || 'imagen-4.0-generate-001',
-                            prompt: `Premium vertical health ad design: ${aiResponse.image_prompt}. STRICTLY: Emotional impact, single prominent subject, dark background, cinematic.`,
+                            prompt: `Premium vertical health ad design: ${aiResponse.image_prompt}. STRICTLY: Emotional impact, single prominent subject, visually striking, no text overlays, no watermarks.`,
                             config: { numberOfImages: 1, outputMimeType: 'image/jpeg', aspectRatio: '9:16' }
                         });
                         if (!response.generatedImages || response.generatedImages.length === 0) throw new Error("Empty image output.");
