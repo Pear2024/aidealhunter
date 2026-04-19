@@ -143,9 +143,9 @@ async function mixContent(audioPath, visualPath, musicPath) {
     }
 
     if (visualPath.endsWith('.jpg') || visualPath.endsWith('.png')) {
-        execSync(`ffmpeg -loop 1 ${inputs} -c:v libx264 -tune stillimage -b:a 192k -pix_fmt yuv420p -shortest -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0015,1.5)':d=700:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'" ${audioFilter} -y ${outputPath}`);
+        execSync(`ffmpeg -loop 1 ${inputs} -c:v libx264 -tune stillimage -b:a 192k -pix_fmt yuv420p -shortest -t 30 -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,zoompan=z='min(zoom+0.0015,1.5)':d=700:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)'" ${audioFilter} -y ${outputPath}`);
     } else {
-        execSync(`ffmpeg -stream_loop -1 ${inputs} -c:v libx264 ${audioFilter} -shortest -map 0:v:0 -y ${outputPath}`);
+        execSync(`ffmpeg -stream_loop -1 ${inputs} -c:v libx264 ${audioFilter} -shortest -t 30 -map 0:v:0 -y ${outputPath}`);
     }
     return outputPath;
 }
@@ -176,7 +176,7 @@ async function main() {
         const promptBase = `News Title: ${news.title}. Content: ${news.contentSnippet}.`;
         
         // 1. Get Audio Script
-        const scriptPrompt = `Act as an inspiring, professional medical tech presenter. Write a brilliant 40-word voiceover script (around 20-30 seconds of speech) summarizing this technology breakthrough in health and longevity. Tone must be awe-inspiring. Do not include stage directions. ` + promptBase;
+        const scriptPrompt = `Act as an inspiring, professional medical tech presenter. Write a brilliant 30-40 word voiceover script (around 20-25 seconds of speech, HARD LIMIT: 30 seconds total video). Tone must be awe-inspiring. Do not include stage directions. ` + promptBase;
         const script = await requestText(scriptPrompt);
         
         // 2. Get Video Prompt

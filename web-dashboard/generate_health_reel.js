@@ -506,10 +506,10 @@ STRATEGIC DIRECTIVES:
 - Core Topic Angle: ${plannerStrategy.topic_angle} (Drawn from: ${selectedTopic})
 
 Requirements:
-- hook: max 8 words
-- script: max 150 characters
-- caption: short and clear
-- comment_cta: direct comment CTA
+- hook: max 8 words, STOP-THE-SCROLL compelling
+- script: max 120 characters STRICT (this is critical for 30-second video cap)
+- caption: short, punchy, include 3-5 hashtags
+- comment_cta: direct engagement CTA (e.g., "Comment CELL if you relate")
 - image_prompt: IMPORTANT: Create a UNIQUE, DIVERSE visual concept. Do NOT default to "glowing cells" or "dark background". Instead, choose from styles like:
   * Lifestyle photography (person eating healthy, exercising, morning routine)
   * Nature macro (fruits, vegetables, seeds, superfoods close-up)
@@ -570,7 +570,7 @@ If you cannot comply, return:
                     await executeSelfHealingStep('Audio TTS', 'audio', context, async (provider) => {
                         if (provider === 'google-tts') {
                             const googleTTS = require('google-tts-api');
-                            const results = await googleTTS.getAllAudioBase64(aiResponse.script.slice(0, 800), { lang: 'en', slow: false, splitPunct: ',.?' });
+                            const results = await googleTTS.getAllAudioBase64(aiResponse.script.slice(0, 400), { lang: 'en', slow: false, splitPunct: ',.?' });
                             const base64Buffers = results.map(r => Buffer.from(r.base64, 'base64'));
                             fs.writeFileSync(audioPath, Buffer.concat(base64Buffers));
                         }
@@ -914,7 +914,10 @@ CRITICAL OUTPUT RULE:
                     }
                     await updateRunLog(context.conn, { current_step: 'ffmpeg_rendering' });
                     
-                    const safeDuration = safeModeActivated ? 10 : Math.max(8, aiResponse.script.split(' ').length * 0.4) + 2; 
+                    const MAX_REEL_DURATION = 30; // 🔒 HARD CAP: 30 seconds for viral reels
+                    const rawDuration = safeModeActivated ? 10 : Math.max(8, aiResponse.script.split(' ').length * 0.4) + 2;
+                    const safeDuration = Math.min(rawDuration, MAX_REEL_DURATION); // Clamp to 30s max
+                    console.log(`[DURATION] Raw: ${rawDuration.toFixed(1)}s → Clamped: ${safeDuration}s (max ${MAX_REEL_DURATION}s)`);
                     const eff = imgDecision === "branded_fallback_visual" ? "" : "zoompan=z='min(zoom+0.0015,1.5)':d=700:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1080x1920,";
                     const ffmpegMainCmd = process.env.FFMPEG_PATH || (fs.existsSync('/usr/local/bin/ffmpeg') ? '/usr/local/bin/ffmpeg' : 'ffmpeg');
                     require('child_process').execSync(`${ffmpegMainCmd} -y -loop 1 -i "${imgPath}" -i "${audioPath}" -map 0:v -map 1:a -vf "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,${eff}format=yuv420p" -c:v libx264 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -shortest -t ${safeDuration} "${outPath}"`, { stdio: 'pipe', timeout: 120000 });

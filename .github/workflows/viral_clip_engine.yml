@@ -1,0 +1,82 @@
+name: 🔥 Viral Clip Engine v2.0
+
+on:
+  schedule:
+    # Runs 3 times daily: 8AM, 2PM, 8PM (UTC)
+    # = ~1AM, 7AM, 1PM (US Pacific) — optimal posting times
+    - cron: '0 8 * * *'
+    - cron: '0 14 * * *'
+    - cron: '0 20 * * *'
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: 'Custom topic (leave empty for auto)'
+        required: false
+        default: ''
+
+jobs:
+  generate_viral_clip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+          ffmpeg -version
+
+      - name: Install Dependencies
+        working-directory: ./web-dashboard
+        run: npm ci || npm install
+
+      - name: 🔥 Generate & Publish Viral Clip
+        working-directory: ./web-dashboard
+        env:
+          # Database
+          MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+          MYSQL_PORT: ${{ secrets.MYSQL_PORT }}
+
+          # AI APIs
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+
+          # Facebook
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+
+          # Discord notifications
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+
+          # Config
+          PUBLISH_ENABLED: "true"
+          FFMPEG_PATH: "ffmpeg"
+        run: |
+          echo "🔥 Viral Clip Engine v2.0 — Starting..."
+          echo "⏰ Time: $(date -u)"
+          if [ -n "${{ github.event.inputs.topic }}" ]; then
+            echo "📌 Custom topic: ${{ github.event.inputs.topic }}"
+            node generate_viral_clip.js "${{ github.event.inputs.topic }}"
+          else
+            echo "🎲 Auto-selecting topic..."
+            node generate_viral_clip.js
+          fi
+
+      - name: Upload video artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: viral-clip-${{ github.run_number }}
+          path: web-dashboard/output/viral_clips/*.mp4
+          retention-days: 7
